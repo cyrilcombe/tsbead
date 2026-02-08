@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-08
+Last updated: 2026-02-08 (evening)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -15,12 +15,12 @@ Status legend:
 
 | ID | Area | Legacy Feature | Java Reference | Web Status |
 |---|---|---|---|---|
-| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `TODO` |
+| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (Draft/Corrected/Simulation present, Report pane missing) |
 | F-002 | Layout | Per-pane visibility toggles | `ViewDraftAction`, `ViewCorrectedAction`, `ViewSimulationAction`, `ViewReportAction` | `PARTIAL` (flags in document view, no full UI behavior) |
-| F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `PARTIAL` (basic canvas scroll exists, no shared row scroll control) |
-| F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `PARTIAL` (draft grid exists, markers missing) |
-| F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `TODO` |
-| F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `TODO` |
+| F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `PARTIAL` (shared scroll implemented, row-index scrollbar behavior still differs) |
+| F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `DONE` |
+| F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `PARTIAL` (read-only parity pass) |
+| F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `PARTIAL` (read-only parity pass) |
 | F-007 | Views | Report rendering (infos + color counts + bead run list) | `view/ReportPanel.java` | `TODO` |
 | F-008 | Tools | Pencil: click toggles point, drag draws snapped line | `ToolPencilAction`, `DraftPanel.handleMouse*` | `PARTIAL` |
 | F-009 | Tools | Select: rectangular selection | `ToolSelectAction`, `Selection.java` | `PARTIAL` |
@@ -102,7 +102,7 @@ Status legend:
 ## Next Recommended Slice
 
 Target a thin vertical slice first:
-- [ ] S-001 Implement Corrected and Simulation panes read-only
+- [x] S-001 Implement Corrected and Simulation panes read-only
 - [ ] S-002 Add view toggles for Draft/Corrected/Simulation/Report
 - [ ] S-003 Add report infos block (without color lists yet)
 
