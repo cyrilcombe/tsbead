@@ -27,6 +27,13 @@ interface BeadPreviewCanvasProps {
   onPointerCancel?: () => void
 }
 
+interface CellPixelRect {
+  px: number
+  py: number
+  pw: number
+  ph: number
+}
+
 function toCss(color: RgbaColor): string {
   const [red, green, blue, alpha = 255] = color
   return `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`
@@ -51,6 +58,15 @@ function correctedPointFromIndex(index: number, width: number): { x: number; y: 
 
 function floorDiv(a: number, b: number): number {
   return Math.floor(a / b)
+}
+
+function getCellPixelRect(cell: PreviewCell, layout: PreviewLayout, cellSize: number): CellPixelRect {
+  return {
+    px: (cell.x - layout.minX) * cellSize + 1,
+    py: (cell.y - layout.minY) * cellSize + 1,
+    pw: Math.max(1, Math.round(cell.width * cellSize)),
+    ph: Math.max(1, cellSize),
+  }
 }
 
 function buildCorrectedLayout(rows: number[][]): PreviewLayout {
@@ -217,10 +233,7 @@ export function BeadPreviewCanvas({
 
     for (let index = layout.cells.length - 1; index >= 0; index -= 1) {
       const cell = layout.cells[index]
-      const px = (cell.x - layout.minX) * cellSize + 1
-      const py = (cell.y - layout.minY) * cellSize + 1
-      const pw = Math.max(1, cell.width * cellSize - 1)
-      const ph = Math.max(1, cellSize - 1)
+      const { px, py, pw, ph } = getCellPixelRect(cell, layout, cellSize)
       if (hitX >= px && hitX <= px + pw && hitY >= py && hitY <= py + ph) {
         return { x: cell.sourceX, y: cell.sourceY }
       }
@@ -295,17 +308,14 @@ export function BeadPreviewCanvas({
         context.fillRect(0, 0, canvas.width, canvas.height)
 
         for (const cell of layout.cells) {
-          const px = (cell.x - layout.minX) * cellSize + 1
-          const py = (cell.y - layout.minY) * cellSize + 1
-          const pw = Math.max(1, cell.width * cellSize - 1)
-          const ph = Math.max(1, cellSize - 1)
-          const fillWidth = Math.max(1, pw - 2)
-          const fillHeight = Math.max(1, ph - 2)
+          const { px, py, pw, ph } = getCellPixelRect(cell, layout, cellSize)
+          const fillWidth = Math.max(1, pw - 1)
+          const fillHeight = Math.max(1, ph - 1)
           context.fillStyle = toCss(document.colors[cell.colorIndex] ?? [0, 0, 0, 255])
           context.fillRect(px + 1, py + 1, fillWidth, fillHeight)
           context.strokeStyle = 'rgba(30, 35, 40, 0.7)'
           context.lineWidth = 1
-          context.strokeRect(px + 0.5, py + 0.5, Math.max(0, pw - 1), Math.max(0, ph - 1))
+          context.strokeRect(px + 0.5, py + 0.5, Math.max(0, pw), Math.max(0, ph))
         }
       }}
       role="img"

@@ -148,7 +148,13 @@ function App() {
     [reportSummary.colorCounts],
   )
 
-  const onPointerDown = (point: CellPoint) => {
+  const onPointerDown = (point: CellPoint, allowShapeTools: boolean) => {
+    if ((selectedTool === 'line' || selectedTool === 'select') && !allowShapeTools) {
+      dragStartRef.current = null
+      setDragPreview(null)
+      return
+    }
+
     dragStartRef.current = point
     if (selectedTool === 'line' || selectedTool === 'select') {
       setDragPreview({ start: point, end: point })
@@ -203,6 +209,9 @@ function App() {
     dragStartRef.current = null
     setDragPreview(null)
   }
+
+  const onDraftPointerDown = (point: CellPoint) => onPointerDown(point, true)
+  const onPreviewPointerDown = (point: CellPoint) => onPointerDown(point, false)
 
   const onDeleteSelection = () => {
     dragStartRef.current = null
@@ -490,7 +499,7 @@ function App() {
                     document={document}
                     selectionOverlay={selectionOverlay}
                     linePreview={linePreview}
-                    onPointerDown={onPointerDown}
+                    onPointerDown={onDraftPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}
                     onPointerCancel={onPointerCancel}
@@ -512,7 +521,7 @@ function App() {
                   <BeadPreviewCanvas
                     document={document}
                     variant="corrected"
-                    onPointerDown={onPointerDown}
+                    onPointerDown={onPreviewPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}
                     onPointerCancel={onPointerCancel}
@@ -534,7 +543,7 @@ function App() {
                   <BeadPreviewCanvas
                     document={document}
                     variant="simulation"
-                    onPointerDown={onPointerDown}
+                    onPointerDown={onPreviewPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}
                     onPointerCancel={onPointerCancel}

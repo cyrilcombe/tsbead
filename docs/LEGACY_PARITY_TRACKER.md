@@ -20,7 +20,7 @@ Status legend:
 | F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `DONE` |
 | F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `DONE` |
 | F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `PARTIAL` (editable parity pass, visual parity gaps remain) |
-| F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `PARTIAL` (editable parity pass, visual parity gaps remain) |
+| F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `DONE` |
 | F-007 | Views | Report rendering (infos + color counts + bead run list) | `view/ReportPanel.java` | `DONE` |
 | F-008 | Tools | Pencil: click toggles point, drag draws snapped line | `ToolPencilAction`, `DraftPanel.handleMouse*` | `PARTIAL` |
 | F-009 | Tools | Select: rectangular selection | `ToolSelectAction`, `Selection.java` | `PARTIAL` |
@@ -70,7 +70,7 @@ Status legend:
 - [x] T-001 Add workspace layout with Draft, Corrected, Simulation, Report panes
 - [x] T-002 Implement shared vertical row scroll model across panes
 - [ ] T-003 Implement Corrected renderer (`Model.correct` equivalent)
-- [ ] T-004 Implement Simulation renderer (shift + weave mapping)
+- [x] T-004 Implement Simulation renderer (shift + weave mapping)
 - [x] T-005 Add view visibility toggles for all panes
 
 ### Phase 2 - Editing parity
