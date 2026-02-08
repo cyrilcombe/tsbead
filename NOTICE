@@ -1,0 +1,12 @@
+This project is a modern rewrite derived from the original JBead software.
+
+Original project:
+- Name: JBead (formerly DB-BEAD)
+- Author: Damian Brunold
+- Website: http://www.jbead.ch
+- License: GNU General Public License v3.0 or later
+
+The original source is available in this workspace at:
+- /Users/cyrilcombe/Dev/perso/jbead
+
+This rewrite keeps GPL-compatible licensing and attribution.
