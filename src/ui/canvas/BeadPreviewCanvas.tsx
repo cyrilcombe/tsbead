@@ -88,7 +88,7 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
   return { cells, minX, maxX, minY, maxY }
 }
 
-function buildSimulationLayout(rows: number[][], shift: number, scroll: number): PreviewLayout {
+function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
   const width = rows[0]?.length ?? 0
   if (width === 0 || rows.length === 0) {
     return { cells: [], minX: 0, maxX: 1, minY: 0, maxY: 1 }
@@ -118,8 +118,7 @@ function buildSimulationLayout(rows: number[][], shift: number, scroll: number):
         continue
       }
 
-      const evenScroll = Math.abs(scroll) % 2 === 0
-      const isFullRow = evenScroll ? corrected.y % 2 === 0 : corrected.y % 2 === 1
+      const isFullRow = corrected.y % 2 === 0
       if (isFullRow) {
         if (corrected.x === visibleWidth) {
           continue
@@ -176,10 +175,10 @@ export function BeadPreviewCanvas({ document, variant }: BeadPreviewCanvasProps)
 
   const layout = useMemo(() => {
     if (variant === 'simulation') {
-      return buildSimulationLayout(document.model.rows, document.view.shift, document.view.scroll)
+      return buildSimulationLayout(document.model.rows, document.view.shift)
     }
     return buildCorrectedLayout(document.model.rows)
-  }, [document.model.rows, document.view.scroll, document.view.shift, variant])
+  }, [document.model.rows, document.view.shift, variant])
 
   const canvasWidth = Math.ceil((layout.maxX - layout.minX) * cellSize) + 2
   const canvasHeight = Math.ceil((layout.maxY - layout.minY) * cellSize) + 2

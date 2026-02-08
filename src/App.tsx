@@ -27,6 +27,11 @@ function colorToCss(color: [number, number, number, number?]): string {
   return `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`
 }
 
+function getCellSize(zoomIndex: number): number {
+  const zoomTable = [6, 8, 10, 12, 14, 16, 18, 20]
+  return zoomTable[Math.max(0, Math.min(zoomIndex, zoomTable.length - 1))]
+}
+
 function App() {
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
@@ -37,6 +42,7 @@ function App() {
   const setSelectedColor = useEditorStore((state) => state.setSelectedColor)
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
   const setViewVisibility = useEditorStore((state) => state.setViewVisibility)
+  const setViewScroll = useEditorStore((state) => state.setViewScroll)
   const setSelection = useEditorStore((state) => state.setSelection)
   const deleteSelection = useEditorStore((state) => state.deleteSelection)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
@@ -48,7 +54,7 @@ function App() {
   const correctedScrollRef = useRef<HTMLDivElement | null>(null)
   const simulationScrollRef = useRef<HTMLDivElement | null>(null)
   const syncingScrollRef = useRef(false)
-  const [sharedScrollRatio, setSharedScrollRatio] = useState(0)
+  const [sharedMaxScrollRow, setSharedMaxScrollRow] = useState(0)
   const [viewportTick, setViewportTick] = useState(0)
   const [dragPreview, setDragPreview] = useState<SelectionRect | null>(null)
 
@@ -71,8 +77,10 @@ function App() {
 
   const width = document.model.rows[0]?.length ?? 0
   const height = document.model.rows.length
+  const cellSize = getCellSize(document.view.zoom)
   const selectedTool = document.view.selectedTool
   const selectedColor = document.view.selectedColor
+  const sharedScrollRow = document.view.scroll
   const isDraftVisible = document.view.draftVisible
   const isCorrectedVisible = document.view.correctedVisible
   const isSimulationVisible = document.view.simulationVisible
@@ -170,13 +178,34 @@ function App() {
     report: isReportVisible,
   }
 
+  const getPaneMaxScrollRow = (pane: HTMLDivElement | null): number => {
+    if (!pane) {
+      return 0
+    }
+    return Math.max(0, Math.round((pane.scrollHeight - pane.clientHeight) / cellSize))
+  }
+
+  const getSharedMaxRow = (): number => {
+    const referencePane =
+      (isDraftVisible ? draftScrollRef.current : null) ??
+      (isCorrectedVisible ? correctedScrollRef.current : null) ??
+      (isSimulationVisible ? simulationScrollRef.current : null)
+    if (!referencePane) {
+      return Math.max(0, height - 1)
+    }
+
+    const visibleRows = Math.max(1, Math.floor(referencePane.clientHeight / cellSize))
+    return Math.max(0, height - visibleRows)
+  }
+
   const onPaneScroll = (source: HTMLDivElement) => {
     if (syncingScrollRef.current) {
       return
     }
-    const sourceMax = source.scrollHeight - source.clientHeight
-    const ratio = sourceMax > 0 ? source.scrollTop / sourceMax : 0
-    setSharedScrollRatio(Math.max(0, Math.min(1, ratio)))
+    const sourceMaxRow = getPaneMaxScrollRow(source)
+    const sourceScrollRow = Math.round(source.scrollTop / cellSize)
+    const nextScrollRow = Math.max(0, Math.min(sourceMaxRow, sourceScrollRow))
+    setViewScroll(nextScrollRow)
   }
 
   useEffect(() => {
@@ -190,19 +219,37 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const nextSharedMaxRow = getSharedMaxRow()
+    setSharedMaxScrollRow((current) => (current === nextSharedMaxRow ? current : nextSharedMaxRow))
+
+    const targetScrollRow = Math.max(0, Math.min(nextSharedMaxRow, sharedScrollRow))
+    if (targetScrollRow !== sharedScrollRow) {
+      setViewScroll(targetScrollRow)
+      return
+    }
+
     syncingScrollRef.current = true
     const paneRefs = [draftScrollRef.current, correctedScrollRef.current, simulationScrollRef.current]
     for (const pane of paneRefs) {
       if (!pane) {
         continue
       }
-      const paneMax = pane.scrollHeight - pane.clientHeight
-      pane.scrollTop = paneMax > 0 ? sharedScrollRatio * paneMax : 0
+      const paneMaxRow = getPaneMaxScrollRow(pane)
+      pane.scrollTop = Math.min(targetScrollRow, paneMaxRow) * cellSize
     }
     requestAnimationFrame(() => {
       syncingScrollRef.current = false
     })
-  }, [document.model.rows, document.view.zoom, sharedScrollRatio, viewportTick])
+  }, [
+    cellSize,
+    document.model.rows,
+    isCorrectedVisible,
+    isDraftVisible,
+    isSimulationVisible,
+    sharedScrollRow,
+    viewportTick,
+    setViewScroll,
+  ])
 
   return (
     <div className="app-shell">
@@ -427,9 +474,10 @@ function App() {
                 className="shared-scrollbar"
                 type="range"
                 min={0}
-                max={1000}
-                value={Math.round(sharedScrollRatio * 1000)}
-                onChange={(event) => setSharedScrollRatio(Number(event.currentTarget.value) / 1000)}
+                max={sharedMaxScrollRow}
+                step={1}
+                value={Math.min(sharedScrollRow, sharedMaxScrollRow)}
+                onChange={(event) => setViewScroll(Number(event.currentTarget.value))}
               />
             </div>
           ) : null}

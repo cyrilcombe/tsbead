@@ -13,6 +13,7 @@ interface EditorState {
   setSelectedColor: (colorIndex: number) => void
   setSelectedTool: (tool: ToolId) => void
   setViewVisibility: (pane: ViewPaneId, visible: boolean) => void
+  setViewScroll: (scroll: number) => void
   setSelection: (selection: SelectionRect | null) => void
   clearSelection: () => void
   deleteSelection: () => void
@@ -238,6 +239,18 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const document = cloneDocument(state.document)
       document.view[key] = visible
+      return { document }
+    })
+  },
+  setViewScroll: (scroll) => {
+    set((state) => {
+      const normalized = Math.max(0, Math.floor(scroll))
+      if (state.document.view.scroll === normalized) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.scroll = normalized
       return { document }
     })
   },

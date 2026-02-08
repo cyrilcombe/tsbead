@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-08 (late night)
+Last updated: 2026-02-08 (late night, S-005)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -17,7 +17,7 @@ Status legend:
 |---|---|---|---|---|
 | F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (all 4 panes present; report block layout still not pixel-parity) |
 | F-002 | Layout | Per-pane visibility toggles | `ViewDraftAction`, `ViewCorrectedAction`, `ViewSimulationAction`, `ViewReportAction` | `DONE` |
-| F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `PARTIAL` (shared scroll implemented, row-index scrollbar behavior still differs) |
+| F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `DONE` |
 | F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `DONE` |
 | F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `PARTIAL` (read-only parity pass) |
 | F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `PARTIAL` (read-only parity pass) |
@@ -67,8 +67,8 @@ Status legend:
 ## Task Breakdown (Execution Plan)
 
 ### Phase 1 - Multi-view parity foundation
-- [ ] T-001 Add workspace layout with Draft, Corrected, Simulation, Report panes
-- [ ] T-002 Implement shared vertical row scroll model across panes
+- [x] T-001 Add workspace layout with Draft, Corrected, Simulation, Report panes
+- [x] T-002 Implement shared vertical row scroll model across panes
 - [ ] T-003 Implement Corrected renderer (`Model.correct` equivalent)
 - [ ] T-004 Implement Simulation renderer (shift + weave mapping)
 - [x] T-005 Add view visibility toggles for all panes
@@ -106,6 +106,6 @@ Target a thin vertical slice first:
 - [x] S-002 Add view toggles for Draft/Corrected/Simulation/Report
 - [x] S-003 Add report infos block (without color lists yet)
 - [x] S-004 Add bead-run list section in report
-- [ ] S-005 Align vertical scrollbar behavior to legacy row-index model
+- [x] S-005 Align vertical scrollbar behavior to legacy row-index model
 
 This slice unlocks visual parity early and reduces risk before implementing advanced editing/history.

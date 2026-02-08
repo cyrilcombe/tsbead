@@ -147,4 +147,12 @@ describe('editor store', () => {
     state = useEditorStore.getState()
     expect(state.document.view.correctedVisible).toBe(true)
   })
+
+  it('stores a non-negative integer scroll row index', () => {
+    useEditorStore.getState().setViewScroll(8.7)
+    expect(useEditorStore.getState().document.view.scroll).toBe(8)
+
+    useEditorStore.getState().setViewScroll(-4)
+    expect(useEditorStore.getState().document.view.scroll).toBe(0)
+  })
 })
