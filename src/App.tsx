@@ -509,7 +509,14 @@ function App() {
                   className="canvas-scroll"
                   onScroll={(event) => onPaneScroll(event.currentTarget)}
                 >
-                  <BeadPreviewCanvas document={document} variant="corrected" />
+                  <BeadPreviewCanvas
+                    document={document}
+                    variant="corrected"
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                  />
                 </div>
               </section>
             ) : null}
@@ -524,7 +531,14 @@ function App() {
                   className="canvas-scroll"
                   onScroll={(event) => onPaneScroll(event.currentTarget)}
                 >
-                  <BeadPreviewCanvas document={document} variant="simulation" />
+                  <BeadPreviewCanvas
+                    document={document}
+                    variant="simulation"
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                  />
                 </div>
               </section>
             ) : null}

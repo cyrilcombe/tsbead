@@ -1,11 +1,13 @@
-import { useMemo } from 'react'
-import type { JBeadDocument, RgbaColor } from '../../domain/types'
+import { useMemo, useRef } from 'react'
+import type { CellPoint, JBeadDocument, RgbaColor } from '../../domain/types'
 
 interface PreviewCell {
   x: number
   y: number
   width: number
   colorIndex: number
+  sourceX: number
+  sourceY: number
 }
 
 interface PreviewLayout {
@@ -19,6 +21,10 @@ interface PreviewLayout {
 interface BeadPreviewCanvasProps {
   document: JBeadDocument
   variant: 'corrected' | 'simulation'
+  onPointerDown?: (point: CellPoint) => void
+  onPointerMove?: (point: CellPoint) => void
+  onPointerUp?: (point: CellPoint) => void
+  onPointerCancel?: () => void
 }
 
 function toCss(color: RgbaColor): string {
@@ -60,7 +66,8 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
   let minY = Number.POSITIVE_INFINITY
   let maxY = Number.NEGATIVE_INFINITY
 
-  for (const row of rows) {
+  for (let y = 0; y < rows.length; y += 1) {
+    const row = rows[y]
     for (let x = 0; x < row.length; x += 1) {
       const corrected = correctedPointFromIndex(index, width)
       const offset = corrected.y % 2 === 0 ? 0 : -0.5
@@ -72,6 +79,8 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
         y: drawY,
         width: drawWidth,
         colorIndex: row[x],
+        sourceX: x,
+        sourceY: y,
       })
       minX = Math.min(minX, drawX)
       maxX = Math.max(maxX, drawX + drawWidth)
@@ -127,7 +136,7 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
         const drawX = corrected.x
         const drawY = corrected.y
         const drawWidth = 1
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)
@@ -136,7 +145,7 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
         const drawX = corrected.x - 0.5
         const drawY = corrected.y
         const drawWidth = 1
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)
@@ -145,7 +154,7 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
         const drawX = -0.5
         const drawY = corrected.y + 1
         const drawWidth = 0.5
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)
@@ -154,7 +163,7 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
         const drawX = corrected.x - 0.5
         const drawY = corrected.y
         const drawWidth = 0.5
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)
@@ -170,7 +179,16 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
   return { cells, minX, maxX, minY, maxY }
 }
 
-export function BeadPreviewCanvas({ document, variant }: BeadPreviewCanvasProps) {
+export function BeadPreviewCanvas({
+  document,
+  variant,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+}: BeadPreviewCanvasProps) {
+  const isPointerDownRef = useRef(false)
+  const lastPointRef = useRef<CellPoint | null>(null)
   const cellSize = getCellSize(document.view.zoom)
 
   const layout = useMemo(() => {
@@ -182,12 +200,87 @@ export function BeadPreviewCanvas({ document, variant }: BeadPreviewCanvasProps)
 
   const canvasWidth = Math.ceil((layout.maxX - layout.minX) * cellSize) + 2
   const canvasHeight = Math.ceil((layout.maxY - layout.minY) * cellSize) + 2
+  const isInteractive = !!onPointerDown && !!onPointerMove && !!onPointerUp && !!onPointerCancel
+  const handlePointerDown = onPointerDown ?? (() => undefined)
+  const handlePointerMove = onPointerMove ?? (() => undefined)
+  const handlePointerUp = onPointerUp ?? (() => undefined)
+  const handlePointerCancel = onPointerCancel ?? (() => undefined)
+
+  const getPoint = (event: React.PointerEvent<HTMLCanvasElement>): CellPoint | null => {
+    if (!isInteractive) {
+      return null
+    }
+    const canvas = event.currentTarget
+    const bounds = canvas.getBoundingClientRect()
+    const hitX = event.clientX - bounds.left
+    const hitY = event.clientY - bounds.top
+
+    for (let index = layout.cells.length - 1; index >= 0; index -= 1) {
+      const cell = layout.cells[index]
+      const px = (cell.x - layout.minX) * cellSize + 1
+      const py = (cell.y - layout.minY) * cellSize + 1
+      const pw = Math.max(1, cell.width * cellSize - 1)
+      const ph = Math.max(1, cellSize - 1)
+      if (hitX >= px && hitX <= px + pw && hitY >= py && hitY <= py + ph) {
+        return { x: cell.sourceX, y: cell.sourceY }
+      }
+    }
+    return null
+  }
 
   return (
     <canvas
       className="bead-preview-canvas"
       width={canvasWidth}
       height={canvasHeight}
+      onPointerDown={(event) => {
+        if (!isInteractive || event.button !== 0) {
+          return
+        }
+        const point = getPoint(event)
+        if (!point) {
+          return
+        }
+        isPointerDownRef.current = true
+        lastPointRef.current = point
+        event.currentTarget.setPointerCapture(event.pointerId)
+        handlePointerDown(point)
+      }}
+      onPointerMove={(event) => {
+        if (!isInteractive || !isPointerDownRef.current) {
+          return
+        }
+        const point = getPoint(event)
+        if (point) {
+          lastPointRef.current = point
+          handlePointerMove(point)
+        }
+      }}
+      onPointerUp={(event) => {
+        if (!isInteractive || !isPointerDownRef.current) {
+          return
+        }
+        isPointerDownRef.current = false
+        const point = getPoint(event) ?? lastPointRef.current
+        lastPointRef.current = null
+        if (point) {
+          handlePointerUp(point)
+        }
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId)
+        }
+      }}
+      onPointerCancel={(event) => {
+        if (!isInteractive) {
+          return
+        }
+        isPointerDownRef.current = false
+        lastPointRef.current = null
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId)
+        }
+        handlePointerCancel()
+      }}
       ref={(canvas) => {
         if (!canvas) {
           return

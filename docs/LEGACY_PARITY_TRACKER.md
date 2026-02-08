@@ -19,8 +19,8 @@ Status legend:
 | F-002 | Layout | Per-pane visibility toggles | `ViewDraftAction`, `ViewCorrectedAction`, `ViewSimulationAction`, `ViewReportAction` | `DONE` |
 | F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `DONE` |
 | F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `DONE` |
-| F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `PARTIAL` (read-only parity pass) |
-| F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `PARTIAL` (read-only parity pass) |
+| F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `PARTIAL` (editable parity pass, visual parity gaps remain) |
+| F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `PARTIAL` (editable parity pass, visual parity gaps remain) |
 | F-007 | Views | Report rendering (infos + color counts + bead run list) | `view/ReportPanel.java` | `DONE` |
 | F-008 | Tools | Pencil: click toggles point, drag draws snapped line | `ToolPencilAction`, `DraftPanel.handleMouse*` | `PARTIAL` |
 | F-009 | Tools | Select: rectangular selection | `ToolSelectAction`, `Selection.java` | `PARTIAL` |
@@ -75,7 +75,7 @@ Status legend:
 
 ### Phase 2 - Editing parity
 - [x] T-006 Add pipette tool in Draft pane
-- [ ] T-007 Enable edit interactions from Corrected and Simulation panes
+- [x] T-007 Enable edit interactions from Corrected and Simulation panes
 - [x] T-008 Add insert row / delete row actions
 - [ ] T-009 Add arrange selection dialog + operation
 - [x] T-010 Add keyboard shortcuts (0-9 colors, arrows for shift, tool shortcuts)
