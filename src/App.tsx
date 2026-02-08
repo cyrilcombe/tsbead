@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useEditorStore } from './domain/editorStore'
+import { buildReportSummary } from './domain/report'
 import { parseJbb, serializeJbb } from './io/jbb/format'
 import { loadProject, saveProject } from './storage/db'
 import { BeadCanvas } from './ui/canvas/BeadCanvas'
@@ -95,6 +96,12 @@ function App() {
     }
     return null
   }, [dragPreview, selectedTool])
+
+  const reportSummary = useMemo(() => buildReportSummary(document, 'Local Draft'), [document])
+  const visibleColorCounts = useMemo(
+    () => reportSummary.colorCounts.filter((item) => item.count > 0),
+    [reportSummary.colorCounts],
+  )
 
   const onPointerDown = (point: CellPoint) => {
     dragStartRef.current = point
@@ -358,13 +365,34 @@ function App() {
               <section className="panel report-panel">
                 <div className="panel-title">
                   <h2>Report</h2>
-                  <span>Preview</span>
+                  <span>{reportSummary.usedColorCount} colors used</span>
                 </div>
                 <div className="report-content">
-                  <p>Report detail blocks are coming in S-003.</p>
-                  <p>
-                    Current model: {width} columns x {height} rows ({width * height} beads)
-                  </p>
+                  <dl className="report-info-list">
+                    {reportSummary.entries.map((entry) => (
+                      <div key={entry.label} className="report-info-row">
+                        <dt>{entry.label}:</dt>
+                        <dd>{entry.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {reportSummary.repeat > 0 ? (
+                    <section className="report-color-usage">
+                      <h3>Color usage</h3>
+                      <div className="report-color-grid">
+                        {visibleColorCounts.map((item) => {
+                          const color = document.colors[item.colorIndex]
+                          const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
+                          return (
+                            <div key={item.colorIndex} className="report-color-row">
+                              <span className="report-color-count">{item.count} x</span>
+                              <span className="report-color-swatch" style={swatchStyle} />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  ) : null}
                 </div>
               </section>
             ) : null}

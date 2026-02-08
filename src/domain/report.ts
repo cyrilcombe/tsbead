@@ -1,0 +1,135 @@
+import type { JBeadDocument } from './types'
+
+export interface ReportEntry {
+  label: string
+  value: string
+}
+
+export interface ColorCount {
+  colorIndex: number
+  count: number
+}
+
+export interface ReportSummary {
+  entries: ReportEntry[]
+  colorCounts: ColorCount[]
+  usedColorCount: number
+  usedHeight: number
+  repeat: number
+}
+
+function rowLabel(count: number): string {
+  return count === 1 ? 'row' : 'rows'
+}
+
+function beadLabel(count: number): string {
+  return count === 1 ? 'bead' : 'beads'
+}
+
+export function getUsedHeight(rows: number[][]): number {
+  for (let y = rows.length - 1; y >= 0; y -= 1) {
+    if (rows[y].some((value) => value > 0)) {
+      return y + 1
+    }
+  }
+  return 0
+}
+
+function flattenUsedRows(rows: number[][], width: number, usedHeight: number): number[] {
+  const result: number[] = []
+  for (let y = 0; y < usedHeight; y += 1) {
+    const row = rows[y] ?? []
+    for (let x = 0; x < width; x += 1) {
+      result.push(row[x] ?? 0)
+    }
+  }
+  return result
+}
+
+export function calculateColorRepeatBeads(sequence: number[]): number {
+  const length = sequence.length
+  if (length === 0) {
+    return 0
+  }
+  if (length === 1) {
+    return 1
+  }
+
+  const z = new Array<number>(length).fill(0)
+  let left = 0
+  let right = 0
+  for (let i = 1; i < length; i += 1) {
+    if (i <= right) {
+      z[i] = Math.min(right - i + 1, z[i - left])
+    }
+    while (i + z[i] < length && sequence[z[i]] === sequence[i + z[i]]) {
+      z[i] += 1
+    }
+    if (i + z[i] - 1 > right) {
+      left = i
+      right = i + z[i] - 1
+    }
+  }
+
+  for (let repeat = 1; repeat < length; repeat += 1) {
+    if (z[repeat] >= length - repeat) {
+      return repeat
+    }
+  }
+  return length
+}
+
+export function formatRowsPerRepeat(repeat: number, width: number): string {
+  if (width <= 0) {
+    return '0'
+  }
+  if (repeat % width === 0) {
+    return String(repeat / width)
+  }
+
+  const rows = Math.floor(repeat / width)
+  const beads = repeat % width
+  return `${rows} ${rowLabel(rows)} ${beads} ${beadLabel(beads)}`
+}
+
+export function buildReportSummary(document: JBeadDocument, patternName: string): ReportSummary {
+  const rows = document.model.rows
+  const width = rows[0]?.length ?? 0
+  const usedHeight = getUsedHeight(rows)
+  const sequence = flattenUsedRows(rows, width, usedHeight)
+  const repeat = calculateColorRepeatBeads(sequence)
+  const maxColorIndexInModel = sequence.reduce((max, colorIndex) => Math.max(max, colorIndex), 0)
+  const paletteSize = Math.max(document.colors.length, maxColorIndexInModel + 1)
+  const colorCounts = Array.from({ length: paletteSize }, (_, colorIndex) => ({ colorIndex, count: 0 }))
+
+  for (const colorIndex of sequence) {
+    colorCounts[colorIndex].count += 1
+  }
+
+  const entries: ReportEntry[] = [
+    { label: 'Pattern', value: patternName },
+  ]
+
+  if (document.author.trim().length > 0) {
+    entries.push({ label: 'Author', value: document.author.trim() })
+  }
+  if (document.organization.trim().length > 0) {
+    entries.push({ label: 'Organization', value: document.organization.trim() })
+  }
+
+  entries.push(
+    { label: 'Circumference', value: String(width) },
+    { label: 'Repeat of colors', value: `${repeat} beads` },
+    { label: 'Rows per repeat', value: formatRowsPerRepeat(repeat, width) },
+    { label: 'Total number of rows', value: String(usedHeight) },
+    { label: 'Total number of beads', value: `${usedHeight * width} beads` },
+  )
+
+  return {
+    entries,
+    colorCounts,
+    usedColorCount: colorCounts.filter((item) => item.count > 0).length,
+    usedHeight,
+    repeat,
+  }
+}
