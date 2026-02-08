@@ -108,6 +108,92 @@ describe('editor store', () => {
     ])
   })
 
+  it('resizes pattern width with legacy copy semantics', () => {
+    const document = createEmptyDocument(4, 3)
+    document.model.rows = [
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9, 1, 2, 3],
+    ]
+    document.view.shift = 3
+    useEditorStore.getState().setDocument(document)
+    useEditorStore.getState().setSelection({
+      start: { x: 0, y: 0 },
+      end: { x: 1, y: 1 },
+    })
+
+    useEditorStore.getState().setPatternWidth(6)
+    let state = useEditorStore.getState()
+    expect(state.document.model.rows).toEqual([
+      [1, 2, 3, 4, 0, 0],
+      [5, 6, 7, 8, 0, 0],
+      [9, 1, 2, 3, 0, 0],
+    ])
+    expect(state.document.view.shift).toBe(3)
+    expect(state.selection).toBeNull()
+    expect(state.canUndo).toBe(true)
+
+    useEditorStore.getState().undo()
+    state = useEditorStore.getState()
+    expect(state.document.model.rows).toEqual([
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9, 1, 2, 3],
+    ])
+    expect(state.canRedo).toBe(true)
+  })
+
+  it('resizes pattern height and keeps top rows', () => {
+    const document = createEmptyDocument(3, 3)
+    document.model.rows = [
+      [1, 1, 1],
+      [2, 2, 2],
+      [3, 3, 3],
+    ]
+    useEditorStore.getState().setDocument(document)
+    useEditorStore.getState().setSelection({
+      start: { x: 0, y: 0 },
+      end: { x: 1, y: 1 },
+    })
+
+    useEditorStore.getState().setPatternHeight(5)
+    let state = useEditorStore.getState()
+    expect(state.document.model.rows).toEqual([
+      [1, 1, 1],
+      [2, 2, 2],
+      [3, 3, 3],
+      [0, 0, 0],
+      [0, 0, 0],
+    ])
+    expect(state.selection).toBeNull()
+
+    useEditorStore.getState().setPatternHeight(7)
+    useEditorStore.getState().setCell(0, 6, 9)
+    useEditorStore.getState().setPatternHeight(5)
+    state = useEditorStore.getState()
+    expect(state.document.model.rows).toEqual([
+      [1, 1, 1],
+      [2, 2, 2],
+      [3, 3, 3],
+      [0, 0, 0],
+      [0, 0, 0],
+    ])
+  })
+
+  it('clamps pattern dimensions to legacy bounds', () => {
+    useEditorStore.getState().setPatternWidth(1)
+    expect(useEditorStore.getState().document.model.rows[0]).toHaveLength(5)
+
+    useEditorStore.getState().setPatternWidth(999)
+    expect(useEditorStore.getState().document.model.rows[0]).toHaveLength(500)
+
+    useEditorStore.getState().setPatternHeight(1)
+    expect(useEditorStore.getState().document.model.rows).toHaveLength(5)
+
+    useEditorStore.getState().setPatternHeight(20000)
+    expect(useEditorStore.getState().document.model.rows).toHaveLength(10000)
+  })
+
   it('mirrors the selected area horizontally', () => {
     const document = createEmptyDocument(4, 4)
     document.model.rows = [

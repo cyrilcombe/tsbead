@@ -21,6 +21,10 @@ const VIEW_PANES: Array<{ id: ViewPaneId; label: string }> = [
   { id: 'simulation', label: 'Simulation' },
   { id: 'report', label: 'Report' },
 ]
+const MIN_PATTERN_WIDTH = 5
+const MAX_PATTERN_WIDTH = 500
+const MIN_PATTERN_HEIGHT = 5
+const MAX_PATTERN_HEIGHT = 10000
 
 function colorToCss(color: [number, number, number, number?]): string {
   const [red, green, blue, alpha = 255] = color
@@ -78,6 +82,8 @@ function App() {
   const setViewScroll = useEditorStore((state) => state.setViewScroll)
   const shiftLeft = useEditorStore((state) => state.shiftLeft)
   const shiftRight = useEditorStore((state) => state.shiftRight)
+  const setPatternWidth = useEditorStore((state) => state.setPatternWidth)
+  const setPatternHeight = useEditorStore((state) => state.setPatternHeight)
   const insertRow = useEditorStore((state) => state.insertRow)
   const deleteRow = useEditorStore((state) => state.deleteRow)
   const setSelection = useEditorStore((state) => state.setSelection)
@@ -103,6 +109,10 @@ function App() {
   const [arrangeCopies, setArrangeCopies] = useState('1')
   const [arrangeHorizontalOffset, setArrangeHorizontalOffset] = useState('0')
   const [arrangeVerticalOffset, setArrangeVerticalOffset] = useState('0')
+  const [isPatternWidthDialogOpen, setIsPatternWidthDialogOpen] = useState(false)
+  const [isPatternHeightDialogOpen, setIsPatternHeightDialogOpen] = useState(false)
+  const [patternWidthInput, setPatternWidthInput] = useState('15')
+  const [patternHeightInput, setPatternHeightInput] = useState('120')
 
   useEffect(() => {
     void loadProject(LOCAL_PROJECT_ID).then((project) => {
@@ -236,6 +246,19 @@ function App() {
     return Math.max(0, Math.min(100, Math.floor(parsed)))
   }
 
+  const parsePatternDimensionValue = (
+    rawValue: string,
+    fallback: number,
+    min: number,
+    max: number,
+  ): number => {
+    const parsed = Number(rawValue)
+    if (!Number.isFinite(parsed)) {
+      return fallback
+    }
+    return Math.max(min, Math.min(max, Math.floor(parsed)))
+  }
+
   const onOpenArrangeDialog = () => {
     if (selection === null || width <= 0) {
       return
@@ -257,6 +280,38 @@ function App() {
     const verticalOffset = parseArrangeValue(arrangeVerticalOffset, 0)
     arrangeSelection(copies, horizontalOffset, verticalOffset)
     setIsArrangeDialogOpen(false)
+  }
+
+  const onOpenPatternWidthDialog = () => {
+    setPatternWidthInput(String(width))
+    setIsPatternWidthDialogOpen(true)
+  }
+
+  const onOpenPatternHeightDialog = () => {
+    setPatternHeightInput(String(height))
+    setIsPatternHeightDialogOpen(true)
+  }
+
+  const onApplyPatternWidth = () => {
+    const nextWidth = parsePatternDimensionValue(
+      patternWidthInput,
+      width,
+      MIN_PATTERN_WIDTH,
+      MAX_PATTERN_WIDTH,
+    )
+    setPatternWidth(nextWidth)
+    setIsPatternWidthDialogOpen(false)
+  }
+
+  const onApplyPatternHeight = () => {
+    const nextHeight = parsePatternDimensionValue(
+      patternHeightInput,
+      height,
+      MIN_PATTERN_HEIGHT,
+      MAX_PATTERN_HEIGHT,
+    )
+    setPatternHeight(nextHeight)
+    setIsPatternHeightDialogOpen(false)
   }
 
   const paneVisibilityById: Record<ViewPaneId, boolean> = {
@@ -312,9 +367,11 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isArrangeDialogOpen) {
+      if (isArrangeDialogOpen || isPatternWidthDialogOpen || isPatternHeightDialogOpen) {
         if (event.key === 'Escape') {
           setIsArrangeDialogOpen(false)
+          setIsPatternWidthDialogOpen(false)
+          setIsPatternHeightDialogOpen(false)
           event.preventDefault()
         }
         return
@@ -387,7 +444,18 @@ function App() {
     return () => {
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [isArrangeDialogOpen, onDeleteSelection, redo, setSelectedColor, setSelectedTool, shiftLeft, shiftRight, undo])
+  }, [
+    isArrangeDialogOpen,
+    isPatternHeightDialogOpen,
+    isPatternWidthDialogOpen,
+    onDeleteSelection,
+    redo,
+    setSelectedColor,
+    setSelectedTool,
+    shiftLeft,
+    shiftRight,
+    undo,
+  ])
 
   useEffect(() => {
     const nextSharedMaxRow = getSharedMaxRow()
@@ -514,6 +582,12 @@ function App() {
             </button>
             <button className="action" onClick={() => deleteRow()}>
               Delete row
+            </button>
+            <button className="action" onClick={onOpenPatternWidthDialog}>
+              Pattern width...
+            </button>
+            <button className="action" onClick={onOpenPatternHeightDialog}>
+              Pattern height...
             </button>
             <button className="action" onClick={onOpenArrangeDialog} disabled={selection === null}>
               Arrange...
@@ -718,6 +792,70 @@ function App() {
           </div>
         </aside>
       </main>
+
+      {isPatternWidthDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Pattern width">
+            <div className="panel-title">
+              <h2>Pattern Width</h2>
+            </div>
+            <div className="arrange-form">
+              <label className="arrange-field">
+                Width (beads)
+                <input
+                  className="arrange-input"
+                  type="number"
+                  min={MIN_PATTERN_WIDTH}
+                  max={MAX_PATTERN_WIDTH}
+                  step={1}
+                  value={patternWidthInput}
+                  onChange={(event) => setPatternWidthInput(event.currentTarget.value)}
+                />
+              </label>
+            </div>
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsPatternWidthDialogOpen(false)}>
+                Cancel
+              </button>
+              <button className="action tool-action active" onClick={onApplyPatternWidth}>
+                Apply
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isPatternHeightDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Pattern height">
+            <div className="panel-title">
+              <h2>Pattern Height</h2>
+            </div>
+            <div className="arrange-form">
+              <label className="arrange-field">
+                Height (rows)
+                <input
+                  className="arrange-input"
+                  type="number"
+                  min={MIN_PATTERN_HEIGHT}
+                  max={MAX_PATTERN_HEIGHT}
+                  step={1}
+                  value={patternHeightInput}
+                  onChange={(event) => setPatternHeightInput(event.currentTarget.value)}
+                />
+              </label>
+            </div>
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsPatternHeightDialogOpen(false)}>
+                Cancel
+              </button>
+              <button className="action tool-action active" onClick={onApplyPatternHeight}>
+                Apply
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {isArrangeDialogOpen ? (
         <div className="dialog-backdrop">

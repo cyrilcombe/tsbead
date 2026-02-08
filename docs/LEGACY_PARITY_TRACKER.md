@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-08 (late night, S-005)
+Last updated: 2026-02-08 (late night, S-006)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -38,8 +38,8 @@ Status legend:
 | F-021 | View Options | Draw colors toggle | `ViewDrawColorsAction`, `View.drawColors()` | `TODO` |
 | F-022 | View Options | Draw symbols toggle | `ViewDrawSymbolsAction`, `View.drawSymbols()` | `TODO` |
 | F-023 | View Options | Zoom in/normal/out | `ViewZoomInAction`, `ViewZoomNormalAction`, `ViewZoomOutAction` | `PARTIAL` (zoom value exists, no controls) |
-| F-024 | Pattern | Pattern width dialog and resize | `PatternWidthAction`, `PatternWidthDialog`, `Model.setWidth()` | `TODO` |
-| F-025 | Pattern | Pattern height dialog and resize | `PatternHeightAction`, `PatternHeightDialog`, `Model.setHeight()` | `TODO` |
+| F-024 | Pattern | Pattern width dialog and resize | `PatternWidthAction`, `PatternWidthDialog`, `Model.setWidth()` | `DONE` |
+| F-025 | Pattern | Pattern height dialog and resize | `PatternHeightAction`, `PatternHeightDialog`, `Model.setHeight()` | `DONE` |
 | F-026 | Pattern | Preferences (author, organization, symbols, update-check setting) | `PatternPreferencesAction`, `PreferencesDialog` | `TODO` |
 | F-027 | Model | Shift left/right (pattern phase shift) | `JBeadFrame.rotateLeft/Right`, `Model.shiftLeft/Right()` | `DONE` |
 | F-028 | Model | Repeat detection (`beads per repeat`, rows per repeat) | `Model.updateRepeat()`, `Model.calcRepeat()` | `PARTIAL` (implemented for report summary calculations) |
@@ -82,7 +82,7 @@ Status legend:
 
 ### Phase 3 - Pattern controls and history
 - [x] T-011 Add undo/redo history stack equivalent to `BeadUndo`
-- [ ] T-012 Add width/height pattern dialogs and model resizing
+- [x] T-012 Add width/height pattern dialogs and model resizing
 - [x] T-013 Add shift controls (left/right buttons + key repeat)
 - [ ] T-014 Implement repeat detection and expose in UI
 - [ ] T-015 Add view options: zoom in/normal/out, draw colors/symbols toggles

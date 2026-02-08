@@ -19,6 +19,8 @@ interface EditorState {
   setViewScroll: (scroll: number) => void
   shiftLeft: () => void
   shiftRight: () => void
+  setPatternWidth: (width: number) => void
+  setPatternHeight: (height: number) => void
   insertRow: () => void
   deleteRow: () => void
   setSelection: (selection: SelectionRect | null) => void
@@ -347,6 +349,65 @@ export const useEditorStore = create<EditorState>((set) => ({
       const document = cloneDocument(state.document)
       document.view.shift = (document.view.shift + 1) % width
       return { document }
+    })
+  },
+  setPatternWidth: (width) => {
+    set((state) => {
+      const rows = state.document.model.rows
+      const currentHeight = rows.length
+      const currentWidth = rows[0]?.length ?? 0
+      if (currentHeight <= 0 || currentWidth <= 0) {
+        return state
+      }
+
+      const normalizedWidth = clamp(Math.floor(width), 5, 500)
+      if (normalizedWidth === currentWidth) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      const resizedRows = Array.from({ length: currentHeight }, (_, y) => {
+        const sourceRow = document.model.rows[y]
+        const targetRow = Array.from({ length: normalizedWidth }, () => 0)
+        const copyWidth = Math.min(currentWidth, normalizedWidth)
+        for (let x = 0; x < copyWidth; x += 1) {
+          targetRow[x] = sourceRow[x]
+        }
+        return targetRow
+      })
+      document.model.rows = resizedRows
+      document.view.shift = ((document.view.shift % normalizedWidth) + normalizedWidth) % normalizedWidth
+
+      pushUndoSnapshot(state)
+      return { document, selection: null, dirty: true, ...applyHistoryFlags() }
+    })
+  },
+  setPatternHeight: (height) => {
+    set((state) => {
+      const rows = state.document.model.rows
+      const currentHeight = rows.length
+      const currentWidth = rows[0]?.length ?? 0
+      if (currentHeight <= 0 || currentWidth <= 0) {
+        return state
+      }
+
+      const normalizedHeight = clamp(Math.floor(height), 5, 10000)
+      if (normalizedHeight === currentHeight) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      const resizedRows = Array.from({ length: normalizedHeight }, (_, y) => {
+        if (y >= currentHeight) {
+          return Array.from({ length: currentWidth }, () => 0)
+        }
+        return [...document.model.rows[y]]
+      })
+      document.model.rows = resizedRows
+      document.view.scroll = clamp(document.view.scroll, 0, Math.max(0, normalizedHeight - 1))
+
+      pushUndoSnapshot(state)
+      return { document, selection: null, dirty: true, ...applyHistoryFlags() }
     })
   },
   insertRow: () => {
