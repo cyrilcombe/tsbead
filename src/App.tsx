@@ -427,6 +427,12 @@ function App() {
             </button>
           </div>
           <div className="button-strip">
+            <button className="action" onClick={() => shiftLeft()} title="ArrowLeft">
+              Shift left
+            </button>
+            <button className="action" onClick={() => shiftRight()} title="ArrowRight">
+              Shift right
+            </button>
             <button className="action" onClick={() => insertRow()}>
               Insert row
             </button>

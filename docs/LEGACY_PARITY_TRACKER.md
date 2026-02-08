@@ -41,7 +41,7 @@ Status legend:
 | F-024 | Pattern | Pattern width dialog and resize | `PatternWidthAction`, `PatternWidthDialog`, `Model.setWidth()` | `TODO` |
 | F-025 | Pattern | Pattern height dialog and resize | `PatternHeightAction`, `PatternHeightDialog`, `Model.setHeight()` | `TODO` |
 | F-026 | Pattern | Preferences (author, organization, symbols, update-check setting) | `PatternPreferencesAction`, `PreferencesDialog` | `TODO` |
-| F-027 | Model | Shift left/right (pattern phase shift) | `JBeadFrame.rotateLeft/Right`, `Model.shiftLeft/Right()` | `TODO` |
+| F-027 | Model | Shift left/right (pattern phase shift) | `JBeadFrame.rotateLeft/Right`, `Model.shiftLeft/Right()` | `DONE` |
 | F-028 | Model | Repeat detection (`beads per repeat`, rows per repeat) | `Model.updateRepeat()`, `Model.calcRepeat()` | `PARTIAL` (implemented for report summary calculations) |
 | F-029 | Palette | 32-color palette with selected color indicator | `ui/ColorPalette.java` | `PARTIAL` (palette exists; not full legacy behavior) |
 | F-030 | Palette | Double-click/popup color edit | `ColorPalette.chooseColor()` | `TODO` |
@@ -83,7 +83,7 @@ Status legend:
 ### Phase 3 - Pattern controls and history
 - [ ] T-011 Add undo/redo history stack equivalent to `BeadUndo`
 - [ ] T-012 Add width/height pattern dialogs and model resizing
-- [ ] T-013 Add shift controls (left/right buttons + key repeat)
+- [x] T-013 Add shift controls (left/right buttons + key repeat)
 - [ ] T-014 Implement repeat detection and expose in UI
 - [ ] T-015 Add view options: zoom in/normal/out, draw colors/symbols toggles
 
