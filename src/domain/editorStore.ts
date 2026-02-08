@@ -22,6 +22,7 @@ interface EditorState {
   setSelection: (selection: SelectionRect | null) => void
   clearSelection: () => void
   deleteSelection: () => void
+  arrangeSelection: (copies: number, horizontalOffset: number, verticalOffset: number) => void
   mirrorHorizontal: () => void
   mirrorVertical: () => void
   rotateClockwise: () => void
@@ -399,6 +400,71 @@ export const useEditorStore = create<EditorState>((set) => ({
         return { selection: null }
       }
       return { document, selection: null, dirty: true }
+    })
+  },
+  arrangeSelection: (copies, horizontalOffset, verticalOffset) => {
+    set((state) => {
+      if (state.selection === null) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      const rows = document.model.rows
+      const height = rows.length
+      const width = rows[0]?.length ?? 0
+      if (width === 0 || height === 0) {
+        return state
+      }
+
+      const target = normalizeRect(state.selection.start, state.selection.end)
+      const left = clamp(target.left, 0, width - 1)
+      const right = clamp(target.right, 0, width - 1)
+      const top = clamp(target.top, 0, height - 1)
+      const bottom = clamp(target.bottom, 0, height - 1)
+
+      const normalizedCopies = Math.max(0, Math.floor(copies))
+      if (normalizedCopies === 0) {
+        return state
+      }
+
+      const normalizedHorizontalOffset = Math.max(0, Math.floor(horizontalOffset))
+      const normalizedVerticalOffset = Math.max(0, Math.floor(verticalOffset))
+      const offset = normalizedVerticalOffset * width + normalizedHorizontalOffset
+      if (offset === 0) {
+        return state
+      }
+
+      const buffer = rows.map((row) => [...row])
+      const lastIndex = width * height - 1
+      let changed = false
+
+      for (let y = top; y <= bottom; y += 1) {
+        for (let x = left; x <= right; x += 1) {
+          const color = buffer[y][x]
+          if (color === 0) {
+            continue
+          }
+
+          let index = y * width + x
+          for (let copyIndex = 0; copyIndex < normalizedCopies; copyIndex += 1) {
+            index += offset
+            if (index < 0 || index > lastIndex) {
+              continue
+            }
+            const targetX = index % width
+            const targetY = Math.floor(index / width)
+            if (rows[targetY][targetX] !== color) {
+              rows[targetY][targetX] = color
+              changed = true
+            }
+          }
+        }
+      }
+
+      if (!changed) {
+        return state
+      }
+      return { document, dirty: true }
     })
   },
   mirrorHorizontal: () => {

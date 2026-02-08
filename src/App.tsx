@@ -82,6 +82,7 @@ function App() {
   const deleteRow = useEditorStore((state) => state.deleteRow)
   const setSelection = useEditorStore((state) => state.setSelection)
   const deleteSelection = useEditorStore((state) => state.deleteSelection)
+  const arrangeSelection = useEditorStore((state) => state.arrangeSelection)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
   const mirrorVertical = useEditorStore((state) => state.mirrorVertical)
   const rotateClockwise = useEditorStore((state) => state.rotateClockwise)
@@ -94,6 +95,10 @@ function App() {
   const [sharedMaxScrollRow, setSharedMaxScrollRow] = useState(0)
   const [viewportTick, setViewportTick] = useState(0)
   const [dragPreview, setDragPreview] = useState<SelectionRect | null>(null)
+  const [isArrangeDialogOpen, setIsArrangeDialogOpen] = useState(false)
+  const [arrangeCopies, setArrangeCopies] = useState('1')
+  const [arrangeHorizontalOffset, setArrangeHorizontalOffset] = useState('0')
+  const [arrangeVerticalOffset, setArrangeVerticalOffset] = useState('0')
 
   useEffect(() => {
     void loadProject(LOCAL_PROJECT_ID).then((project) => {
@@ -219,6 +224,37 @@ function App() {
     deleteSelection()
   }
 
+  const parseArrangeValue = (rawValue: string, fallback: number): number => {
+    const parsed = Number(rawValue)
+    if (!Number.isFinite(parsed)) {
+      return fallback
+    }
+    return Math.max(0, Math.min(100, Math.floor(parsed)))
+  }
+
+  const onOpenArrangeDialog = () => {
+    if (selection === null || width <= 0) {
+      return
+    }
+
+    const selectionWidth = Math.abs(selection.end.x - selection.start.x) + 1
+    const selectionHeight = Math.abs(selection.end.y - selection.start.y) + 1
+    const defaultHorizontalOffset = selectionWidth === width ? 0 : selectionWidth
+
+    setArrangeCopies('1')
+    setArrangeHorizontalOffset(String(defaultHorizontalOffset))
+    setArrangeVerticalOffset(String(selectionHeight))
+    setIsArrangeDialogOpen(true)
+  }
+
+  const onApplyArrange = () => {
+    const copies = parseArrangeValue(arrangeCopies, 1)
+    const horizontalOffset = parseArrangeValue(arrangeHorizontalOffset, 0)
+    const verticalOffset = parseArrangeValue(arrangeVerticalOffset, 0)
+    arrangeSelection(copies, horizontalOffset, verticalOffset)
+    setIsArrangeDialogOpen(false)
+  }
+
   const paneVisibilityById: Record<ViewPaneId, boolean> = {
     draft: isDraftVisible,
     corrected: isCorrectedVisible,
@@ -272,6 +308,14 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (isArrangeDialogOpen) {
+        if (event.key === 'Escape') {
+          setIsArrangeDialogOpen(false)
+          event.preventDefault()
+        }
+        return
+      }
+
       if (isEditableTarget(event.target)) {
         return
       }
@@ -326,7 +370,7 @@ function App() {
     return () => {
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [onDeleteSelection, setSelectedColor, setSelectedTool, shiftLeft, shiftRight])
+  }, [isArrangeDialogOpen, onDeleteSelection, setSelectedColor, setSelectedTool, shiftLeft, shiftRight])
 
   useEffect(() => {
     const nextSharedMaxRow = getSharedMaxRow()
@@ -447,6 +491,9 @@ function App() {
             </button>
             <button className="action" onClick={() => deleteRow()}>
               Delete row
+            </button>
+            <button className="action" onClick={onOpenArrangeDialog} disabled={selection === null}>
+              Arrange...
             </button>
             <button className="action" onClick={() => mirrorHorizontal()}>
               Mirror H
@@ -648,6 +695,62 @@ function App() {
           </div>
         </aside>
       </main>
+
+      {isArrangeDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Arrange selection">
+            <div className="panel-title">
+              <h2>Arrange Selection</h2>
+            </div>
+            <div className="arrange-form">
+              <label className="arrange-field">
+                Horizontal offset
+                <input
+                  className="arrange-input"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={arrangeHorizontalOffset}
+                  onChange={(event) => setArrangeHorizontalOffset(event.currentTarget.value)}
+                />
+              </label>
+              <label className="arrange-field">
+                Vertical offset
+                <input
+                  className="arrange-input"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={arrangeVerticalOffset}
+                  onChange={(event) => setArrangeVerticalOffset(event.currentTarget.value)}
+                />
+              </label>
+              <label className="arrange-field">
+                Copies
+                <input
+                  className="arrange-input"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={arrangeCopies}
+                  onChange={(event) => setArrangeCopies(event.currentTarget.value)}
+                />
+              </label>
+            </div>
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsArrangeDialogOpen(false)}>
+                Cancel
+              </button>
+              <button className="action tool-action active" onClick={onApplyArrange}>
+                Apply
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   )
 }

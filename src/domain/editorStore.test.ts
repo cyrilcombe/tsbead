@@ -193,6 +193,58 @@ describe('editor store', () => {
     expect(state.selection).toBeNull()
   })
 
+  it('arranges selected beads with linear offset copies', () => {
+    const document = createEmptyDocument(5, 4)
+    document.model.rows = [
+      [1, 2, 0, 0, 0],
+      [0, 3, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]
+    useEditorStore.getState().setDocument(document)
+    useEditorStore.getState().setSelection({
+      start: { x: 0, y: 0 },
+      end: { x: 1, y: 1 },
+    })
+
+    useEditorStore.getState().arrangeSelection(2, 2, 0)
+    const state = useEditorStore.getState()
+
+    expect(state.document.model.rows).toEqual([
+      [1, 2, 1, 2, 1],
+      [2, 3, 0, 3, 0],
+      [3, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ])
+    expect(state.selection).not.toBeNull()
+    expect(state.dirty).toBe(true)
+  })
+
+  it('arranges selection with vertical offset based on pattern width', () => {
+    const document = createEmptyDocument(4, 4)
+    document.model.rows = [
+      [0, 0, 0, 7],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]
+    useEditorStore.getState().setDocument(document)
+    useEditorStore.getState().setSelection({
+      start: { x: 2, y: 0 },
+      end: { x: 3, y: 1 },
+    })
+
+    useEditorStore.getState().arrangeSelection(1, 1, 1)
+    const rows = useEditorStore.getState().document.model.rows
+
+    expect(rows).toEqual([
+      [0, 0, 0, 7],
+      [0, 0, 0, 0],
+      [7, 0, 0, 0],
+      [0, 0, 0, 0],
+    ])
+  })
+
   it('toggles pane visibility flags in the document view', () => {
     useEditorStore.getState().setViewVisibility('corrected', false)
     useEditorStore.getState().setViewVisibility('report', false)

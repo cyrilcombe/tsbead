@@ -71,7 +71,8 @@ function getCellPixelRect(cell: PreviewCell, layout: PreviewLayout, cellSize: nu
 
 function buildCorrectedLayout(rows: number[][]): PreviewLayout {
   const width = rows[0]?.length ?? 0
-  if (width === 0 || rows.length === 0) {
+  const height = rows.length
+  if (width === 0 || height === 0) {
     return { cells: [], minX: 0, maxX: 1, minY: 0, maxY: 1 }
   }
 
@@ -82,13 +83,14 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
   let minY = Number.POSITIVE_INFINITY
   let maxY = Number.NEGATIVE_INFINITY
 
-  for (let y = 0; y < rows.length; y += 1) {
-    const row = rows[y]
+  for (let legacyY = 0; legacyY < height; legacyY += 1) {
+    const sourceY = height - 1 - legacyY
+    const row = rows[sourceY]
     for (let x = 0; x < row.length; x += 1) {
       const corrected = correctedPointFromIndex(index, width)
       const offset = corrected.y % 2 === 0 ? 0 : -0.5
       const drawX = corrected.x + offset
-      const drawY = corrected.y
+      const drawY = -corrected.y
       const drawWidth = 1
       cells.push({
         x: drawX,
@@ -96,7 +98,7 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
         width: drawWidth,
         colorIndex: row[x],
         sourceX: x,
-        sourceY: y,
+        sourceY,
       })
       minX = Math.min(minX, drawX)
       maxX = Math.max(maxX, drawX + drawWidth)
@@ -115,7 +117,8 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
 
 function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
   const width = rows[0]?.length ?? 0
-  if (width === 0 || rows.length === 0) {
+  const height = rows.length
+  if (width === 0 || height === 0) {
     return { cells: [], minX: 0, maxX: 1, minY: 0, maxY: 1 }
   }
 
@@ -126,12 +129,14 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
   let minY = Number.POSITIVE_INFINITY
   let maxY = Number.NEGATIVE_INFINITY
 
-  for (let y = 0; y < rows.length; y += 1) {
-    for (let x = 0; x < rows[y].length; x += 1) {
-      const colorIndex = rows[y][x]
+  for (let legacyY = 0; legacyY < height; legacyY += 1) {
+    const sourceY = height - 1 - legacyY
+    const row = rows[sourceY]
+    for (let x = 0; x < row.length; x += 1) {
+      const colorIndex = row[x]
       const shifted = x + shift
       const shiftedX = ((shifted % width) + width) % width
-      const shiftedY = y + floorDiv(shifted, width)
+      const shiftedY = legacyY + floorDiv(shifted, width)
       if (shiftedY < 0) {
         continue
       }
@@ -150,36 +155,36 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
         }
 
         const drawX = corrected.x
-        const drawY = corrected.y
+        const drawY = -corrected.y
         const drawWidth = 1
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)
         maxY = Math.max(maxY, drawY + 1)
       } else if (corrected.x !== width && corrected.x !== visibleWidth) {
         const drawX = corrected.x - 0.5
-        const drawY = corrected.y
+        const drawY = -corrected.y
         const drawWidth = 1
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)
         maxY = Math.max(maxY, drawY + 1)
       } else if (corrected.x === width) {
         const drawX = -0.5
-        const drawY = corrected.y + 1
+        const drawY = -(corrected.y + 1)
         const drawWidth = 0.5
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)
         maxY = Math.max(maxY, drawY + 1)
       } else {
         const drawX = corrected.x - 0.5
-        const drawY = corrected.y
+        const drawY = -corrected.y
         const drawWidth = 0.5
-        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY: y })
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex, sourceX: x, sourceY })
         minX = Math.min(minX, drawX)
         maxX = Math.max(maxX, drawX + drawWidth)
         minY = Math.min(minY, drawY)

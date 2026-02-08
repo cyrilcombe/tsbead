@@ -30,7 +30,7 @@ Status legend:
 | F-013 | Edit | Mirror horizontal | `EditMirrorHorizontalAction`, `Model.mirrorHorizontal()` | `DONE` |
 | F-014 | Edit | Mirror vertical | `EditMirrorVerticalAction`, `Model.mirrorVertical()` | `DONE` |
 | F-015 | Edit | Rotate square selection | `EditRotateAction`, `Model.rotate()` | `DONE` |
-| F-016 | Edit | Arrange selection copies with offset | `EditArrangeAction`, `ArrangeDialog`, `Model.arrangeSelection()` | `TODO` |
+| F-016 | Edit | Arrange selection copies with offset | `EditArrangeAction`, `ArrangeDialog`, `Model.arrangeSelection()` | `DONE` |
 | F-017 | Edit | Insert row | `EditInsertRowAction`, `Model.insertRow()` | `DONE` |
 | F-018 | Edit | Delete row | `EditDeleteRowAction`, `Model.deleteRow()` | `DONE` |
 | F-019 | History | Undo | `EditUndoAction`, `Model.undo()`, `BeadUndo.java` | `TODO` |
@@ -77,7 +77,7 @@ Status legend:
 - [x] T-006 Add pipette tool in Draft pane
 - [x] T-007 Enable edit interactions from Corrected and Simulation panes
 - [x] T-008 Add insert row / delete row actions
-- [ ] T-009 Add arrange selection dialog + operation
+- [x] T-009 Add arrange selection dialog + operation
 - [x] T-010 Add keyboard shortcuts (0-9 colors, arrows for shift, tool shortcuts)
 
 ### Phase 3 - Pattern controls and history

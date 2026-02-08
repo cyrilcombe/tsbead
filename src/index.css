@@ -424,6 +424,49 @@ h1 {
   transform: translateY(-1px);
 }
 
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 23, 20, 0.32);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 10;
+}
+
+.arrange-dialog {
+  width: min(420px, 100%);
+  border-radius: 16px;
+}
+
+.arrange-form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.arrange-field {
+  display: grid;
+  gap: 0.3rem;
+  color: #4f5a5e;
+  font-size: 0.88rem;
+}
+
+.arrange-input {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fffefb;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.42rem 0.5rem;
+}
+
+.arrange-actions {
+  margin-top: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 @media (max-width: 980px) {
   .workspace {
     grid-template-columns: 1fr;
