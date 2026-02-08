@@ -13,6 +13,7 @@ const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'pencil', label: 'Pencil' },
   { id: 'line', label: 'Line' },
   { id: 'fill', label: 'Fill' },
+  { id: 'pipette', label: 'Pipette' },
   { id: 'select', label: 'Select' },
 ]
 const VIEW_PANES: Array<{ id: ViewPaneId; label: string }> = [
@@ -36,6 +37,7 @@ function App() {
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
   const setCell = useEditorStore((state) => state.setCell)
+  const pickColorAt = useEditorStore((state) => state.pickColorAt)
   const drawLine = useEditorStore((state) => state.drawLine)
   const fillLine = useEditorStore((state) => state.fillLine)
   const reset = useEditorStore((state) => state.reset)
@@ -123,6 +125,8 @@ function App() {
       setCell(point.x, point.y, selectedColor)
     } else if (selectedTool === 'fill') {
       fillLine(point, selectedColor)
+    } else if (selectedTool === 'pipette') {
+      pickColorAt(point)
     }
   }
 

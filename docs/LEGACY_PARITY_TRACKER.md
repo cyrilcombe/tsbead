@@ -25,7 +25,7 @@ Status legend:
 | F-008 | Tools | Pencil: click toggles point, drag draws snapped line | `ToolPencilAction`, `DraftPanel.handleMouse*` | `PARTIAL` |
 | F-009 | Tools | Select: rectangular selection | `ToolSelectAction`, `Selection.java` | `PARTIAL` |
 | F-010 | Tools | Fill (linear fill along flattened pattern) | `ToolFillAction`, `Model.fillLine()` | `DONE` |
-| F-011 | Tools | Pipette (pick color from bead) | `ToolPipetteAction`, `DraftPanel.selectColorFrom()` | `TODO` |
+| F-011 | Tools | Pipette (pick color from bead) | `ToolPipetteAction`, `DraftPanel.selectColorFrom()` | `DONE` |
 | F-012 | Edit | Delete selection content | `EditDeleteAction`, `Model.delete()` | `DONE` |
 | F-013 | Edit | Mirror horizontal | `EditMirrorHorizontalAction`, `Model.mirrorHorizontal()` | `DONE` |
 | F-014 | Edit | Mirror vertical | `EditMirrorVerticalAction`, `Model.mirrorVertical()` | `DONE` |
@@ -74,7 +74,7 @@ Status legend:
 - [x] T-005 Add view visibility toggles for all panes
 
 ### Phase 2 - Editing parity
-- [ ] T-006 Add pipette tool in Draft pane
+- [x] T-006 Add pipette tool in Draft pane
 - [ ] T-007 Enable edit interactions from Corrected and Simulation panes
 - [ ] T-008 Add insert row / delete row actions
 - [ ] T-009 Add arrange selection dialog + operation

@@ -8,6 +8,7 @@ interface EditorState {
   selection: SelectionRect | null
   dirty: boolean
   setCell: (x: number, y: number, value: number) => void
+  pickColorAt: (point: CellPoint) => void
   drawLine: (start: CellPoint, end: CellPoint, value: number) => void
   fillLine: (point: CellPoint, value: number) => void
   setSelectedColor: (colorIndex: number) => void
@@ -129,6 +130,22 @@ export const useEditorStore = create<EditorState>((set) => ({
       const document = cloneDocument(state.document)
       document.model.rows[y][x] = value
       return { document, dirty: true }
+    })
+  },
+  pickColorAt: (point) => {
+    set((state) => {
+      if (!isInside(state.document, point)) {
+        return state
+      }
+
+      const colorIndex = state.document.model.rows[point.y][point.x]
+      if (state.document.view.selectedColor === colorIndex) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.selectedColor = colorIndex
+      return { document }
     })
   },
   drawLine: (start, end, value) => {

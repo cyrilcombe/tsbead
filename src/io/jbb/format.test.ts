@@ -63,4 +63,30 @@ describe('jbb format', () => {
     const parsed = parseJbb(fixture)
     expect(parsed.view.selectedTool).toBe('line')
   })
+
+  it('keeps pipette as selected tool when present in jbb view', () => {
+    const fixture = `
+      (jbb
+        (version 1)
+        (colors
+          (rgb 0 0 0 255)
+          (rgb 255 0 0 255)
+        )
+        (view
+          (selected-tool "pipette")
+          (selected-color 1)
+          (zoom 2)
+          (scroll 0)
+          (shift 0)
+        )
+        (model
+          (row 0 0)
+          (row 0 0)
+        )
+      )
+    `
+
+    const parsed = parseJbb(fixture)
+    expect(parsed.view.selectedTool).toBe('pipette')
+  })
 })

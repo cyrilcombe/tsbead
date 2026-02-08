@@ -1,4 +1,4 @@
-export type ToolId = 'pencil' | 'line' | 'fill' | 'select'
+export type ToolId = 'pencil' | 'line' | 'fill' | 'pipette' | 'select'
 export type ViewPaneId = 'draft' | 'corrected' | 'simulation' | 'report'
 
 export type RgbaColor = [number, number, number, number?]

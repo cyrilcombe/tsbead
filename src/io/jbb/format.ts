@@ -139,7 +139,7 @@ function findChild(root: Expr[], key: string): Expr[] | undefined {
 }
 
 function asTool(value: string): ToolId {
-  if (value === 'line' || value === 'fill' || value === 'select') {
+  if (value === 'line' || value === 'fill' || value === 'pipette' || value === 'select') {
     return value
   }
   return 'pencil'

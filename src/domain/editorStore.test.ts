@@ -27,6 +27,22 @@ describe('editor store', () => {
     expect(useEditorStore.getState().document.view.selectedColor).toBe(3)
   })
 
+  it('picks selected color from a bead cell', () => {
+    const document = createEmptyDocument(3, 3)
+    document.model.rows = [
+      [0, 4, 0],
+      [2, 0, 1],
+      [0, 0, 0],
+    ]
+    useEditorStore.getState().setDocument(document)
+
+    useEditorStore.getState().pickColorAt({ x: 1, y: 0 })
+    expect(useEditorStore.getState().document.view.selectedColor).toBe(4)
+
+    useEditorStore.getState().pickColorAt({ x: 99, y: 99 })
+    expect(useEditorStore.getState().document.view.selectedColor).toBe(4)
+  })
+
   it('draws a snapped line', () => {
     useEditorStore.getState().drawLine({ x: 0, y: 0 }, { x: 3, y: 1 }, 7)
     const rows = useEditorStore.getState().document.model.rows
