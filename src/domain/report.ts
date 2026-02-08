@@ -10,9 +10,15 @@ export interface ColorCount {
   count: number
 }
 
+export interface BeadRun {
+  colorIndex: number
+  count: number
+}
+
 export interface ReportSummary {
   entries: ReportEntry[]
   colorCounts: ColorCount[]
+  beadRuns: BeadRun[]
   usedColorCount: number
   usedHeight: number
   repeat: number
@@ -92,6 +98,28 @@ export function formatRowsPerRepeat(repeat: number, width: number): string {
   return `${rows} ${rowLabel(rows)} ${beads} ${beadLabel(beads)}`
 }
 
+export function buildBeadRuns(repeatSequence: number[]): BeadRun[] {
+  if (repeatSequence.length === 0) {
+    return []
+  }
+
+  const runs: BeadRun[] = []
+  let colorIndex = repeatSequence[repeatSequence.length - 1]
+  let count = 1
+  for (let index = repeatSequence.length - 2; index >= 0; index -= 1) {
+    const bead = repeatSequence[index]
+    if (bead === colorIndex) {
+      count += 1
+      continue
+    }
+    runs.push({ colorIndex, count })
+    colorIndex = bead
+    count = 1
+  }
+  runs.push({ colorIndex, count })
+  return runs
+}
+
 export function buildReportSummary(document: JBeadDocument, patternName: string): ReportSummary {
   const rows = document.model.rows
   const width = rows[0]?.length ?? 0
@@ -101,6 +129,7 @@ export function buildReportSummary(document: JBeadDocument, patternName: string)
   const maxColorIndexInModel = sequence.reduce((max, colorIndex) => Math.max(max, colorIndex), 0)
   const paletteSize = Math.max(document.colors.length, maxColorIndexInModel + 1)
   const colorCounts = Array.from({ length: paletteSize }, (_, colorIndex) => ({ colorIndex, count: 0 }))
+  const beadRuns = buildBeadRuns(sequence.slice(0, repeat))
 
   for (const colorIndex of sequence) {
     colorCounts[colorIndex].count += 1
@@ -128,6 +157,7 @@ export function buildReportSummary(document: JBeadDocument, patternName: string)
   return {
     entries,
     colorCounts,
+    beadRuns,
     usedColorCount: colorCounts.filter((item) => item.count > 0).length,
     usedHeight,
     repeat,

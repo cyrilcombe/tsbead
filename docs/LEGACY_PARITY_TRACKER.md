@@ -15,13 +15,13 @@ Status legend:
 
 | ID | Area | Legacy Feature | Java Reference | Web Status |
 |---|---|---|---|---|
-| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (all 4 panes present; report pane still missing bead-run list parity) |
+| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (all 4 panes present; report block layout still not pixel-parity) |
 | F-002 | Layout | Per-pane visibility toggles | `ViewDraftAction`, `ViewCorrectedAction`, `ViewSimulationAction`, `ViewReportAction` | `DONE` |
 | F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `PARTIAL` (shared scroll implemented, row-index scrollbar behavior still differs) |
 | F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `DONE` |
 | F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `PARTIAL` (read-only parity pass) |
 | F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `PARTIAL` (read-only parity pass) |
-| F-007 | Views | Report rendering (infos + color counts + bead run list) | `view/ReportPanel.java` | `PARTIAL` (infos + color counts done, bead-run list pending) |
+| F-007 | Views | Report rendering (infos + color counts + bead run list) | `view/ReportPanel.java` | `DONE` |
 | F-008 | Tools | Pencil: click toggles point, drag draws snapped line | `ToolPencilAction`, `DraftPanel.handleMouse*` | `PARTIAL` |
 | F-009 | Tools | Select: rectangular selection | `ToolSelectAction`, `Selection.java` | `PARTIAL` |
 | F-010 | Tools | Fill (linear fill along flattened pattern) | `ToolFillAction`, `Model.fillLine()` | `DONE` |
@@ -57,7 +57,7 @@ Status legend:
 | F-040 | Metadata | Author / organization / notes persisted in file | `Model.saveTo/loadFrom`, `Memento` | `PARTIAL` |
 | F-041 | Report | Pattern info block (circumference/repeat/rows/beads) | `ReportInfos.java` | `DONE` |
 | F-042 | Report | Color usage counts | `BeadCounts.java` | `DONE` |
-| F-043 | Report | Bead run list (sequence counts) | `BeadList.java`, `BeadRun.java` | `TODO` |
+| F-043 | Report | Bead run list (sequence counts) | `BeadList.java`, `BeadRun.java` | `DONE` |
 | F-044 | Print | Print visible sections (draft/corrected/simulation/report) | `print/DesignPrinter.java` | `TODO` |
 | F-045 | Print | Page setup persistence (paper/orientation) | `FilePageSetupAction`, `PrintSettings` | `TODO` |
 | F-046 | Info | Technical info dialog | `InfoTechInfosAction`, `dialog/TechInfosDialog` | `N/A` |
@@ -90,7 +90,7 @@ Status legend:
 ### Phase 4 - Palette/report completeness
 - [ ] T-016 Add full 32-color palette behavior (edit color + set as background)
 - [x] T-017 Build report infos panel (pattern, repeat, row/bead totals)
-- [ ] T-018 Build color usage block and bead run list
+- [x] T-018 Build color usage block and bead run list
 - [ ] T-019 Add metadata editors (author, organization, notes)
 
 ### Phase 5 - File/compat/print
@@ -105,7 +105,7 @@ Target a thin vertical slice first:
 - [x] S-001 Implement Corrected and Simulation panes read-only
 - [x] S-002 Add view toggles for Draft/Corrected/Simulation/Report
 - [x] S-003 Add report infos block (without color lists yet)
-- [ ] S-004 Add bead-run list section in report
+- [x] S-004 Add bead-run list section in report
 - [ ] S-005 Align vertical scrollbar behavior to legacy row-index model
 
 This slice unlocks visual parity early and reduces risk before implementing advanced editing/history.

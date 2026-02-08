@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument } from './defaults'
-import { buildReportSummary, calculateColorRepeatBeads, formatRowsPerRepeat, getUsedHeight } from './report'
+import { buildBeadRuns, buildReportSummary, calculateColorRepeatBeads, formatRowsPerRepeat, getUsedHeight } from './report'
 
 describe('report summary', () => {
   it('computes used height from the last non-empty row', () => {
@@ -42,6 +42,10 @@ describe('report summary', () => {
     expect(summary.usedColorCount).toBe(2)
     expect(summary.colorCounts[1].count).toBe(3)
     expect(summary.colorCounts[2].count).toBe(3)
+    expect(summary.beadRuns).toEqual([
+      { colorIndex: 2, count: 1 },
+      { colorIndex: 1, count: 1 },
+    ])
     expect(summary.entries.map((entry) => entry.label)).toEqual([
       'Pattern',
       'Author',
@@ -53,5 +57,13 @@ describe('report summary', () => {
       'Total number of beads',
     ])
     expect(summary.entries.find((entry) => entry.label === 'Total number of beads')?.value).toBe('6 beads')
+  })
+
+  it('builds bead runs using legacy reverse traversal order', () => {
+    expect(buildBeadRuns([1, 1, 2, 2, 1, 1])).toEqual([
+      { colorIndex: 1, count: 2 },
+      { colorIndex: 2, count: 2 },
+      { colorIndex: 1, count: 2 },
+    ])
   })
 })

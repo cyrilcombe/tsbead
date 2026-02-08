@@ -362,7 +362,7 @@ function App() {
             ) : null}
 
             {isReportVisible ? (
-              <section className="panel report-panel">
+              <section className="panel canvas-panel report-panel">
                 <div className="panel-title">
                   <h2>Report</h2>
                   <span>{reportSummary.usedColorCount} colors used</span>
@@ -387,6 +387,23 @@ function App() {
                             <div key={item.colorIndex} className="report-color-row">
                               <span className="report-color-count">{item.count} x</span>
                               <span className="report-color-swatch" style={swatchStyle} />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  ) : null}
+                  {reportSummary.beadRuns.length > 0 ? (
+                    <section className="report-bead-list">
+                      <h3>List of beads</h3>
+                      <div className="report-bead-grid">
+                        {reportSummary.beadRuns.map((item, index) => {
+                          const color = document.colors[item.colorIndex]
+                          const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
+                          return (
+                            <div key={`${item.colorIndex}-${item.count}-${index}`} className="report-bead-row">
+                              <span className="report-color-swatch" style={swatchStyle} />
+                              <span className="report-bead-count">{item.count}</span>
                             </div>
                           )
                         })}
