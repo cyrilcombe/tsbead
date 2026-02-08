@@ -1,0 +1,223 @@
+import { useMemo } from 'react'
+import type { JBeadDocument, RgbaColor } from '../../domain/types'
+
+interface PreviewCell {
+  x: number
+  y: number
+  width: number
+  colorIndex: number
+}
+
+interface PreviewLayout {
+  cells: PreviewCell[]
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
+
+interface BeadPreviewCanvasProps {
+  document: JBeadDocument
+  variant: 'corrected' | 'simulation'
+}
+
+function toCss(color: RgbaColor): string {
+  const [red, green, blue, alpha = 255] = color
+  return `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`
+}
+
+function getCellSize(zoomIndex: number): number {
+  const zoomTable = [6, 8, 10, 12, 14, 16, 18, 20]
+  return zoomTable[Math.max(0, Math.min(zoomIndex, zoomTable.length - 1))]
+}
+
+function correctedPointFromIndex(index: number, width: number): { x: number; y: number } {
+  let rest = index
+  let row = 0
+  let rowLength = width
+  while (rest >= rowLength) {
+    rest -= rowLength
+    row += 1
+    rowLength = row % 2 === 0 ? width : width + 1
+  }
+  return { x: rest, y: row }
+}
+
+function floorDiv(a: number, b: number): number {
+  return Math.floor(a / b)
+}
+
+function buildCorrectedLayout(rows: number[][]): PreviewLayout {
+  const width = rows[0]?.length ?? 0
+  if (width === 0 || rows.length === 0) {
+    return { cells: [], minX: 0, maxX: 1, minY: 0, maxY: 1 }
+  }
+
+  const cells: PreviewCell[] = []
+  let index = 0
+  let minX = Number.POSITIVE_INFINITY
+  let maxX = Number.NEGATIVE_INFINITY
+  let minY = Number.POSITIVE_INFINITY
+  let maxY = Number.NEGATIVE_INFINITY
+
+  for (const row of rows) {
+    for (let x = 0; x < row.length; x += 1) {
+      const corrected = correctedPointFromIndex(index, width)
+      const offset = corrected.y % 2 === 0 ? 0 : -0.5
+      const drawX = corrected.x + offset
+      const drawY = corrected.y
+      const drawWidth = 1
+      cells.push({
+        x: drawX,
+        y: drawY,
+        width: drawWidth,
+        colorIndex: row[x],
+      })
+      minX = Math.min(minX, drawX)
+      maxX = Math.max(maxX, drawX + drawWidth)
+      minY = Math.min(minY, drawY)
+      maxY = Math.max(maxY, drawY + 1)
+      index += 1
+    }
+  }
+
+  if (cells.length === 0) {
+    return { cells, minX: 0, maxX: 1, minY: 0, maxY: 1 }
+  }
+
+  return { cells, minX, maxX, minY, maxY }
+}
+
+function buildSimulationLayout(rows: number[][], shift: number, scroll: number): PreviewLayout {
+  const width = rows[0]?.length ?? 0
+  if (width === 0 || rows.length === 0) {
+    return { cells: [], minX: 0, maxX: 1, minY: 0, maxY: 1 }
+  }
+
+  const visibleWidth = Math.floor(width / 2)
+  const cells: PreviewCell[] = []
+  let minX = Number.POSITIVE_INFINITY
+  let maxX = Number.NEGATIVE_INFINITY
+  let minY = Number.POSITIVE_INFINITY
+  let maxY = Number.NEGATIVE_INFINITY
+
+  for (let y = 0; y < rows.length; y += 1) {
+    for (let x = 0; x < rows[y].length; x += 1) {
+      const colorIndex = rows[y][x]
+      const shifted = x + shift
+      const shiftedX = ((shifted % width) + width) % width
+      const shiftedY = y + floorDiv(shifted, width)
+      if (shiftedY < 0) {
+        continue
+      }
+
+      const correctedIndex = shiftedX + shiftedY * width
+      const corrected = correctedPointFromIndex(correctedIndex, width)
+
+      if (corrected.x > visibleWidth && corrected.x !== width) {
+        continue
+      }
+
+      const evenScroll = Math.abs(scroll) % 2 === 0
+      const isFullRow = evenScroll ? corrected.y % 2 === 0 : corrected.y % 2 === 1
+      if (isFullRow) {
+        if (corrected.x === visibleWidth) {
+          continue
+        }
+
+        const drawX = corrected.x
+        const drawY = corrected.y
+        const drawWidth = 1
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        minX = Math.min(minX, drawX)
+        maxX = Math.max(maxX, drawX + drawWidth)
+        minY = Math.min(minY, drawY)
+        maxY = Math.max(maxY, drawY + 1)
+      } else if (corrected.x !== width && corrected.x !== visibleWidth) {
+        const drawX = corrected.x - 0.5
+        const drawY = corrected.y
+        const drawWidth = 1
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        minX = Math.min(minX, drawX)
+        maxX = Math.max(maxX, drawX + drawWidth)
+        minY = Math.min(minY, drawY)
+        maxY = Math.max(maxY, drawY + 1)
+      } else if (corrected.x === width) {
+        const drawX = -0.5
+        const drawY = corrected.y + 1
+        const drawWidth = 0.5
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        minX = Math.min(minX, drawX)
+        maxX = Math.max(maxX, drawX + drawWidth)
+        minY = Math.min(minY, drawY)
+        maxY = Math.max(maxY, drawY + 1)
+      } else {
+        const drawX = corrected.x - 0.5
+        const drawY = corrected.y
+        const drawWidth = 0.5
+        cells.push({ x: drawX, y: drawY, width: drawWidth, colorIndex })
+        minX = Math.min(minX, drawX)
+        maxX = Math.max(maxX, drawX + drawWidth)
+        minY = Math.min(minY, drawY)
+        maxY = Math.max(maxY, drawY + 1)
+      }
+    }
+  }
+
+  if (cells.length === 0) {
+    return { cells, minX: 0, maxX: 1, minY: 0, maxY: 1 }
+  }
+
+  return { cells, minX, maxX, minY, maxY }
+}
+
+export function BeadPreviewCanvas({ document, variant }: BeadPreviewCanvasProps) {
+  const cellSize = getCellSize(document.view.zoom)
+
+  const layout = useMemo(() => {
+    if (variant === 'simulation') {
+      return buildSimulationLayout(document.model.rows, document.view.shift, document.view.scroll)
+    }
+    return buildCorrectedLayout(document.model.rows)
+  }, [document.model.rows, document.view.scroll, document.view.shift, variant])
+
+  const canvasWidth = Math.ceil((layout.maxX - layout.minX) * cellSize) + 2
+  const canvasHeight = Math.ceil((layout.maxY - layout.minY) * cellSize) + 2
+
+  return (
+    <canvas
+      className="bead-preview-canvas"
+      width={canvasWidth}
+      height={canvasHeight}
+      ref={(canvas) => {
+        if (!canvas) {
+          return
+        }
+        const context = canvas.getContext('2d')
+        if (!context) {
+          return
+        }
+
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        context.fillStyle = '#f4f1ea'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+
+        for (const cell of layout.cells) {
+          const px = (cell.x - layout.minX) * cellSize + 1
+          const py = (cell.y - layout.minY) * cellSize + 1
+          const pw = Math.max(1, cell.width * cellSize - 1)
+          const ph = Math.max(1, cellSize - 1)
+          const fillWidth = Math.max(1, pw - 2)
+          const fillHeight = Math.max(1, ph - 2)
+          context.fillStyle = toCss(document.colors[cell.colorIndex] ?? [0, 0, 0, 255])
+          context.fillRect(px + 1, py + 1, fillWidth, fillHeight)
+          context.strokeStyle = 'rgba(30, 35, 40, 0.7)'
+          context.lineWidth = 1
+          context.strokeRect(px + 0.5, py + 0.5, Math.max(0, pw - 1), Math.max(0, ph - 1))
+        }
+      }}
+      role="img"
+      aria-label={variant === 'corrected' ? 'Corrected preview' : 'Simulation preview'}
+    />
+  )
+}

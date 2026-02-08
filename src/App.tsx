@@ -3,6 +3,7 @@ import { useEditorStore } from './domain/editorStore'
 import { parseJbb, serializeJbb } from './io/jbb/format'
 import { loadProject, saveProject } from './storage/db'
 import { BeadCanvas } from './ui/canvas/BeadCanvas'
+import { BeadPreviewCanvas } from './ui/canvas/BeadPreviewCanvas'
 import type { CellPoint, SelectionRect, ToolId } from './domain/types'
 import './index.css'
 
@@ -35,6 +36,12 @@ function App() {
   const rotateClockwise = useEditorStore((state) => state.rotateClockwise)
   const setDocument = useEditorStore((state) => state.setDocument)
   const dragStartRef = useRef<CellPoint | null>(null)
+  const draftScrollRef = useRef<HTMLDivElement | null>(null)
+  const correctedScrollRef = useRef<HTMLDivElement | null>(null)
+  const simulationScrollRef = useRef<HTMLDivElement | null>(null)
+  const syncingScrollRef = useRef(false)
+  const [sharedScrollRatio, setSharedScrollRatio] = useState(0)
+  const [viewportTick, setViewportTick] = useState(0)
   const [dragPreview, setDragPreview] = useState<SelectionRect | null>(null)
 
   useEffect(() => {
@@ -136,6 +143,40 @@ function App() {
     deleteSelection()
   }
 
+  const onPaneScroll = (source: HTMLDivElement) => {
+    if (syncingScrollRef.current) {
+      return
+    }
+    const sourceMax = source.scrollHeight - source.clientHeight
+    const ratio = sourceMax > 0 ? source.scrollTop / sourceMax : 0
+    setSharedScrollRatio(Math.max(0, Math.min(1, ratio)))
+  }
+
+  useEffect(() => {
+    const onResize = () => {
+      setViewportTick((value) => value + 1)
+    }
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+    }
+  }, [])
+
+  useEffect(() => {
+    syncingScrollRef.current = true
+    const paneRefs = [draftScrollRef.current, correctedScrollRef.current, simulationScrollRef.current]
+    for (const pane of paneRefs) {
+      if (!pane) {
+        continue
+      }
+      const paneMax = pane.scrollHeight - pane.clientHeight
+      pane.scrollTop = paneMax > 0 ? sharedScrollRatio * paneMax : 0
+    }
+    requestAnimationFrame(() => {
+      syncingScrollRef.current = false
+    })
+  }, [document.model.rows, document.view.zoom, sharedScrollRatio, viewportTick])
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -217,22 +258,63 @@ function App() {
       </section>
 
       <main className="workspace">
-        <section className="panel canvas-panel">
-          <div className="panel-title">
-            <h2>Pattern</h2>
-            <span>
-              {width} x {height}
-            </span>
-          </div>
-          <div className="canvas-scroll">
-            <BeadCanvas
-              document={document}
-              selectionOverlay={selectionOverlay}
-              linePreview={linePreview}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={onPointerCancel}
+        <section className="preview-with-scrollbar">
+          <section className="preview-grid">
+            <section className="panel canvas-panel draft-panel">
+              <div className="panel-title">
+                <h2>Draft</h2>
+                <span>
+                  {width} x {height}
+                </span>
+              </div>
+              <div ref={draftScrollRef} className="canvas-scroll" onScroll={(event) => onPaneScroll(event.currentTarget)}>
+                <BeadCanvas
+                  document={document}
+                  selectionOverlay={selectionOverlay}
+                  linePreview={linePreview}
+                  onPointerDown={onPointerDown}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={onPointerUp}
+                  onPointerCancel={onPointerCancel}
+                />
+              </div>
+            </section>
+
+            <section className="panel canvas-panel">
+              <div className="panel-title">
+                <h2>Corrected</h2>
+              </div>
+              <div
+                ref={correctedScrollRef}
+                className="canvas-scroll"
+                onScroll={(event) => onPaneScroll(event.currentTarget)}
+              >
+                <BeadPreviewCanvas document={document} variant="corrected" />
+              </div>
+            </section>
+
+            <section className="panel canvas-panel">
+              <div className="panel-title">
+                <h2>Simulation</h2>
+              </div>
+              <div
+                ref={simulationScrollRef}
+                className="canvas-scroll"
+                onScroll={(event) => onPaneScroll(event.currentTarget)}
+              >
+                <BeadPreviewCanvas document={document} variant="simulation" />
+              </div>
+            </section>
+          </section>
+
+          <div className="shared-scrollbar-panel" aria-label="Shared pattern scroll">
+            <input
+              className="shared-scrollbar"
+              type="range"
+              min={0}
+              max={1000}
+              value={Math.round(sharedScrollRatio * 1000)}
+              onChange={(event) => setSharedScrollRatio(Number(event.currentTarget.value) / 1000)}
             />
           </div>
         </section>

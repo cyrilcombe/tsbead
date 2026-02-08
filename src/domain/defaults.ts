@@ -13,7 +13,7 @@ const DEFAULT_COLORS: JBeadDocument['colors'] = [
   [0, 128, 128, 255],
 ]
 
-export function createEmptyDocument(width = 24, height = 16): JBeadDocument {
+export function createEmptyDocument(width = 15, height = 120): JBeadDocument {
   return {
     version: 1,
     author: '',

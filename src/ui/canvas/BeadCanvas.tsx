@@ -12,6 +12,10 @@ interface BeadCanvasProps {
   onPointerCancel: () => void
 }
 
+const MARKER_WIDTH = 30
+const MARKER_GAP = 6
+const GRID_OFFSET_X = MARKER_WIDTH + MARKER_GAP
+
 function toCss(color: RgbaColor): string {
   const [red, green, blue, alpha = 255] = color
   return `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`
@@ -58,38 +62,64 @@ export function BeadCanvas({
       return
     }
 
-    canvas.width = width * cellSize
-    canvas.height = height * cellSize
+    canvas.width = GRID_OFFSET_X + width * cellSize + 1
+    canvas.height = height * cellSize + 1
 
-    context.fillStyle = '#f4f1ea'
+    context.fillStyle = '#efe9dd'
     context.fillRect(0, 0, canvas.width, canvas.height)
+    context.fillStyle = '#f4f1ea'
+    context.fillRect(GRID_OFFSET_X, 0, width * cellSize + 1, canvas.height)
 
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const colorIndex = document.model.rows[y][x]
+        const beadX = GRID_OFFSET_X + x * cellSize
+        const beadY = y * cellSize
+        const beadWidth = Math.max(1, cellSize - 1)
+        const beadHeight = Math.max(1, cellSize - 1)
+
         context.fillStyle = toCss(document.colors[colorIndex] ?? [0, 0, 0, 255])
-        context.fillRect(x * cellSize, y * cellSize, cellSize, cellSize)
+        context.fillRect(beadX + 1, beadY + 1, beadWidth, beadHeight)
       }
     }
 
-    context.strokeStyle = 'rgba(66, 63, 57, 0.25)'
+    context.strokeStyle = 'rgba(40, 42, 44, 0.85)'
     context.lineWidth = 1
-
     for (let x = 0; x <= width; x += 1) {
-      const position = x * cellSize + 0.5
+      const position = GRID_OFFSET_X + x * cellSize + 0.5
       context.beginPath()
       context.moveTo(position, 0)
-      context.lineTo(position, height * cellSize)
+      context.lineTo(position, height * cellSize + 0.5)
       context.stroke()
     }
-
     for (let y = 0; y <= height; y += 1) {
       const position = y * cellSize + 0.5
       context.beginPath()
-      context.moveTo(0, position)
-      context.lineTo(width * cellSize, position)
+      context.moveTo(GRID_OFFSET_X, position)
+      context.lineTo(GRID_OFFSET_X + width * cellSize + 0.5, position)
       context.stroke()
     }
+
+    context.strokeStyle = 'rgba(66, 63, 57, 0.9)'
+    context.fillStyle = 'rgba(66, 63, 57, 0.95)'
+    context.lineWidth = 1
+    context.textAlign = 'center'
+    context.textBaseline = 'middle'
+    context.font = `${Math.max(9, Math.floor(cellSize * 0.9))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
+    for (let y = 0; y <= height; y += 1) {
+      if (y % 10 !== 0) {
+        continue
+      }
+      const markerY = y * cellSize + 0.5
+      context.beginPath()
+      context.moveTo(GRID_OFFSET_X - MARKER_GAP - MARKER_WIDTH, markerY)
+      context.lineTo(GRID_OFFSET_X - MARKER_GAP, markerY)
+      context.stroke()
+      if (y > 0) {
+        context.fillText(String(y), GRID_OFFSET_X - MARKER_GAP - MARKER_WIDTH / 2, markerY - cellSize / 2)
+      }
+    }
+
     if (selectionOverlay) {
       const normalized = normalizeRect(selectionOverlay.start, selectionOverlay.end)
       const left = clamp(normalized.left, 0, width - 1)
@@ -100,7 +130,7 @@ export function BeadCanvas({
       context.lineWidth = 2
       context.setLineDash([6, 4])
       context.strokeRect(
-        left * cellSize + 1,
+        GRID_OFFSET_X + left * cellSize + 1,
         top * cellSize + 1,
         (right - left + 1) * cellSize - 2,
         (bottom - top + 1) * cellSize - 2,
@@ -116,7 +146,12 @@ export function BeadCanvas({
         if (point.x < 0 || point.x >= width || point.y < 0 || point.y >= height) {
           continue
         }
-        context.fillRect(point.x * cellSize, point.y * cellSize, cellSize, cellSize)
+        context.fillRect(
+          GRID_OFFSET_X + point.x * cellSize + 1,
+          point.y * cellSize + 1,
+          Math.max(1, cellSize - 1),
+          Math.max(1, cellSize - 1),
+        )
       }
     }
   }, [cellSize, document, height, linePreview, selectionOverlay, width])
@@ -128,8 +163,11 @@ export function BeadCanvas({
     }
 
     const bounds = canvas.getBoundingClientRect()
-    const rawX = Math.floor((event.clientX - bounds.left) / cellSize)
+    const rawX = Math.floor((event.clientX - bounds.left - GRID_OFFSET_X) / cellSize)
     const rawY = Math.floor((event.clientY - bounds.top) / cellSize)
+    if (rawX < 0 || rawX >= width || rawY < 0 || rawY >= height) {
+      return null
+    }
     return {
       x: clamp(rawX, 0, width - 1),
       y: clamp(rawY, 0, height - 1),
