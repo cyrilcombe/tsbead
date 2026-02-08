@@ -17,6 +17,8 @@ interface EditorState {
   setViewScroll: (scroll: number) => void
   shiftLeft: () => void
   shiftRight: () => void
+  insertRow: () => void
+  deleteRow: () => void
   setSelection: (selection: SelectionRect | null) => void
   clearSelection: () => void
   deleteSelection: () => void
@@ -295,6 +297,50 @@ export const useEditorStore = create<EditorState>((set) => ({
       const document = cloneDocument(state.document)
       document.view.shift = (document.view.shift + 1) % width
       return { document }
+    })
+  },
+  insertRow: () => {
+    set((state) => {
+      const document = cloneDocument(state.document)
+      const rows = document.model.rows
+      const height = rows.length
+      const width = rows[0]?.length ?? 0
+      if (height === 0 || width === 0) {
+        return state
+      }
+
+      for (let y = height - 1; y > 0; y -= 1) {
+        for (let x = 0; x < width; x += 1) {
+          rows[y][x] = rows[y - 1][x]
+        }
+      }
+      for (let x = 0; x < width; x += 1) {
+        rows[0][x] = 0
+      }
+
+      return { document, dirty: true }
+    })
+  },
+  deleteRow: () => {
+    set((state) => {
+      const document = cloneDocument(state.document)
+      const rows = document.model.rows
+      const height = rows.length
+      const width = rows[0]?.length ?? 0
+      if (height === 0 || width === 0) {
+        return state
+      }
+
+      for (let y = 0; y < height - 1; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          rows[y][x] = rows[y + 1][x]
+        }
+      }
+      for (let x = 0; x < width; x += 1) {
+        rows[height - 1][x] = 0
+      }
+
+      return { document, dirty: true }
     })
   },
   setSelection: (selection) => {

@@ -70,6 +70,48 @@ describe('editor store', () => {
     expect(rows[2]).toEqual([0, 0, 0, 0])
   })
 
+  it('inserts an empty row and shifts all rows up by one index', () => {
+    const document = createEmptyDocument(3, 4)
+    document.model.rows = [
+      [1, 1, 1],
+      [2, 2, 2],
+      [3, 3, 3],
+      [4, 4, 4],
+    ]
+    useEditorStore.getState().setDocument(document)
+
+    useEditorStore.getState().insertRow()
+    const rows = useEditorStore.getState().document.model.rows
+
+    expect(rows).toEqual([
+      [0, 0, 0],
+      [1, 1, 1],
+      [2, 2, 2],
+      [3, 3, 3],
+    ])
+  })
+
+  it('deletes first row and shifts all rows down by one index', () => {
+    const document = createEmptyDocument(3, 4)
+    document.model.rows = [
+      [1, 1, 1],
+      [2, 2, 2],
+      [3, 3, 3],
+      [4, 4, 4],
+    ]
+    useEditorStore.getState().setDocument(document)
+
+    useEditorStore.getState().deleteRow()
+    const rows = useEditorStore.getState().document.model.rows
+
+    expect(rows).toEqual([
+      [2, 2, 2],
+      [3, 3, 3],
+      [4, 4, 4],
+      [0, 0, 0],
+    ])
+  })
+
   it('mirrors the selected area horizontally', () => {
     const document = createEmptyDocument(4, 4)
     document.model.rows = [

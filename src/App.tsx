@@ -78,6 +78,8 @@ function App() {
   const setViewScroll = useEditorStore((state) => state.setViewScroll)
   const shiftLeft = useEditorStore((state) => state.shiftLeft)
   const shiftRight = useEditorStore((state) => state.shiftRight)
+  const insertRow = useEditorStore((state) => state.insertRow)
+  const deleteRow = useEditorStore((state) => state.deleteRow)
   const setSelection = useEditorStore((state) => state.setSelection)
   const deleteSelection = useEditorStore((state) => state.deleteSelection)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
@@ -215,11 +217,16 @@ function App() {
     report: isReportVisible,
   }
 
-  const getPaneMaxScrollRow = (pane: HTMLDivElement | null): number => {
+  const getPaneMaxScrollTop = (pane: HTMLDivElement | null): number => {
     if (!pane) {
       return 0
     }
-    return Math.max(0, Math.round((pane.scrollHeight - pane.clientHeight) / cellSize))
+    return Math.max(0, pane.scrollHeight - pane.clientHeight)
+  }
+
+  const getPaneMaxScrollRow = (pane: HTMLDivElement | null): number => {
+    const maxScrollTop = getPaneMaxScrollTop(pane)
+    return Math.max(0, Math.ceil(maxScrollTop / cellSize))
   }
 
   const getSharedMaxRow = (): number => {
@@ -230,17 +237,16 @@ function App() {
     if (!referencePane) {
       return Math.max(0, height - 1)
     }
-
-    const visibleRows = Math.max(1, Math.floor(referencePane.clientHeight / cellSize))
-    return Math.max(0, height - visibleRows)
+    return getPaneMaxScrollRow(referencePane)
   }
 
   const onPaneScroll = (source: HTMLDivElement) => {
     if (syncingScrollRef.current) {
       return
     }
+    const maxScrollTop = getPaneMaxScrollTop(source)
     const sourceMaxRow = getPaneMaxScrollRow(source)
-    const sourceScrollRow = Math.round(source.scrollTop / cellSize)
+    const sourceScrollRow = source.scrollTop >= maxScrollTop - 1 ? sourceMaxRow : Math.round(source.scrollTop / cellSize)
     const nextScrollRow = Math.max(0, Math.min(sourceMaxRow, sourceScrollRow))
     setViewScroll(nextScrollRow)
   }
@@ -330,7 +336,9 @@ function App() {
         continue
       }
       const paneMaxRow = getPaneMaxScrollRow(pane)
-      pane.scrollTop = Math.min(targetScrollRow, paneMaxRow) * cellSize
+      const paneMaxScrollTop = getPaneMaxScrollTop(pane)
+      const paneTargetRow = Math.min(targetScrollRow, paneMaxRow)
+      pane.scrollTop = paneTargetRow >= paneMaxRow ? paneMaxScrollTop : paneTargetRow * cellSize
     }
     requestAnimationFrame(() => {
       syncingScrollRef.current = false
@@ -419,6 +427,12 @@ function App() {
             </button>
           </div>
           <div className="button-strip">
+            <button className="action" onClick={() => insertRow()}>
+              Insert row
+            </button>
+            <button className="action" onClick={() => deleteRow()}>
+              Delete row
+            </button>
             <button className="action" onClick={() => mirrorHorizontal()}>
               Mirror H
             </button>

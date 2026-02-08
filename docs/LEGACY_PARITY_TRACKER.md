@@ -31,8 +31,8 @@ Status legend:
 | F-014 | Edit | Mirror vertical | `EditMirrorVerticalAction`, `Model.mirrorVertical()` | `DONE` |
 | F-015 | Edit | Rotate square selection | `EditRotateAction`, `Model.rotate()` | `DONE` |
 | F-016 | Edit | Arrange selection copies with offset | `EditArrangeAction`, `ArrangeDialog`, `Model.arrangeSelection()` | `TODO` |
-| F-017 | Edit | Insert row | `EditInsertRowAction`, `Model.insertRow()` | `TODO` |
-| F-018 | Edit | Delete row | `EditDeleteRowAction`, `Model.deleteRow()` | `TODO` |
+| F-017 | Edit | Insert row | `EditInsertRowAction`, `Model.insertRow()` | `DONE` |
+| F-018 | Edit | Delete row | `EditDeleteRowAction`, `Model.deleteRow()` | `DONE` |
 | F-019 | History | Undo | `EditUndoAction`, `Model.undo()`, `BeadUndo.java` | `TODO` |
 | F-020 | History | Redo | `EditRedoAction`, `Model.redo()`, `BeadUndo.java` | `TODO` |
 | F-021 | View Options | Draw colors toggle | `ViewDrawColorsAction`, `View.drawColors()` | `TODO` |
@@ -76,7 +76,7 @@ Status legend:
 ### Phase 2 - Editing parity
 - [x] T-006 Add pipette tool in Draft pane
 - [ ] T-007 Enable edit interactions from Corrected and Simulation panes
-- [ ] T-008 Add insert row / delete row actions
+- [x] T-008 Add insert row / delete row actions
 - [ ] T-009 Add arrange selection dialog + operation
 - [x] T-010 Add keyboard shortcuts (0-9 colors, arrows for shift, tool shortcuts)
 
