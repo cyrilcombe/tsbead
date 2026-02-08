@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createEmptyDocument } from './defaults'
 import { getLinePoints, normalizeRect, snapLineEnd, type NormalizedRect } from './gridMath'
-import type { CellPoint, JBeadDocument, SelectionRect, ToolId } from './types'
+import type { CellPoint, JBeadDocument, SelectionRect, ToolId, ViewPaneId } from './types'
 
 interface EditorState {
   document: JBeadDocument
@@ -12,6 +12,7 @@ interface EditorState {
   fillLine: (point: CellPoint, value: number) => void
   setSelectedColor: (colorIndex: number) => void
   setSelectedTool: (tool: ToolId) => void
+  setViewVisibility: (pane: ViewPaneId, visible: boolean) => void
   setSelection: (selection: SelectionRect | null) => void
   clearSelection: () => void
   deleteSelection: () => void
@@ -220,6 +221,24 @@ export const useEditorStore = create<EditorState>((set) => ({
       document.view.selectedTool = tool
       const selection = tool === 'select' ? state.selection : null
       return { document, selection }
+    })
+  },
+  setViewVisibility: (pane, visible) => {
+    set((state) => {
+      const keyByPane: Record<ViewPaneId, 'draftVisible' | 'correctedVisible' | 'simulationVisible' | 'reportVisible'> = {
+        draft: 'draftVisible',
+        corrected: 'correctedVisible',
+        simulation: 'simulationVisible',
+        report: 'reportVisible',
+      }
+      const key = keyByPane[pane]
+      if (state.document.view[key] === visible) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view[key] = visible
+      return { document }
     })
   },
   setSelection: (selection) => {

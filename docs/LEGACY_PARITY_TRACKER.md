@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-08 (evening)
+Last updated: 2026-02-08 (night)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -15,8 +15,8 @@ Status legend:
 
 | ID | Area | Legacy Feature | Java Reference | Web Status |
 |---|---|---|---|---|
-| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (Draft/Corrected/Simulation present, Report pane missing) |
-| F-002 | Layout | Per-pane visibility toggles | `ViewDraftAction`, `ViewCorrectedAction`, `ViewSimulationAction`, `ViewReportAction` | `PARTIAL` (flags in document view, no full UI behavior) |
+| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (all 4 panes now present; Report still placeholder-level) |
+| F-002 | Layout | Per-pane visibility toggles | `ViewDraftAction`, `ViewCorrectedAction`, `ViewSimulationAction`, `ViewReportAction` | `DONE` |
 | F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `PARTIAL` (shared scroll implemented, row-index scrollbar behavior still differs) |
 | F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `DONE` |
 | F-005 | Views | Corrected rendering (offset rows / corrected index mapping) | `view/CorrectedPanel.java`, `Model.correct()` | `PARTIAL` (read-only parity pass) |
@@ -71,7 +71,7 @@ Status legend:
 - [ ] T-002 Implement shared vertical row scroll model across panes
 - [ ] T-003 Implement Corrected renderer (`Model.correct` equivalent)
 - [ ] T-004 Implement Simulation renderer (shift + weave mapping)
-- [ ] T-005 Add view visibility toggles for all panes
+- [x] T-005 Add view visibility toggles for all panes
 
 ### Phase 2 - Editing parity
 - [ ] T-006 Add pipette tool in Draft pane
@@ -103,7 +103,7 @@ Status legend:
 
 Target a thin vertical slice first:
 - [x] S-001 Implement Corrected and Simulation panes read-only
-- [ ] S-002 Add view toggles for Draft/Corrected/Simulation/Report
+- [x] S-002 Add view toggles for Draft/Corrected/Simulation/Report
 - [ ] S-003 Add report infos block (without color lists yet)
 
 This slice unlocks visual parity early and reduces risk before implementing advanced editing/history.

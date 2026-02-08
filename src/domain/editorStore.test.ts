@@ -134,4 +134,17 @@ describe('editor store', () => {
     ])
     expect(state.selection).toBeNull()
   })
+
+  it('toggles pane visibility flags in the document view', () => {
+    useEditorStore.getState().setViewVisibility('corrected', false)
+    useEditorStore.getState().setViewVisibility('report', false)
+
+    let state = useEditorStore.getState()
+    expect(state.document.view.correctedVisible).toBe(false)
+    expect(state.document.view.reportVisible).toBe(false)
+
+    useEditorStore.getState().setViewVisibility('corrected', true)
+    state = useEditorStore.getState()
+    expect(state.document.view.correctedVisible).toBe(true)
+  })
 })

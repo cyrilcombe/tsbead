@@ -4,7 +4,7 @@ import { parseJbb, serializeJbb } from './io/jbb/format'
 import { loadProject, saveProject } from './storage/db'
 import { BeadCanvas } from './ui/canvas/BeadCanvas'
 import { BeadPreviewCanvas } from './ui/canvas/BeadPreviewCanvas'
-import type { CellPoint, SelectionRect, ToolId } from './domain/types'
+import type { CellPoint, SelectionRect, ToolId, ViewPaneId } from './domain/types'
 import './index.css'
 
 const LOCAL_PROJECT_ID = 'local-default'
@@ -13,6 +13,12 @@ const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'line', label: 'Line' },
   { id: 'fill', label: 'Fill' },
   { id: 'select', label: 'Select' },
+]
+const VIEW_PANES: Array<{ id: ViewPaneId; label: string }> = [
+  { id: 'draft', label: 'Draft' },
+  { id: 'corrected', label: 'Corrected' },
+  { id: 'simulation', label: 'Simulation' },
+  { id: 'report', label: 'Report' },
 ]
 
 function colorToCss(color: [number, number, number, number?]): string {
@@ -29,6 +35,7 @@ function App() {
   const reset = useEditorStore((state) => state.reset)
   const setSelectedColor = useEditorStore((state) => state.setSelectedColor)
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
+  const setViewVisibility = useEditorStore((state) => state.setViewVisibility)
   const setSelection = useEditorStore((state) => state.setSelection)
   const deleteSelection = useEditorStore((state) => state.deleteSelection)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
@@ -65,6 +72,12 @@ function App() {
   const height = document.model.rows.length
   const selectedTool = document.view.selectedTool
   const selectedColor = document.view.selectedColor
+  const isDraftVisible = document.view.draftVisible
+  const isCorrectedVisible = document.view.correctedVisible
+  const isSimulationVisible = document.view.simulationVisible
+  const isReportVisible = document.view.reportVisible
+  const hasCanvasPaneVisible = isDraftVisible || isCorrectedVisible || isSimulationVisible
+  const hasAnyPaneVisible = hasCanvasPaneVisible || isReportVisible
   const canRotate =
     selection !== null &&
     Math.abs(selection.end.x - selection.start.x) === Math.abs(selection.end.y - selection.start.y)
@@ -141,6 +154,13 @@ function App() {
     dragStartRef.current = null
     setDragPreview(null)
     deleteSelection()
+  }
+
+  const paneVisibilityById: Record<ViewPaneId, boolean> = {
+    draft: isDraftVisible,
+    corrected: isCorrectedVisible,
+    simulation: isSimulationVisible,
+    report: isReportVisible,
   }
 
   const onPaneScroll = (source: HTMLDivElement) => {
@@ -255,68 +275,119 @@ function App() {
             </button>
           </div>
         </div>
+        <div className="view-row">
+          <span className="view-row-label">Views</span>
+          <div className="button-strip">
+            {VIEW_PANES.map((pane) => {
+              const visible = paneVisibilityById[pane.id]
+              return (
+                <button
+                  key={pane.id}
+                  className={`action view-toggle ${visible ? 'active' : ''}`}
+                  aria-pressed={visible}
+                  onClick={() => setViewVisibility(pane.id, !visible)}
+                >
+                  {pane.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </section>
 
       <main className="workspace">
         <section className="preview-with-scrollbar">
           <section className="preview-grid">
-            <section className="panel canvas-panel draft-panel">
-              <div className="panel-title">
-                <h2>Draft</h2>
-                <span>
-                  {width} x {height}
-                </span>
-              </div>
-              <div ref={draftScrollRef} className="canvas-scroll" onScroll={(event) => onPaneScroll(event.currentTarget)}>
-                <BeadCanvas
-                  document={document}
-                  selectionOverlay={selectionOverlay}
-                  linePreview={linePreview}
-                  onPointerDown={onPointerDown}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                  onPointerCancel={onPointerCancel}
-                />
-              </div>
-            </section>
+            {isDraftVisible ? (
+              <section className="panel canvas-panel draft-panel">
+                <div className="panel-title">
+                  <h2>Draft</h2>
+                  <span>
+                    {width} x {height}
+                  </span>
+                </div>
+                <div
+                  ref={draftScrollRef}
+                  className="canvas-scroll"
+                  onScroll={(event) => onPaneScroll(event.currentTarget)}
+                >
+                  <BeadCanvas
+                    document={document}
+                    selectionOverlay={selectionOverlay}
+                    linePreview={linePreview}
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                  />
+                </div>
+              </section>
+            ) : null}
 
-            <section className="panel canvas-panel">
-              <div className="panel-title">
-                <h2>Corrected</h2>
-              </div>
-              <div
-                ref={correctedScrollRef}
-                className="canvas-scroll"
-                onScroll={(event) => onPaneScroll(event.currentTarget)}
-              >
-                <BeadPreviewCanvas document={document} variant="corrected" />
-              </div>
-            </section>
+            {isCorrectedVisible ? (
+              <section className="panel canvas-panel">
+                <div className="panel-title">
+                  <h2>Corrected</h2>
+                </div>
+                <div
+                  ref={correctedScrollRef}
+                  className="canvas-scroll"
+                  onScroll={(event) => onPaneScroll(event.currentTarget)}
+                >
+                  <BeadPreviewCanvas document={document} variant="corrected" />
+                </div>
+              </section>
+            ) : null}
 
-            <section className="panel canvas-panel">
-              <div className="panel-title">
-                <h2>Simulation</h2>
-              </div>
-              <div
-                ref={simulationScrollRef}
-                className="canvas-scroll"
-                onScroll={(event) => onPaneScroll(event.currentTarget)}
-              >
-                <BeadPreviewCanvas document={document} variant="simulation" />
-              </div>
-            </section>
+            {isSimulationVisible ? (
+              <section className="panel canvas-panel">
+                <div className="panel-title">
+                  <h2>Simulation</h2>
+                </div>
+                <div
+                  ref={simulationScrollRef}
+                  className="canvas-scroll"
+                  onScroll={(event) => onPaneScroll(event.currentTarget)}
+                >
+                  <BeadPreviewCanvas document={document} variant="simulation" />
+                </div>
+              </section>
+            ) : null}
+
+            {isReportVisible ? (
+              <section className="panel report-panel">
+                <div className="panel-title">
+                  <h2>Report</h2>
+                  <span>Preview</span>
+                </div>
+                <div className="report-content">
+                  <p>Report detail blocks are coming in S-003.</p>
+                  <p>
+                    Current model: {width} columns x {height} rows ({width * height} beads)
+                  </p>
+                </div>
+              </section>
+            ) : null}
+
+            {!hasAnyPaneVisible ? (
+              <section className="panel empty-pane">
+                <p>Select at least one view to display a pane.</p>
+              </section>
+            ) : null}
           </section>
 
-          <div className="shared-scrollbar-panel" aria-label="Shared pattern scroll">
-            <input
-              className="shared-scrollbar"
-              type="range"
-              min={0}
-              max={1000}
-              value={Math.round(sharedScrollRatio * 1000)}
-              onChange={(event) => setSharedScrollRatio(Number(event.currentTarget.value) / 1000)}
-            />
-          </div>
+          {hasCanvasPaneVisible ? (
+            <div className="shared-scrollbar-panel" aria-label="Shared pattern scroll">
+              <input
+                className="shared-scrollbar"
+                type="range"
+                min={0}
+                max={1000}
+                value={Math.round(sharedScrollRatio * 1000)}
+                onChange={(event) => setSharedScrollRatio(Number(event.currentTarget.value) / 1000)}
+              />
+            </div>
+          ) : null}
         </section>
 
         <aside className="panel sidebar">
