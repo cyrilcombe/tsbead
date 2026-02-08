@@ -83,6 +83,10 @@ function App() {
   const setSelection = useEditorStore((state) => state.setSelection)
   const deleteSelection = useEditorStore((state) => state.deleteSelection)
   const arrangeSelection = useEditorStore((state) => state.arrangeSelection)
+  const undo = useEditorStore((state) => state.undo)
+  const redo = useEditorStore((state) => state.redo)
+  const canUndo = useEditorStore((state) => state.canUndo)
+  const canRedo = useEditorStore((state) => state.canRedo)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
   const mirrorVertical = useEditorStore((state) => state.mirrorVertical)
   const rotateClockwise = useEditorStore((state) => state.rotateClockwise)
@@ -324,25 +328,38 @@ function App() {
       let handled = false
 
       if (hasModifier && !event.altKey) {
-        const shortcut = shortcutFromKeyboardCode(event.code)
-        if (shortcut === 1) {
+        const lowerKey = event.key.toLowerCase()
+        if (lowerKey === 'z') {
+          if (event.shiftKey) {
+            redo()
+          } else {
+            undo()
+          }
+          handled = true
+        } else if (lowerKey === 'y') {
+          redo()
+          handled = true
+        } else {
+          const shortcut = shortcutFromKeyboardCode(event.code)
+          if (shortcut === 1) {
           setSelectedTool('pencil')
           handled = true
-        } else if (shortcut === 2) {
-          setSelectedTool('line')
-          handled = true
-        } else if (shortcut === 3) {
-          setSelectedTool('fill')
-          handled = true
-        } else if (shortcut === 4) {
-          setSelectedTool('select')
-          handled = true
-        } else if (shortcut === 5) {
-          onDeleteSelection()
-          handled = true
-        } else if (shortcut === 6) {
-          setSelectedTool('pipette')
-          handled = true
+          } else if (shortcut === 2) {
+            setSelectedTool('line')
+            handled = true
+          } else if (shortcut === 3) {
+            setSelectedTool('fill')
+            handled = true
+          } else if (shortcut === 4) {
+            setSelectedTool('select')
+            handled = true
+          } else if (shortcut === 5) {
+            onDeleteSelection()
+            handled = true
+          } else if (shortcut === 6) {
+            setSelectedTool('pipette')
+            handled = true
+          }
         }
       } else if (!event.altKey) {
         const colorFromCode = colorFromKeyboardCode(event.code)
@@ -370,7 +387,7 @@ function App() {
     return () => {
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [isArrangeDialogOpen, onDeleteSelection, setSelectedColor, setSelectedTool, shiftLeft, shiftRight])
+  }, [isArrangeDialogOpen, onDeleteSelection, redo, setSelectedColor, setSelectedTool, shiftLeft, shiftRight, undo])
 
   useEffect(() => {
     const nextSharedMaxRow = getSharedMaxRow()
@@ -480,6 +497,12 @@ function App() {
             </button>
           </div>
           <div className="button-strip">
+            <button className="action" onClick={() => undo()} disabled={!canUndo}>
+              Undo
+            </button>
+            <button className="action" onClick={() => redo()} disabled={!canRedo}>
+              Redo
+            </button>
             <button className="action" onClick={() => shiftLeft()} title="ArrowLeft">
               Shift left
             </button>

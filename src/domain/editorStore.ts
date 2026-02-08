@@ -7,6 +7,8 @@ interface EditorState {
   document: JBeadDocument
   selection: SelectionRect | null
   dirty: boolean
+  canUndo: boolean
+  canRedo: boolean
   setCell: (x: number, y: number, value: number) => void
   pickColorAt: (point: CellPoint) => void
   drawLine: (start: CellPoint, end: CellPoint, value: number) => void
@@ -23,11 +25,18 @@ interface EditorState {
   clearSelection: () => void
   deleteSelection: () => void
   arrangeSelection: (copies: number, horizontalOffset: number, verticalOffset: number) => void
+  undo: () => void
+  redo: () => void
   mirrorHorizontal: () => void
   mirrorVertical: () => void
   rotateClockwise: () => void
   setDocument: (document: JBeadDocument) => void
   reset: () => void
+}
+
+interface HistorySnapshot {
+  rows: number[][]
+  dirty: boolean
 }
 
 function cloneDocument(document: JBeadDocument): JBeadDocument {
@@ -39,6 +48,10 @@ function cloneDocument(document: JBeadDocument): JBeadDocument {
       rows: document.model.rows.map((row) => [...row]),
     },
   }
+}
+
+function cloneRows(rows: number[][]): number[][] {
+  return rows.map((row) => [...row])
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -115,9 +128,42 @@ function getTransformRect(document: JBeadDocument, selection: SelectionRect | nu
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
+  // History behavior aligned with legacy BeadUndo: bounded undo stack and redo reset on new edits.
+  // We snapshot model rows + dirty flag only (view state is intentionally not part of history).
+  ...(() => {
+    const MAX_HISTORY = 100
+    let undoStack: HistorySnapshot[] = []
+    let redoStack: HistorySnapshot[] = []
+
+    const toSnapshot = (state: EditorState): HistorySnapshot => ({
+      rows: cloneRows(state.document.model.rows),
+      dirty: state.dirty,
+    })
+
+    const applyHistoryFlags = (): Pick<EditorState, 'canUndo' | 'canRedo'> => ({
+      canUndo: undoStack.length > 0,
+      canRedo: redoStack.length > 0,
+    })
+
+    const pushUndoSnapshot = (state: EditorState) => {
+      undoStack.push(toSnapshot(state))
+      if (undoStack.length > MAX_HISTORY) {
+        undoStack = undoStack.slice(undoStack.length - MAX_HISTORY)
+      }
+      redoStack = []
+    }
+
+    const clearHistory = () => {
+      undoStack = []
+      redoStack = []
+    }
+
+    return {
   document: createEmptyDocument(),
   selection: null,
   dirty: false,
+  canUndo: false,
+  canRedo: false,
   setCell: (x, y, value) => {
     set((state) => {
       const rows = state.document.model.rows
@@ -132,9 +178,10 @@ export const useEditorStore = create<EditorState>((set) => ({
         return state
       }
 
+      pushUndoSnapshot(state)
       const document = cloneDocument(state.document)
       document.model.rows[y][x] = value
-      return { document, dirty: true }
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   pickColorAt: (point) => {
@@ -176,7 +223,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!changed) {
         return state
       }
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   fillLine: (point, value) => {
@@ -220,7 +268,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!changed) {
         return state
       }
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   setSelectedColor: (colorIndex) => {
@@ -319,7 +368,8 @@ export const useEditorStore = create<EditorState>((set) => ({
         rows[0][x] = 0
       }
 
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   deleteRow: () => {
@@ -341,7 +391,8 @@ export const useEditorStore = create<EditorState>((set) => ({
         rows[height - 1][x] = 0
       }
 
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   setSelection: (selection) => {
@@ -399,7 +450,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!changed) {
         return { selection: null }
       }
-      return { document, selection: null, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, selection: null, dirty: true, ...applyHistoryFlags() }
     })
   },
   arrangeSelection: (copies, horizontalOffset, verticalOffset) => {
@@ -464,7 +516,50 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!changed) {
         return state
       }
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
+    })
+  },
+  undo: () => {
+    set((state) => {
+      if (undoStack.length === 0) {
+        return state
+      }
+
+      redoStack.push(toSnapshot(state))
+      if (redoStack.length > MAX_HISTORY) {
+        redoStack = redoStack.slice(redoStack.length - MAX_HISTORY)
+      }
+
+      const previous = undoStack.pop()
+      if (!previous) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.model.rows = cloneRows(previous.rows)
+      return { document, dirty: previous.dirty, ...applyHistoryFlags() }
+    })
+  },
+  redo: () => {
+    set((state) => {
+      if (redoStack.length === 0) {
+        return state
+      }
+
+      undoStack.push(toSnapshot(state))
+      if (undoStack.length > MAX_HISTORY) {
+        undoStack = undoStack.slice(undoStack.length - MAX_HISTORY)
+      }
+
+      const next = redoStack.pop()
+      if (!next) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.model.rows = cloneRows(next.rows)
+      return { document, dirty: next.dirty, ...applyHistoryFlags() }
     })
   },
   mirrorHorizontal: () => {
@@ -490,7 +585,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!changed) {
         return state
       }
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   mirrorVertical: () => {
@@ -516,7 +612,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!changed) {
         return state
       }
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   rotateClockwise: () => {
@@ -558,13 +655,28 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!changed) {
         return state
       }
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   setDocument: (document) => {
-    set({ document: cloneDocument(document), selection: null, dirty: false })
+    clearHistory()
+    set({
+      document: cloneDocument(document),
+      selection: null,
+      dirty: false,
+      ...applyHistoryFlags(),
+    })
   },
   reset: () => {
-    set({ document: createEmptyDocument(), selection: null, dirty: false })
+    clearHistory()
+    set({
+      document: createEmptyDocument(),
+      selection: null,
+      dirty: false,
+      ...applyHistoryFlags(),
+    })
   },
+    }
+  })(),
 }))

@@ -33,8 +33,8 @@ Status legend:
 | F-016 | Edit | Arrange selection copies with offset | `EditArrangeAction`, `ArrangeDialog`, `Model.arrangeSelection()` | `DONE` |
 | F-017 | Edit | Insert row | `EditInsertRowAction`, `Model.insertRow()` | `DONE` |
 | F-018 | Edit | Delete row | `EditDeleteRowAction`, `Model.deleteRow()` | `DONE` |
-| F-019 | History | Undo | `EditUndoAction`, `Model.undo()`, `BeadUndo.java` | `TODO` |
-| F-020 | History | Redo | `EditRedoAction`, `Model.redo()`, `BeadUndo.java` | `TODO` |
+| F-019 | History | Undo | `EditUndoAction`, `Model.undo()`, `BeadUndo.java` | `DONE` |
+| F-020 | History | Redo | `EditRedoAction`, `Model.redo()`, `BeadUndo.java` | `DONE` |
 | F-021 | View Options | Draw colors toggle | `ViewDrawColorsAction`, `View.drawColors()` | `TODO` |
 | F-022 | View Options | Draw symbols toggle | `ViewDrawSymbolsAction`, `View.drawSymbols()` | `TODO` |
 | F-023 | View Options | Zoom in/normal/out | `ViewZoomInAction`, `ViewZoomNormalAction`, `ViewZoomOutAction` | `PARTIAL` (zoom value exists, no controls) |
@@ -81,7 +81,7 @@ Status legend:
 - [x] T-010 Add keyboard shortcuts (0-9 colors, arrows for shift, tool shortcuts)
 
 ### Phase 3 - Pattern controls and history
-- [ ] T-011 Add undo/redo history stack equivalent to `BeadUndo`
+- [x] T-011 Add undo/redo history stack equivalent to `BeadUndo`
 - [ ] T-012 Add width/height pattern dialogs and model resizing
 - [x] T-013 Add shift controls (left/right buttons + key repeat)
 - [ ] T-014 Implement repeat detection and expose in UI

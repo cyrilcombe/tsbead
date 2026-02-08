@@ -4,11 +4,7 @@ import { useEditorStore } from './editorStore'
 
 describe('editor store', () => {
   beforeEach(() => {
-    useEditorStore.setState({
-      document: createEmptyDocument(4, 4),
-      selection: null,
-      dirty: false,
-    })
+    useEditorStore.getState().setDocument(createEmptyDocument(4, 4))
   })
 
   it('writes a bead color into the model', () => {
@@ -278,5 +274,42 @@ describe('editor store', () => {
 
     useEditorStore.getState().shiftRight()
     expect(useEditorStore.getState().document.view.shift).toBe(1)
+  })
+
+  it('undoes and redoes model edits', () => {
+    useEditorStore.getState().setCell(1, 1, 6)
+    let state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(6)
+    expect(state.canUndo).toBe(true)
+    expect(state.canRedo).toBe(false)
+
+    useEditorStore.getState().undo()
+    state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(0)
+    expect(state.dirty).toBe(false)
+    expect(state.canUndo).toBe(false)
+    expect(state.canRedo).toBe(true)
+
+    useEditorStore.getState().redo()
+    state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(6)
+    expect(state.dirty).toBe(true)
+    expect(state.canUndo).toBe(true)
+    expect(state.canRedo).toBe(false)
+  })
+
+  it('clears redo stack when a new edit happens after undo', () => {
+    useEditorStore.getState().setCell(0, 0, 1)
+    useEditorStore.getState().setCell(1, 0, 2)
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().canRedo).toBe(true)
+
+    useEditorStore.getState().setCell(2, 0, 3)
+    const beforeRedo = useEditorStore.getState().document.model.rows.map((row) => [...row])
+    expect(useEditorStore.getState().canRedo).toBe(false)
+
+    useEditorStore.getState().redo()
+    expect(useEditorStore.getState().document.model.rows).toEqual(beforeRedo)
   })
 })
