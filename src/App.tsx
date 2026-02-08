@@ -13,7 +13,6 @@ const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'pencil', label: 'Pencil' },
   { id: 'line', label: 'Line' },
   { id: 'fill', label: 'Fill' },
-  { id: 'pipette', label: 'Pipette' },
   { id: 'select', label: 'Select' },
 ]
 const VIEW_PANES: Array<{ id: ViewPaneId; label: string }> = [
@@ -33,6 +32,38 @@ function getCellSize(zoomIndex: number): number {
   return zoomTable[Math.max(0, Math.min(zoomIndex, zoomTable.length - 1))]
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+  const tagName = target.tagName
+  return target.isContentEditable || tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT'
+}
+
+function colorFromKeyboardCode(code: string): number | null {
+  if (code.startsWith('Digit')) {
+    const value = Number(code.slice('Digit'.length))
+    return Number.isInteger(value) && value >= 0 && value <= 9 ? value : null
+  }
+  if (code.startsWith('Numpad')) {
+    const value = Number(code.slice('Numpad'.length))
+    return Number.isInteger(value) && value >= 0 && value <= 9 ? value : null
+  }
+  return null
+}
+
+function shortcutFromKeyboardCode(code: string): number | null {
+  if (code.startsWith('Digit')) {
+    const value = Number(code.slice('Digit'.length))
+    return Number.isInteger(value) && value >= 1 && value <= 9 ? value : null
+  }
+  if (code.startsWith('Numpad')) {
+    const value = Number(code.slice('Numpad'.length))
+    return Number.isInteger(value) && value >= 1 && value <= 9 ? value : null
+  }
+  return null
+}
+
 function App() {
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
@@ -45,6 +76,8 @@ function App() {
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
   const setViewVisibility = useEditorStore((state) => state.setViewVisibility)
   const setViewScroll = useEditorStore((state) => state.setViewScroll)
+  const shiftLeft = useEditorStore((state) => state.shiftLeft)
+  const shiftRight = useEditorStore((state) => state.shiftRight)
   const setSelection = useEditorStore((state) => state.setSelection)
   const deleteSelection = useEditorStore((state) => state.deleteSelection)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
@@ -223,6 +256,64 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) {
+        return
+      }
+
+      const hasModifier = event.ctrlKey || event.metaKey
+      let handled = false
+
+      if (hasModifier && !event.altKey) {
+        const shortcut = shortcutFromKeyboardCode(event.code)
+        if (shortcut === 1) {
+          setSelectedTool('pencil')
+          handled = true
+        } else if (shortcut === 2) {
+          setSelectedTool('line')
+          handled = true
+        } else if (shortcut === 3) {
+          setSelectedTool('fill')
+          handled = true
+        } else if (shortcut === 4) {
+          setSelectedTool('select')
+          handled = true
+        } else if (shortcut === 5) {
+          onDeleteSelection()
+          handled = true
+        } else if (shortcut === 6) {
+          setSelectedTool('pipette')
+          handled = true
+        }
+      } else if (!event.altKey) {
+        const colorFromCode = colorFromKeyboardCode(event.code)
+        if (colorFromCode !== null) {
+          setSelectedColor(colorFromCode)
+          handled = true
+        } else if (event.key >= '0' && event.key <= '9') {
+          setSelectedColor(Number(event.key))
+          handled = true
+        } else if (event.key === 'ArrowLeft') {
+          shiftLeft()
+          handled = true
+        } else if (event.key === 'ArrowRight') {
+          shiftRight()
+          handled = true
+        }
+      }
+
+      if (handled) {
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [onDeleteSelection, setSelectedColor, setSelectedTool, shiftLeft, shiftRight])
+
+  useEffect(() => {
     const nextSharedMaxRow = getSharedMaxRow()
     setSharedMaxScrollRow((current) => (current === nextSharedMaxRow ? current : nextSharedMaxRow))
 
@@ -317,6 +408,15 @@ function App() {
                 </button>
               )
             })}
+            <button className="action" onClick={onDeleteSelection} disabled={selection === null}>
+              Delete selection
+            </button>
+            <button
+              className={`action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
+              onClick={() => setSelectedTool('pipette')}
+            >
+              Pipette
+            </button>
           </div>
           <div className="button-strip">
             <button className="action" onClick={() => mirrorHorizontal()}>
@@ -327,9 +427,6 @@ function App() {
             </button>
             <button className="action" onClick={() => rotateClockwise()} disabled={!canRotate}>
               Rotate 90
-            </button>
-            <button className="action" onClick={onDeleteSelection} disabled={selection === null}>
-              Delete selection
             </button>
           </div>
         </div>

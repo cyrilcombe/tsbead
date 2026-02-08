@@ -15,6 +15,8 @@ interface EditorState {
   setSelectedTool: (tool: ToolId) => void
   setViewVisibility: (pane: ViewPaneId, visible: boolean) => void
   setViewScroll: (scroll: number) => void
+  shiftLeft: () => void
+  shiftRight: () => void
   setSelection: (selection: SelectionRect | null) => void
   clearSelection: () => void
   deleteSelection: () => void
@@ -268,6 +270,30 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const document = cloneDocument(state.document)
       document.view.scroll = normalized
+      return { document }
+    })
+  },
+  shiftLeft: () => {
+    set((state) => {
+      const width = state.document.model.rows[0]?.length ?? 0
+      if (width <= 0) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.shift = ((document.view.shift - 1) % width + width) % width
+      return { document }
+    })
+  },
+  shiftRight: () => {
+    set((state) => {
+      const width = state.document.model.rows[0]?.length ?? 0
+      if (width <= 0) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.shift = (document.view.shift + 1) % width
       return { document }
     })
   },

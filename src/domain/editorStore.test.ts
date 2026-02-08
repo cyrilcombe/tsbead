@@ -171,4 +171,18 @@ describe('editor store', () => {
     useEditorStore.getState().setViewScroll(-4)
     expect(useEditorStore.getState().document.view.scroll).toBe(0)
   })
+
+  it('shifts preview phase left and right with wrap-around', () => {
+    const document = createEmptyDocument(4, 2)
+    useEditorStore.getState().setDocument(document)
+
+    useEditorStore.getState().shiftLeft()
+    expect(useEditorStore.getState().document.view.shift).toBe(3)
+
+    useEditorStore.getState().shiftRight()
+    expect(useEditorStore.getState().document.view.shift).toBe(0)
+
+    useEditorStore.getState().shiftRight()
+    expect(useEditorStore.getState().document.view.shift).toBe(1)
+  })
 })

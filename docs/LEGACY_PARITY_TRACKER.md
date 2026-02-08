@@ -46,9 +46,9 @@ Status legend:
 | F-029 | Palette | 32-color palette with selected color indicator | `ui/ColorPalette.java` | `PARTIAL` (palette exists; not full legacy behavior) |
 | F-030 | Palette | Double-click/popup color edit | `ColorPalette.chooseColor()` | `TODO` |
 | F-031 | Palette | Set clicked color as background (swap with color 0) | `ColorPalette.asBackground()` | `TODO` |
-| F-032 | Input | Numeric shortcuts 0-9 for color selection | `JBeadFrame.formKeyUp()` | `TODO` |
-| F-033 | Input | Keyboard shortcuts and accelerators from actions | action classes `putValue(ACCELERATOR_KEY, ...)` | `TODO` |
-| F-034 | Input | Space/Escape/arrow interactions for tools/shift | `JBeadFrame.formKeyDown/formKeyUp()` | `TODO` |
+| F-032 | Input | Numeric shortcuts 0-9 for color selection | `JBeadFrame.formKeyUp()` | `DONE` |
+| F-033 | Input | Keyboard shortcuts and accelerators from actions | action classes `putValue(ACCELERATOR_KEY, ...)` | `PARTIAL` (tool accelerators Ctrl/Cmd+1..4 implemented) |
+| F-034 | Input | Space/Escape/arrow interactions for tools/shift | `JBeadFrame.formKeyDown/formKeyUp()` | `PARTIAL` (left/right shift implemented; space/escape still pending) |
 | F-035 | File IO | Open `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
 | F-036 | File IO | Save/export `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
 | F-037 | File IO | Open/save `.dbb` legacy format | `DbbFileFormat`, `DbbMemento` | `TODO` |
@@ -78,7 +78,7 @@ Status legend:
 - [ ] T-007 Enable edit interactions from Corrected and Simulation panes
 - [ ] T-008 Add insert row / delete row actions
 - [ ] T-009 Add arrange selection dialog + operation
-- [ ] T-010 Add keyboard shortcuts (0-9 colors, arrows for shift, tool shortcuts)
+- [x] T-010 Add keyboard shortcuts (0-9 colors, arrows for shift, tool shortcuts)
 
 ### Phase 3 - Pattern controls and history
 - [ ] T-011 Add undo/redo history stack equivalent to `BeadUndo`
