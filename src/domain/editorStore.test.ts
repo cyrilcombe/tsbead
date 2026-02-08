@@ -108,4 +108,30 @@ describe('editor store', () => {
     expect(state.selection).toBeNull()
     expect(state.document.view.selectedTool).toBe('pencil')
   })
+
+  it('deletes selected beads and clears selection', () => {
+    const document = createEmptyDocument(4, 4)
+    document.model.rows = [
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9, 1, 2, 3],
+      [4, 5, 6, 7],
+    ]
+    useEditorStore.getState().setDocument(document)
+    useEditorStore.getState().setSelection({
+      start: { x: 1, y: 1 },
+      end: { x: 2, y: 2 },
+    })
+
+    useEditorStore.getState().deleteSelection()
+    const state = useEditorStore.getState()
+
+    expect(state.document.model.rows).toEqual([
+      [1, 2, 3, 4],
+      [5, 0, 0, 8],
+      [9, 0, 0, 3],
+      [4, 5, 6, 7],
+    ])
+    expect(state.selection).toBeNull()
+  })
 })

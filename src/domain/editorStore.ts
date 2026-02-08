@@ -14,6 +14,7 @@ interface EditorState {
   setSelectedTool: (tool: ToolId) => void
   setSelection: (selection: SelectionRect | null) => void
   clearSelection: () => void
+  deleteSelection: () => void
   mirrorHorizontal: () => void
   mirrorVertical: () => void
   rotateClockwise: () => void
@@ -246,6 +247,37 @@ export const useEditorStore = create<EditorState>((set) => ({
         return state
       }
       return { selection: null }
+    })
+  },
+  deleteSelection: () => {
+    set((state) => {
+      if (state.selection === null) {
+        return state
+      }
+
+      const target = normalizeRect(state.selection.start, state.selection.end)
+      const document = cloneDocument(state.document)
+      const rows = document.model.rows
+      const height = rows.length
+      const width = rows[0]?.length ?? 0
+      if (width === 0 || height === 0) {
+        return { selection: null }
+      }
+      let changed = false
+
+      for (let y = clamp(target.top, 0, height - 1); y <= clamp(target.bottom, 0, height - 1); y += 1) {
+        for (let x = clamp(target.left, 0, width - 1); x <= clamp(target.right, 0, width - 1); x += 1) {
+          if (rows[y][x] !== 0) {
+            rows[y][x] = 0
+            changed = true
+          }
+        }
+      }
+
+      if (!changed) {
+        return { selection: null }
+      }
+      return { document, selection: null, dirty: true }
     })
   },
   mirrorHorizontal: () => {

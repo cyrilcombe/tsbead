@@ -1,31 +1,42 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parseJbb, serializeJbb } from './format'
 
-const heartsFixturePath = resolve(process.cwd(), 'fixtures/hearts.jbb')
+const fixturesDirectory = resolve(process.cwd(), 'fixtures')
+const fixtureFileNames = readdirSync(fixturesDirectory)
+  .filter((name) => name.endsWith('.jbb'))
+  .sort()
 
 describe('jbb format', () => {
-  it('parses a legacy hearts fixture', () => {
-    const fixture = readFileSync(heartsFixturePath, 'utf8')
-    const document = parseJbb(fixture)
-
-    expect(document.version).toBe(1)
-    expect(document.model.rows.length).toBeGreaterThan(0)
-    expect(document.model.rows[0].length).toBeGreaterThan(0)
-    expect(document.colors.length).toBeGreaterThan(0)
+  it('loads legacy fixtures from the fixtures directory', () => {
+    expect(fixtureFileNames.length).toBeGreaterThan(0)
   })
 
-  it('round-trips through serializer and parser', () => {
-    const fixture = readFileSync(heartsFixturePath, 'utf8')
-    const parsed = parseJbb(fixture)
-    const serialized = serializeJbb(parsed)
-    const reparsed = parseJbb(serialized)
+  for (const fixtureFileName of fixtureFileNames) {
+    it(`parses legacy fixture ${fixtureFileName}`, () => {
+      const fixturePath = resolve(fixturesDirectory, fixtureFileName)
+      const fixture = readFileSync(fixturePath, 'utf8')
+      const document = parseJbb(fixture)
 
-    expect(reparsed.model.rows).toEqual(parsed.model.rows)
-    expect(reparsed.colors).toEqual(parsed.colors)
-    expect(reparsed.view.selectedTool).toBe(parsed.view.selectedTool)
-  })
+      expect(document.version).toBe(1)
+      expect(document.model.rows.length).toBeGreaterThan(0)
+      expect(document.model.rows[0].length).toBeGreaterThan(0)
+      expect(document.colors.length).toBeGreaterThan(0)
+    })
+
+    it(`round-trips fixture ${fixtureFileName}`, () => {
+      const fixturePath = resolve(fixturesDirectory, fixtureFileName)
+      const fixture = readFileSync(fixturePath, 'utf8')
+      const parsed = parseJbb(fixture)
+      const serialized = serializeJbb(parsed)
+      const reparsed = parseJbb(serialized)
+
+      expect(reparsed.model.rows).toEqual(parsed.model.rows)
+      expect(reparsed.colors).toEqual(parsed.colors)
+      expect(reparsed.view.selectedTool).toBe(parsed.view.selectedTool)
+    })
+  }
 
   it('keeps line as selected tool when present in jbb view', () => {
     const fixture = `

@@ -29,7 +29,7 @@ function App() {
   const setSelectedColor = useEditorStore((state) => state.setSelectedColor)
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
   const setSelection = useEditorStore((state) => state.setSelection)
-  const clearSelection = useEditorStore((state) => state.clearSelection)
+  const deleteSelection = useEditorStore((state) => state.deleteSelection)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
   const mirrorVertical = useEditorStore((state) => state.mirrorVertical)
   const rotateClockwise = useEditorStore((state) => state.rotateClockwise)
@@ -130,6 +130,12 @@ function App() {
     setDragPreview(null)
   }
 
+  const onDeleteSelection = () => {
+    dragStartRef.current = null
+    setDragPreview(null)
+    deleteSelection()
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -203,8 +209,8 @@ function App() {
             <button className="action" onClick={() => rotateClockwise()} disabled={!canRotate}>
               Rotate 90
             </button>
-            <button className="action" onClick={() => clearSelection()} disabled={selection === null}>
-              Clear selection
+            <button className="action" onClick={onDeleteSelection} disabled={selection === null}>
+              Delete selection
             </button>
           </div>
         </div>
