@@ -45,6 +45,10 @@ The Vite `base` path is computed from `GITHUB_REPOSITORY` during GitHub Actions 
 4. Add report and simulation views.
 5. Add PWA caching and optional desktop packaging.
 
+## Legacy Parity Tracking
+
+See `/Users/cyrilcombe/Dev/perso/jbead-web/docs/LEGACY_PARITY_TRACKER.md` for the exhaustive Java feature inventory and task breakdown.
+
 ## License
 
 GPLv3 (same as original JBead).
