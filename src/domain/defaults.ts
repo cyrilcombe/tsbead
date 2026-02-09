@@ -25,6 +25,8 @@ export function createEmptyDocument(width = 15, height = 120): JBeadDocument {
       correctedVisible: true,
       simulationVisible: true,
       reportVisible: true,
+      drawColors: true,
+      drawSymbols: false,
       selectedTool: 'pencil',
       selectedColor: 1,
       zoom: 2,

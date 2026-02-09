@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import type { CellPoint, JBeadDocument, RgbaColor } from '../../domain/types'
+import { getBeadSymbol, getContrastingSymbolColor } from './beadStyle'
 
 interface PreviewCell {
   x: number
@@ -311,16 +312,31 @@ export function BeadPreviewCanvas({
         context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillStyle = '#f4f1ea'
         context.fillRect(0, 0, canvas.width, canvas.height)
+        if (document.view.drawSymbols) {
+          context.textAlign = 'center'
+          context.textBaseline = 'middle'
+          context.font = `${Math.max(7, Math.floor(cellSize * 0.75))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
+        }
 
         for (const cell of layout.cells) {
           const { px, py, pw, ph } = getCellPixelRect(cell, layout, cellSize)
           const fillWidth = Math.max(1, pw - 1)
           const fillHeight = Math.max(1, ph - 1)
-          context.fillStyle = toCss(document.colors[cell.colorIndex] ?? [0, 0, 0, 255])
-          context.fillRect(px + 1, py + 1, fillWidth, fillHeight)
+          const color = document.colors[cell.colorIndex] ?? [0, 0, 0, 255]
+          if (document.view.drawColors) {
+            context.fillStyle = toCss(color)
+            context.fillRect(px + 1, py + 1, fillWidth, fillHeight)
+          }
           context.strokeStyle = 'rgba(30, 35, 40, 0.7)'
           context.lineWidth = 1
           context.strokeRect(px + 0.5, py + 0.5, Math.max(0, pw), Math.max(0, ph))
+
+          if (document.view.drawSymbols) {
+            context.fillStyle = document.view.drawColors
+              ? getContrastingSymbolColor(color)
+              : 'rgba(0, 0, 0, 0.95)'
+            context.fillText(getBeadSymbol(cell.colorIndex), px + pw / 2 + 0.5, py + ph / 2 + 0.5)
+          }
         }
       }}
       role="img"

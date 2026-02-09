@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-08 (late night, S-006)
+Last updated: 2026-02-09 (S-007)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -35,9 +35,9 @@ Status legend:
 | F-018 | Edit | Delete row | `EditDeleteRowAction`, `Model.deleteRow()` | `DONE` |
 | F-019 | History | Undo | `EditUndoAction`, `Model.undo()`, `BeadUndo.java` | `DONE` |
 | F-020 | History | Redo | `EditRedoAction`, `Model.redo()`, `BeadUndo.java` | `DONE` |
-| F-021 | View Options | Draw colors toggle | `ViewDrawColorsAction`, `View.drawColors()` | `TODO` |
-| F-022 | View Options | Draw symbols toggle | `ViewDrawSymbolsAction`, `View.drawSymbols()` | `TODO` |
-| F-023 | View Options | Zoom in/normal/out | `ViewZoomInAction`, `ViewZoomNormalAction`, `ViewZoomOutAction` | `PARTIAL` (zoom value exists, no controls) |
+| F-021 | View Options | Draw colors toggle | `ViewDrawColorsAction`, `View.drawColors()` | `DONE` |
+| F-022 | View Options | Draw symbols toggle | `ViewDrawSymbolsAction`, `View.drawSymbols()` | `DONE` |
+| F-023 | View Options | Zoom in/normal/out | `ViewZoomInAction`, `ViewZoomNormalAction`, `ViewZoomOutAction` | `DONE` |
 | F-024 | Pattern | Pattern width dialog and resize | `PatternWidthAction`, `PatternWidthDialog`, `Model.setWidth()` | `DONE` |
 | F-025 | Pattern | Pattern height dialog and resize | `PatternHeightAction`, `PatternHeightDialog`, `Model.setHeight()` | `DONE` |
 | F-026 | Pattern | Preferences (author, organization, symbols, update-check setting) | `PatternPreferencesAction`, `PreferencesDialog` | `TODO` |
@@ -85,7 +85,7 @@ Status legend:
 - [x] T-012 Add width/height pattern dialogs and model resizing
 - [x] T-013 Add shift controls (left/right buttons + key repeat)
 - [ ] T-014 Implement repeat detection and expose in UI
-- [ ] T-015 Add view options: zoom in/normal/out, draw colors/symbols toggles
+- [x] T-015 Add view options: zoom in/normal/out, draw colors/symbols toggles
 
 ### Phase 4 - Palette/report completeness
 - [ ] T-016 Add full 32-color palette behavior (edit color + set as background)

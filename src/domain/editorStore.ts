@@ -17,6 +17,11 @@ interface EditorState {
   setSelectedTool: (tool: ToolId) => void
   setViewVisibility: (pane: ViewPaneId, visible: boolean) => void
   setViewScroll: (scroll: number) => void
+  setDrawColors: (drawColors: boolean) => void
+  setDrawSymbols: (drawSymbols: boolean) => void
+  zoomIn: () => void
+  zoomNormal: () => void
+  zoomOut: () => void
   shiftLeft: () => void
   shiftRight: () => void
   setPatternWidth: (width: number) => void
@@ -45,7 +50,11 @@ function cloneDocument(document: JBeadDocument): JBeadDocument {
   return {
     ...document,
     colors: document.colors.map((color) => [...color] as typeof color),
-    view: { ...document.view },
+    view: {
+      ...document.view,
+      drawColors: document.view.drawColors ?? true,
+      drawSymbols: document.view.drawSymbols ?? false,
+    },
     model: {
       rows: document.model.rows.map((row) => [...row]),
     },
@@ -59,6 +68,10 @@ function cloneRows(rows: number[][]): number[][] {
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
+
+const MIN_ZOOM_INDEX = 0
+const MAX_ZOOM_INDEX = 7
+const NORMAL_ZOOM_INDEX = 3
 
 function isInside(document: JBeadDocument, point: CellPoint): boolean {
   const rows = document.model.rows
@@ -324,6 +337,61 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const document = cloneDocument(state.document)
       document.view.scroll = normalized
+      return { document }
+    })
+  },
+  setDrawColors: (drawColors) => {
+    set((state) => {
+      if (state.document.view.drawColors === drawColors) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.drawColors = drawColors
+      return { document }
+    })
+  },
+  setDrawSymbols: (drawSymbols) => {
+    set((state) => {
+      if (state.document.view.drawSymbols === drawSymbols) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.drawSymbols = drawSymbols
+      return { document }
+    })
+  },
+  zoomIn: () => {
+    set((state) => {
+      if (state.document.view.zoom >= MAX_ZOOM_INDEX) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.zoom = clamp(document.view.zoom + 1, MIN_ZOOM_INDEX, MAX_ZOOM_INDEX)
+      return { document }
+    })
+  },
+  zoomNormal: () => {
+    set((state) => {
+      if (state.document.view.zoom === NORMAL_ZOOM_INDEX) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.zoom = NORMAL_ZOOM_INDEX
+      return { document }
+    })
+  },
+  zoomOut: () => {
+    set((state) => {
+      if (state.document.view.zoom <= MIN_ZOOM_INDEX) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.zoom = clamp(document.view.zoom - 1, MIN_ZOOM_INDEX, MAX_ZOOM_INDEX)
       return { document }
     })
   },

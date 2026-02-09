@@ -89,4 +89,65 @@ describe('jbb format', () => {
     const parsed = parseJbb(fixture)
     expect(parsed.view.selectedTool).toBe('pipette')
   })
+
+  it('parses draw colors and draw symbols from view settings', () => {
+    const fixture = `
+      (jbb
+        (version 1)
+        (colors
+          (rgb 0 0 0 255)
+          (rgb 255 0 0 255)
+        )
+        (view
+          (draw-colors false)
+          (draw-symbols true)
+          (selected-tool "pencil")
+          (selected-color 1)
+          (zoom 2)
+          (scroll 0)
+          (shift 0)
+        )
+        (model
+          (row 0 0)
+          (row 0 0)
+        )
+      )
+    `
+
+    const parsed = parseJbb(fixture)
+    expect(parsed.view.drawColors).toBe(false)
+    expect(parsed.view.drawSymbols).toBe(true)
+  })
+
+  it('serializes draw colors and draw symbols in jbb view settings', () => {
+    const fixture = `
+      (jbb
+        (version 1)
+        (colors
+          (rgb 0 0 0 255)
+          (rgb 255 0 0 255)
+        )
+        (view
+          (selected-tool "pencil")
+          (selected-color 1)
+          (zoom 2)
+          (scroll 0)
+          (shift 0)
+        )
+        (model
+          (row 0 0)
+          (row 0 0)
+        )
+      )
+    `
+
+    const parsed = parseJbb(fixture)
+    parsed.view.drawColors = false
+    parsed.view.drawSymbols = true
+    const serialized = serializeJbb(parsed)
+    const reparsed = parseJbb(serialized)
+
+    expect(reparsed.view.drawColors).toBe(false)
+    expect(reparsed.view.drawSymbols).toBe(true)
+  })
 })

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { getLinePoints, normalizeRect, snapLineEnd } from '../../domain/gridMath'
 import type { CellPoint, JBeadDocument, RgbaColor, SelectionRect } from '../../domain/types'
+import { getBeadSymbol, getContrastingSymbolColor } from './beadStyle'
 
 interface BeadCanvasProps {
   document: JBeadDocument
@@ -73,13 +74,16 @@ export function BeadCanvas({
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
         const colorIndex = document.model.rows[y][x]
+        const color = document.colors[colorIndex] ?? [0, 0, 0, 255]
         const beadX = GRID_OFFSET_X + x * cellSize
         const beadY = y * cellSize
         const beadWidth = Math.max(1, cellSize - 1)
         const beadHeight = Math.max(1, cellSize - 1)
 
-        context.fillStyle = toCss(document.colors[colorIndex] ?? [0, 0, 0, 255])
-        context.fillRect(beadX + 1, beadY + 1, beadWidth, beadHeight)
+        if (document.view.drawColors) {
+          context.fillStyle = toCss(color)
+          context.fillRect(beadX + 1, beadY + 1, beadWidth, beadHeight)
+        }
       }
     }
 
@@ -98,6 +102,26 @@ export function BeadCanvas({
       context.moveTo(GRID_OFFSET_X, position)
       context.lineTo(GRID_OFFSET_X + width * cellSize + 0.5, position)
       context.stroke()
+    }
+
+    if (document.view.drawSymbols) {
+      context.textAlign = 'center'
+      context.textBaseline = 'middle'
+      context.font = `${Math.max(7, Math.floor(cellSize * 0.8))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const colorIndex = document.model.rows[y][x]
+          const color = document.colors[colorIndex] ?? [0, 0, 0, 255]
+          context.fillStyle = document.view.drawColors
+            ? getContrastingSymbolColor(color)
+            : 'rgba(0, 0, 0, 0.95)'
+          context.fillText(
+            getBeadSymbol(colorIndex),
+            GRID_OFFSET_X + x * cellSize + cellSize / 2 + 0.5,
+            y * cellSize + cellSize / 2 + 0.5,
+          )
+        }
+      }
     }
 
     context.strokeStyle = 'rgba(66, 63, 57, 0.9)'

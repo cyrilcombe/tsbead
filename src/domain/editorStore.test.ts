@@ -348,6 +348,33 @@ describe('editor store', () => {
     expect(useEditorStore.getState().document.view.scroll).toBe(0)
   })
 
+  it('toggles draw options in view state', () => {
+    useEditorStore.getState().setDrawColors(false)
+    useEditorStore.getState().setDrawSymbols(true)
+
+    const state = useEditorStore.getState()
+    expect(state.document.view.drawColors).toBe(false)
+    expect(state.document.view.drawSymbols).toBe(true)
+  })
+
+  it('zooms in, out and normal with bounds', () => {
+    useEditorStore.getState().zoomIn()
+    expect(useEditorStore.getState().document.view.zoom).toBe(3)
+
+    useEditorStore.getState().zoomNormal()
+    expect(useEditorStore.getState().document.view.zoom).toBe(3)
+
+    for (let index = 0; index < 20; index += 1) {
+      useEditorStore.getState().zoomIn()
+    }
+    expect(useEditorStore.getState().document.view.zoom).toBe(7)
+
+    for (let index = 0; index < 20; index += 1) {
+      useEditorStore.getState().zoomOut()
+    }
+    expect(useEditorStore.getState().document.view.zoom).toBe(0)
+  })
+
   it('shifts preview phase left and right with wrap-around', () => {
     const document = createEmptyDocument(4, 2)
     useEditorStore.getState().setDocument(document)

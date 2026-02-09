@@ -80,6 +80,11 @@ function App() {
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
   const setViewVisibility = useEditorStore((state) => state.setViewVisibility)
   const setViewScroll = useEditorStore((state) => state.setViewScroll)
+  const setDrawColors = useEditorStore((state) => state.setDrawColors)
+  const setDrawSymbols = useEditorStore((state) => state.setDrawSymbols)
+  const zoomIn = useEditorStore((state) => state.zoomIn)
+  const zoomNormal = useEditorStore((state) => state.zoomNormal)
+  const zoomOut = useEditorStore((state) => state.zoomOut)
   const shiftLeft = useEditorStore((state) => state.shiftLeft)
   const shiftRight = useEditorStore((state) => state.shiftRight)
   const setPatternWidth = useEditorStore((state) => state.setPatternWidth)
@@ -141,6 +146,11 @@ function App() {
   const isCorrectedVisible = document.view.correctedVisible
   const isSimulationVisible = document.view.simulationVisible
   const isReportVisible = document.view.reportVisible
+  const drawColors = document.view.drawColors
+  const drawSymbols = document.view.drawSymbols
+  const zoomIndex = document.view.zoom
+  const canZoomIn = zoomIndex < 7
+  const canZoomOut = zoomIndex > 0
   const hasCanvasPaneVisible = isDraftVisible || isCorrectedVisible || isSimulationVisible
   const hasAnyPaneVisible = hasCanvasPaneVisible || isReportVisible
   const canRotate =
@@ -619,6 +629,34 @@ function App() {
                 </button>
               )
             })}
+          </div>
+        </div>
+        <div className="view-row">
+          <span className="view-row-label">Display</span>
+          <div className="button-strip">
+            <button className="action" onClick={() => zoomOut()} disabled={!canZoomOut}>
+              Zoom -
+            </button>
+            <button className="action" onClick={() => zoomNormal()} disabled={zoomIndex === 3}>
+              Zoom 100%
+            </button>
+            <button className="action" onClick={() => zoomIn()} disabled={!canZoomIn}>
+              Zoom +
+            </button>
+            <button
+              className={`action view-toggle ${drawColors ? 'active' : ''}`}
+              aria-pressed={drawColors}
+              onClick={() => setDrawColors(!drawColors)}
+            >
+              Draw colors
+            </button>
+            <button
+              className={`action view-toggle ${drawSymbols ? 'active' : ''}`}
+              aria-pressed={drawSymbols}
+              onClick={() => setDrawSymbols(!drawSymbols)}
+            >
+              Draw symbols
+            </button>
           </div>
         </div>
       </section>

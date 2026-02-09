@@ -18,6 +18,8 @@ export interface JBeadView {
   correctedVisible: boolean
   simulationVisible: boolean
   reportVisible: boolean
+  drawColors: boolean
+  drawSymbols: boolean
   selectedTool: ToolId
   selectedColor: number
   zoom: number
