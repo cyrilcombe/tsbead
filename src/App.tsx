@@ -1,4 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Copy,
+  Eraser,
+  LayoutGrid,
+  Minus,
+  MoveHorizontal,
+  MoveVertical,
+  PaintBucket,
+  Palette,
+  Pencil,
+  Pipette,
+  Plus,
+  Redo2,
+  RotateCw,
+  Scan,
+  Slash,
+  SquareDashed,
+  Type,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
 import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
@@ -16,7 +40,7 @@ import {
 } from './storage/db'
 import { BeadCanvas } from './ui/canvas/BeadCanvas'
 import { BeadPreviewCanvas } from './ui/canvas/BeadPreviewCanvas'
-import type { CellPoint, JBeadDocument, SelectionRect, ToolId, ViewPaneId } from './domain/types'
+import type { CellPoint, JBeadDocument, SelectionRect, ViewPaneId } from './domain/types'
 import './index.css'
 
 const LOCAL_PROJECT_ID = 'local-default'
@@ -34,12 +58,6 @@ const DEFAULT_APP_SETTINGS: AppSettings = {
   printPageSize: 'a4',
   printOrientation: 'portrait',
 }
-const TOOLS: Array<{ id: ToolId; label: string }> = [
-  { id: 'pencil', label: 'Pencil' },
-  { id: 'line', label: 'Line' },
-  { id: 'fill', label: 'Fill' },
-  { id: 'select', label: 'Select' },
-]
 const VIEW_PANES: Array<{ id: ViewPaneId; label: string }> = [
   { id: 'draft', label: 'Draft' },
   { id: 'corrected', label: 'Corrected' },
@@ -171,6 +189,21 @@ function formatLegacyChunkLabel(totalRows: number, rowStart: number, rowEndExclu
   return `${low}-${high}`
 }
 
+function metadataInlineLabel(author: string, organization: string): string {
+  const trimmedAuthor = author.trim()
+  const trimmedOrganization = organization.trim()
+  if (trimmedAuthor.length > 0 && trimmedOrganization.length > 0) {
+    return `${trimmedAuthor} (${trimmedOrganization})`
+  }
+  if (trimmedAuthor.length > 0) {
+    return trimmedAuthor
+  }
+  if (trimmedOrganization.length > 0) {
+    return `(${trimmedOrganization})`
+  }
+  return 'Metadata...'
+}
+
 function App() {
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
@@ -213,6 +246,9 @@ function App() {
   const setDocument = useEditorStore((state) => state.setDocument)
   const paletteColorPickerRef = useRef<HTMLInputElement | null>(null)
   const openFileInputRef = useRef<HTMLInputElement | null>(null)
+  const viewsMenuRef = useRef<HTMLDivElement | null>(null)
+  const colorMenuRef = useRef<HTMLDivElement | null>(null)
+  const backgroundMenuRef = useRef<HTMLDivElement | null>(null)
   const dragStartRef = useRef<CellPoint | null>(null)
   const isSpaceToolActiveRef = useRef(false)
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
@@ -238,9 +274,16 @@ function App() {
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
   const [isPageSetupDialogOpen, setIsPageSetupDialogOpen] = useState(false)
+  const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false)
+  const [isViewsMenuOpen, setIsViewsMenuOpen] = useState(false)
+  const [isColorMenuOpen, setIsColorMenuOpen] = useState(false)
+  const [isBackgroundMenuOpen, setIsBackgroundMenuOpen] = useState(false)
   const [preferencesAuthorInput, setPreferencesAuthorInput] = useState('')
   const [preferencesOrganizationInput, setPreferencesOrganizationInput] = useState('')
   const [preferencesSymbolsInput, setPreferencesSymbolsInput] = useState(DEFAULT_BEAD_SYMBOLS)
+  const [metadataAuthorInput, setMetadataAuthorInput] = useState('')
+  const [metadataOrganizationInput, setMetadataOrganizationInput] = useState('')
+  const [metadataNotesInput, setMetadataNotesInput] = useState('')
   const [pageSetupSizeInput, setPageSetupSizeInput] = useState<AppSettings['printPageSize']>('a4')
   const [pageSetupOrientationInput, setPageSetupOrientationInput] = useState<AppSettings['printOrientation']>('portrait')
 
@@ -313,6 +356,32 @@ function App() {
     }
   }, [refreshRecentFiles])
 
+  useEffect(() => {
+    if (!isViewsMenuOpen && !isColorMenuOpen && !isBackgroundMenuOpen) {
+      return
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Node)) {
+        return
+      }
+      if (
+        viewsMenuRef.current?.contains(target) ||
+        colorMenuRef.current?.contains(target) ||
+        backgroundMenuRef.current?.contains(target)
+      ) {
+        return
+      }
+      setIsViewsMenuOpen(false)
+      setIsColorMenuOpen(false)
+      setIsBackgroundMenuOpen(false)
+    }
+    window.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [isBackgroundMenuOpen, isColorMenuOpen, isViewsMenuOpen])
+
   const width = document.model.rows[0]?.length ?? 0
   const height = document.model.rows.length
   const cellSize = getCellSize(document.view.zoom)
@@ -330,6 +399,12 @@ function App() {
   const canZoomOut = zoomIndex > 0
   const hasCanvasPaneVisible = isDraftVisible || isCorrectedVisible || isSimulationVisible
   const hasAnyPaneVisible = hasCanvasPaneVisible || isReportVisible
+  const selectedColorValue = document.colors[selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255]
+  const backgroundColorValue = document.colors[0] ?? [0, 0, 0, 255]
+  const metadataLabel = useMemo(
+    () => metadataInlineLabel(document.author, document.organization),
+    [document.author, document.organization],
+  )
   const canRotate =
     selection !== null &&
     Math.abs(selection.end.x - selection.start.x) === Math.abs(selection.end.y - selection.start.y)
@@ -703,6 +778,13 @@ function App() {
     setIsPreferencesDialogOpen(true)
   }, [appSettings])
 
+  const onOpenMetadataDialog = useCallback(() => {
+    setMetadataAuthorInput(document.author)
+    setMetadataOrganizationInput(document.organization)
+    setMetadataNotesInput(document.notes)
+    setIsMetadataDialogOpen(true)
+  }, [document.author, document.notes, document.organization])
+
   const onOpenPageSetupDialog = useCallback(() => {
     setPageSetupSizeInput(appSettings.printPageSize)
     setPageSetupOrientationInput(appSettings.printOrientation)
@@ -762,6 +844,15 @@ function App() {
       window.alert(`Could not save page setup: ${getErrorMessage(error)}`)
     }
   }, [appSettings, pageSetupOrientationInput, pageSetupSizeInput])
+
+  const onApplyMetadata = useCallback(() => {
+    setMetadata({
+      author: metadataAuthorInput,
+      organization: metadataOrganizationInput,
+      notes: metadataNotesInput,
+    })
+    setIsMetadataDialogOpen(false)
+  }, [metadataAuthorInput, metadataNotesInput, metadataOrganizationInput, setMetadata])
 
   const onOpenRecentDialog = useCallback(() => {
     void refreshRecentFiles()
@@ -947,9 +1038,18 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if ((isViewsMenuOpen || isColorMenuOpen || isBackgroundMenuOpen) && event.key === 'Escape') {
+        setIsViewsMenuOpen(false)
+        setIsColorMenuOpen(false)
+        setIsBackgroundMenuOpen(false)
+        event.preventDefault()
+        return
+      }
+
       if (
         isPreferencesDialogOpen ||
         isPageSetupDialogOpen ||
+        isMetadataDialogOpen ||
         isRecentDialogOpen ||
         isArrangeDialogOpen ||
         isPatternSizeDialogOpen
@@ -957,6 +1057,7 @@ function App() {
         if (event.key === 'Escape') {
           setIsPreferencesDialogOpen(false)
           setIsPageSetupDialogOpen(false)
+          setIsMetadataDialogOpen(false)
           setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
           setIsPatternSizeDialogOpen(false)
@@ -1104,9 +1205,13 @@ function App() {
   }, [
     clearSelection,
     isArrangeDialogOpen,
+    isBackgroundMenuOpen,
+    isColorMenuOpen,
+    isMetadataDialogOpen,
     isPageSetupDialogOpen,
     isPreferencesDialogOpen,
     isRecentDialogOpen,
+    isViewsMenuOpen,
     isPatternSizeDialogOpen,
     onDeleteSelection,
     onNewDocument,
@@ -1181,6 +1286,9 @@ function App() {
           <p className="file-status">
             File: <strong>{openFileName}</strong>
             {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
+            <button className="metadata-inline-action" onClick={onOpenMetadataDialog} title="Edit metadata">
+              {metadataLabel}
+            </button>
           </p>
         </div>
         <div className="header-actions">
@@ -1221,131 +1329,275 @@ function App() {
       </header>
 
       <section className="panel tools-panel">
-        <div className="tool-row">
-          <div className="button-strip">
-            {TOOLS.map((tool) => {
-              const selected = selectedTool === tool.id
-              return (
+        <div className="toolbar-layout">
+          <div className="toolbar-side toolbar-edit">
+            <div className="button-strip toolbar-group">
+              <button
+                className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`}
+                onClick={() => setSelectedTool('pencil')}
+                title="Pencil (Ctrl/Cmd+1)"
+                aria-label="Pencil"
+              >
+                <Pencil className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`}
+                onClick={() => setSelectedTool('line')}
+                title="Line (Ctrl/Cmd+2)"
+                aria-label="Line"
+              >
+                <Slash className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`}
+                onClick={() => setSelectedTool('fill')}
+                title="Fill (Ctrl/Cmd+3)"
+                aria-label="Fill"
+              >
+                <PaintBucket className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
+                onClick={() => setSelectedTool('pipette')}
+                title="Pipette (Ctrl/Cmd+6)"
+                aria-label="Pipette"
+              >
+                <Pipette className="tool-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            <span className="toolbar-separator" aria-hidden="true" />
+
+            <div className="button-strip toolbar-group">
+              <div className="palette-menu-wrap" ref={backgroundMenuRef}>
                 <button
-                  key={tool.id}
-                  className={`action tool-action ${selected ? 'active' : ''}`}
-                  onClick={() => setSelectedTool(tool.id)}
+                  className={`action color-toggle ${isBackgroundMenuOpen ? 'view-toggle active' : ''}`}
+                  onClick={() => {
+                    setIsBackgroundMenuOpen((value) => !value)
+                    setIsColorMenuOpen(false)
+                    setIsViewsMenuOpen(false)
+                  }}
+                  title="Background color"
+                  aria-label="Background color"
                 >
-                  {tool.label}
+                  <span className="color-toggle-label">BG</span>
+                  <span className="color-toggle-chip" style={{ backgroundColor: colorToCss(backgroundColorValue) }} />
                 </button>
-              )
-            })}
-            <button className="action" onClick={onDeleteSelection} disabled={selection === null}>
-              Delete selection
-            </button>
-            <button
-              className={`action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
-              onClick={() => setSelectedTool('pipette')}
-            >
-              Pipette
-            </button>
-          </div>
-          <div className="button-strip">
-            <button className="action" onClick={() => undo()} disabled={!canUndo}>
-              Undo
-            </button>
-            <button className="action" onClick={() => redo()} disabled={!canRedo}>
-              Redo
-            </button>
-            <button className="action" onClick={() => shiftLeft()} title="ArrowLeft">
-              Shift left
-            </button>
-            <button className="action" onClick={() => shiftRight()} title="ArrowRight">
-              Shift right
-            </button>
-            <button className="action" onClick={() => insertRow()}>
-              Insert row
-            </button>
-            <button className="action" onClick={() => deleteRow()}>
-              Delete row
-            </button>
-            <button className="action" onClick={onOpenPatternSizeDialog}>
-              Pattern size...
-            </button>
-            <button className="action" onClick={onOpenArrangeDialog} disabled={selection === null}>
-              Arrange...
-            </button>
-            <button className="action" onClick={() => mirrorHorizontal()}>
-              Mirror H
-            </button>
-            <button className="action" onClick={() => mirrorVertical()}>
-              Mirror V
-            </button>
-            <button className="action" onClick={() => rotateClockwise()} disabled={!canRotate}>
-              Rotate 90
-            </button>
-          </div>
-        </div>
-        <div className="view-row">
-          <span className="view-row-label">Views</span>
-          <div className="button-strip">
-            {VIEW_PANES.map((pane) => {
-              const visible = paneVisibilityById[pane.id]
-              return (
+                {isBackgroundMenuOpen ? (
+                  <div className="palette-menu">
+                    <div className="palette-menu-grid">
+                      {document.colors.map((color, index) => (
+                        <button
+                          key={`background-color-${color.join('-')}-${index}`}
+                          className={`swatch palette-menu-swatch ${index === 0 ? 'selected' : ''}`}
+                          style={{ backgroundColor: colorToCss(color) }}
+                          onClick={() => {
+                            setColorAsBackground(index)
+                            setIsBackgroundMenuOpen(false)
+                          }}
+                          onDoubleClick={() => onEditPaletteColor(index)}
+                          title={`Set background to color ${index}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="palette-menu-wrap" ref={colorMenuRef}>
                 <button
-                  key={pane.id}
-                  className={`action view-toggle ${visible ? 'active' : ''}`}
-                  aria-pressed={visible}
-                  onClick={() => setViewVisibility(pane.id, !visible)}
+                  className={`action color-toggle ${isColorMenuOpen ? 'view-toggle active' : ''}`}
+                  onClick={() => {
+                    setIsColorMenuOpen((value) => !value)
+                    setIsBackgroundMenuOpen(false)
+                    setIsViewsMenuOpen(false)
+                  }}
+                  title="Drawing color"
+                  aria-label="Drawing color"
                 >
-                  {pane.label}
+                  <span className="color-toggle-label">Color</span>
+                  <span className="color-toggle-chip" style={{ backgroundColor: colorToCss(selectedColorValue) }} />
                 </button>
-              )
-            })}
+                {isColorMenuOpen ? (
+                  <div className="palette-menu">
+                    <div className="palette-menu-grid">
+                      {document.colors.map((color, index) => (
+                        <button
+                          key={`selected-color-${color.join('-')}-${index}`}
+                          className={`swatch palette-menu-swatch ${selectedColor === index ? 'selected' : ''}`}
+                          style={{ backgroundColor: colorToCss(color) }}
+                          onClick={() => {
+                            setSelectedColor(index)
+                            setIsColorMenuOpen(false)
+                          }}
+                          onDoubleClick={() => onEditPaletteColor(index)}
+                          title={`Color ${index}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <span className="toolbar-separator" aria-hidden="true" />
+
+            <div className="button-strip toolbar-group">
+              <button
+                className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`}
+                onClick={() => setSelectedTool('select')}
+                title="Select (Ctrl/Cmd+4)"
+                aria-label="Select"
+              >
+                <SquareDashed className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className="action icon-action"
+                onClick={onDeleteSelection}
+                disabled={selection === null}
+                title="Delete selection (Ctrl/Cmd+5)"
+                aria-label="Delete selection"
+              >
+                <Eraser className="tool-icon" aria-hidden="true" />
+              </button>
+              <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={selection === null} title="Arrange... (F8)" aria-label="Arrange">
+                <Copy className="tool-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            <span className="toolbar-separator" aria-hidden="true" />
+
+            <div className="button-strip toolbar-group">
+              <button className="action icon-action" onClick={() => insertRow()} title="Insert row" aria-label="Insert row">
+                <Plus className="tool-icon" aria-hidden="true" />
+              </button>
+              <button className="action icon-action" onClick={() => deleteRow()} title="Delete row" aria-label="Delete row">
+                <Minus className="tool-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            <span className="toolbar-separator" aria-hidden="true" />
+
+            <div className="button-strip toolbar-group">
+              <button className="action icon-action" onClick={() => mirrorHorizontal()} title="Mirror horizontal" aria-label="Mirror horizontal">
+                <MoveHorizontal className="tool-icon" aria-hidden="true" />
+              </button>
+              <button className="action icon-action" onClick={() => mirrorVertical()} title="Mirror vertical" aria-label="Mirror vertical">
+                <MoveVertical className="tool-icon" aria-hidden="true" />
+              </button>
+              <button className="action icon-action" onClick={() => rotateClockwise()} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
+                <RotateCw className="tool-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            <span className="toolbar-separator" aria-hidden="true" />
+
+            <div className="button-strip toolbar-group">
+              <button className="action icon-action" onClick={() => undo()} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">
+                <Undo2 className="tool-icon" aria-hidden="true" />
+              </button>
+              <button className="action icon-action" onClick={() => redo()} disabled={!canRedo} title="Redo (Ctrl/Cmd+Y)" aria-label="Redo">
+                <Redo2 className="tool-icon" aria-hidden="true" />
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="view-row">
-          <span className="view-row-label">Display</span>
-          <div className="button-strip">
-            <button
-              className="action"
-              onClick={() => {
-                setIsZoomFitMode(false)
-                zoomOut()
-              }}
-              disabled={!canZoomOut}
-            >
-              Zoom -
-            </button>
-            <button
-              className={`action ${isZoomFitMode ? 'view-toggle active' : ''}`}
-              onClick={() => {
-                setIsZoomFitMode(true)
-                applyZoomFit()
-              }}
-              disabled={!hasCanvasPaneVisible}
-            >
-              Zoom 100%
-            </button>
-            <button
-              className="action"
-              onClick={() => {
-                setIsZoomFitMode(false)
-                zoomIn()
-              }}
-              disabled={!canZoomIn}
-            >
-              Zoom +
-            </button>
-            <button
-              className={`action view-toggle ${drawColors ? 'active' : ''}`}
-              aria-pressed={drawColors}
-              onClick={() => setDrawColors(!drawColors)}
-            >
-              Draw colors
-            </button>
-            <button
-              className={`action view-toggle ${drawSymbols ? 'active' : ''}`}
-              aria-pressed={drawSymbols}
-              onClick={() => setDrawSymbols(!drawSymbols)}
-            >
-              Draw symbols
-            </button>
+
+          <div className="toolbar-side toolbar-view">
+            <div className="button-strip toolbar-group">
+              <div className="views-menu-wrap" ref={viewsMenuRef}>
+                <button
+                  className={`action ${isViewsMenuOpen ? 'view-toggle active' : ''}`}
+                  aria-expanded={isViewsMenuOpen}
+                  onClick={() => {
+                    setIsViewsMenuOpen((value) => !value)
+                    setIsColorMenuOpen(false)
+                    setIsBackgroundMenuOpen(false)
+                  }}
+                >
+                  Views
+                </button>
+                {isViewsMenuOpen ? (
+                  <div className="views-menu">
+                    {VIEW_PANES.map((pane) => {
+                      const visible = paneVisibilityById[pane.id]
+                      return (
+                        <label key={pane.id} className="views-menu-item">
+                          <input
+                            type="checkbox"
+                            checked={visible}
+                            onChange={() => setViewVisibility(pane.id, !visible)}
+                          />
+                          <span>{pane.label}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                ) : null}
+              </div>
+              <button className="action icon-action" onClick={onOpenPatternSizeDialog} title="Pattern size..." aria-label="Pattern size">
+                <LayoutGrid className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className="action icon-action"
+                onClick={() => {
+                  setIsZoomFitMode(false)
+                  zoomOut()
+                }}
+                disabled={!canZoomOut}
+                title="Zoom out (Ctrl/Cmd+U)"
+                aria-label="Zoom out"
+              >
+                <ZoomOut className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className={`action icon-action ${isZoomFitMode ? 'view-toggle active' : ''}`}
+                onClick={() => {
+                  setIsZoomFitMode(true)
+                  applyZoomFit()
+                }}
+                disabled={!hasCanvasPaneVisible}
+                title="Zoom 100%"
+                aria-label="Zoom 100%"
+              >
+                <Scan className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className="action icon-action"
+                onClick={() => {
+                  setIsZoomFitMode(false)
+                  zoomIn()
+                }}
+                disabled={!canZoomIn}
+                title="Zoom in (Ctrl/Cmd+I)"
+                aria-label="Zoom in"
+              >
+                <ZoomIn className="tool-icon" aria-hidden="true" />
+              </button>
+              <button className="action icon-action" onClick={() => shiftLeft()} title="Shift left (ArrowLeft)" aria-label="Shift left">
+                <ArrowLeft className="tool-icon" aria-hidden="true" />
+              </button>
+              <button className="action icon-action" onClick={() => shiftRight()} title="Shift right (ArrowRight)" aria-label="Shift right">
+                <ArrowRight className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className={`action icon-action view-toggle ${drawColors ? 'active' : ''}`}
+                aria-pressed={drawColors}
+                onClick={() => setDrawColors(!drawColors)}
+                title="Draw colors"
+                aria-label="Draw colors"
+              >
+                <Palette className="tool-icon" aria-hidden="true" />
+              </button>
+              <button
+                className={`action icon-action view-toggle ${drawSymbols ? 'active' : ''}`}
+                aria-pressed={drawSymbols}
+                onClick={() => setDrawSymbols(!drawSymbols)}
+                title="Draw symbols"
+                aria-label="Draw symbols"
+              >
+                <Type className="tool-icon" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1499,82 +1751,16 @@ function App() {
             </section>
           ) : null}
         </section>
-
-        <aside className="panel sidebar">
-          <div className="panel-title">
-            <h2>Palette</h2>
-            <span>{document.colors.length} colors</span>
-          </div>
-          <div className="palette-actions">
-            <button
-              className="action"
-              onClick={() => onEditPaletteColor(selectedColor)}
-              disabled={selectedColor < 0 || selectedColor >= document.colors.length}
-            >
-              Edit color...
-            </button>
-            <button className="action" onClick={() => setColorAsBackground(selectedColor)} disabled={selectedColor === 0}>
-              As background
-            </button>
-          </div>
-          <div className="palette-grid">
-            {document.colors.map((color, index) => {
-              const selected = document.view.selectedColor === index
-              return (
-                <button
-                  key={`${color.join('-')}-${index}`}
-                  className={`swatch ${selected ? 'selected' : ''}`}
-                  style={{ backgroundColor: colorToCss(color) }}
-                  onClick={() => setSelectedColor(index)}
-                  onDoubleClick={() => onEditPaletteColor(index)}
-                  title={`Color ${index}`}
-                />
-              )
-            })}
-          </div>
-          <input
-            ref={paletteColorPickerRef}
-            className="palette-color-picker"
-            type="color"
-            value={colorToHex(
-              document.colors[editingPaletteColorIndex ?? selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255],
-            )}
-            onChange={(event) => onPaletteColorPicked(event.currentTarget.value)}
-            onBlur={() => setEditingPaletteColorIndex(null)}
-          />
-          <section className="metadata-section">
-            <div className="panel-title">
-              <h2>Metadata</h2>
-            </div>
-            <label className="metadata-field">
-              Author
-              <input
-                className="metadata-input"
-                type="text"
-                value={document.author}
-                onChange={(event) => setMetadata({ author: event.currentTarget.value })}
-              />
-            </label>
-            <label className="metadata-field">
-              Organization
-              <input
-                className="metadata-input"
-                type="text"
-                value={document.organization}
-                onChange={(event) => setMetadata({ organization: event.currentTarget.value })}
-              />
-            </label>
-            <label className="metadata-field">
-              Notes
-              <textarea
-                className="metadata-input metadata-notes"
-                value={document.notes}
-                onChange={(event) => setMetadata({ notes: event.currentTarget.value })}
-              />
-            </label>
-          </section>
-        </aside>
       </main>
+
+      <input
+        ref={paletteColorPickerRef}
+        className="palette-color-picker"
+        type="color"
+        value={colorToHex(document.colors[editingPaletteColorIndex ?? selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255])}
+        onChange={(event) => onPaletteColorPicked(event.currentTarget.value)}
+        onBlur={() => setEditingPaletteColorIndex(null)}
+      />
 
       <section className={`print-workspace ${isReportVisible ? 'has-report' : 'no-report'}`} aria-hidden="true">
         {isReportVisible ? (
@@ -1685,6 +1871,52 @@ function App() {
             })
           : null}
       </section>
+
+      {isMetadataDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Metadata">
+            <div className="panel-title">
+              <h2>Metadata</h2>
+            </div>
+            <div className="arrange-form">
+              <label className="arrange-field">
+                Author
+                <input
+                  className="arrange-input"
+                  type="text"
+                  value={metadataAuthorInput}
+                  onChange={(event) => setMetadataAuthorInput(event.currentTarget.value)}
+                />
+              </label>
+              <label className="arrange-field">
+                Organization
+                <input
+                  className="arrange-input"
+                  type="text"
+                  value={metadataOrganizationInput}
+                  onChange={(event) => setMetadataOrganizationInput(event.currentTarget.value)}
+                />
+              </label>
+              <label className="arrange-field">
+                Notes
+                <textarea
+                  className="arrange-input metadata-notes-input"
+                  value={metadataNotesInput}
+                  onChange={(event) => setMetadataNotesInput(event.currentTarget.value)}
+                />
+              </label>
+            </div>
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsMetadataDialogOpen(false)}>
+                Cancel
+              </button>
+              <button className="action tool-action active" onClick={onApplyMetadata}>
+                Apply
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {isPageSetupDialogOpen ? (
         <div className="dialog-backdrop">
