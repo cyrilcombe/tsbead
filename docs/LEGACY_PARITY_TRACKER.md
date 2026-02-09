@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-021)
+Last updated: 2026-02-09 (S-022)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -47,7 +47,7 @@ Status legend:
 | F-030 | Palette | Double-click/popup color edit | `ColorPalette.chooseColor()` | `DONE` |
 | F-031 | Palette | Set clicked color as background (swap with color 0) | `ColorPalette.asBackground()` | `DONE` |
 | F-032 | Input | Numeric shortcuts 0-9 for color selection | `JBeadFrame.formKeyUp()` | `DONE` |
-| F-033 | Input | Keyboard shortcuts and accelerators from actions | action classes `putValue(ACCELERATOR_KEY, ...)` | `PARTIAL` (file/edit/tool/zoom/arrange accelerators implemented; some legacy actions still pending) |
+| F-033 | Input | Keyboard shortcuts and accelerators from actions | action classes `putValue(ACCELERATOR_KEY, ...)` | `DONE` |
 | F-034 | Input | Space/Escape/arrow interactions for tools/shift | `JBeadFrame.formKeyDown/formKeyUp()` | `DONE` |
 | F-035 | File IO | Open `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
 | F-036 | File IO | Save/export `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
