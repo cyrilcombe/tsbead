@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-020)
+Last updated: 2026-02-09 (S-021)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -58,7 +58,7 @@ Status legend:
 | F-041 | Report | Pattern info block (circumference/repeat/rows/beads) | `ReportInfos.java` | `DONE` |
 | F-042 | Report | Color usage counts | `BeadCounts.java` | `DONE` |
 | F-043 | Report | Bead run list (sequence counts) | `BeadList.java`, `BeadRun.java` | `DONE` |
-| F-044 | Print | Print visible sections (draft/corrected/simulation/report) | `print/DesignPrinter.java` | `PARTIAL` (browser print stylesheet + Print action for visible panes) |
+| F-044 | Print | Print visible sections (draft/corrected/simulation/report) | `print/DesignPrinter.java` | `DONE` |
 | F-045 | Print | Page setup persistence (paper/orientation) | `FilePageSetupAction`, `PrintSettings` | `DONE` |
 | F-046 | Info | Technical info dialog | `InfoTechInfosAction`, `dialog/TechInfosDialog` | `N/A` |
 | F-047 | Info | Update check | `InfoUpdateCheckAction` | `N/A` |
