@@ -717,8 +717,8 @@ h1 {
   }
 
   .app-header {
-    display: block;
-    margin: 0 0 0.5rem;
+    display: none !important;
+    margin: 0;
   }
 
   .header-actions,
@@ -742,8 +742,8 @@ h1 {
     background: #fff;
     padding: 0.45rem;
     margin-bottom: 0.55rem;
-    break-inside: auto;
-    page-break-inside: auto;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
   }
 
   .canvas-panel,
@@ -752,11 +752,6 @@ h1 {
     height: auto !important;
     overflow: visible !important;
     min-height: 0;
-    break-before: page;
-    page-break-before: always;
-  }
-
-  .print-workspace.no-report > .print-panel:first-child {
     break-before: auto;
     page-break-before: auto;
   }
@@ -764,8 +759,8 @@ h1 {
   .print-report-panel {
     break-before: auto;
     page-break-before: auto;
-    break-after: page;
-    page-break-after: always;
+    break-after: auto;
+    page-break-after: auto;
   }
 
   .panel-title {
