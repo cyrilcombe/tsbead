@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-010)
+Last updated: 2026-02-09 (S-011)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -52,7 +52,7 @@ Status legend:
 | F-035 | File IO | Open `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
 | F-036 | File IO | Save/export `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
 | F-037 | File IO | Open/save `.dbb` legacy format | `DbbFileFormat`, `DbbMemento` | `TODO` |
-| F-038 | File IO | New/Open/Save/Save As flows | `FileNewAction`, `FileOpenAction`, `FileSaveAction`, `FileSaveAsAction` | `PARTIAL` |
+| F-038 | File IO | New/Open/Save/Save As flows | `FileNewAction`, `FileOpenAction`, `FileSaveAction`, `FileSaveAsAction` | `DONE` |
 | F-039 | File IO | MRU recent files list | `FileMRUAction`, `JBeadFrame.addToMRU()` | `TODO` |
 | F-040 | Metadata | Author / organization / notes persisted in file | `Model.saveTo/loadFrom`, `Memento` | `DONE` |
 | F-041 | Report | Pattern info block (circumference/repeat/rows/beads) | `ReportInfos.java` | `DONE` |
@@ -94,7 +94,7 @@ Status legend:
 - [x] T-019 Add metadata editors (author, organization, notes)
 
 ### Phase 5 - File/compat/print
-- [ ] T-020 Add file flows: New/Open/Save/Save As equivalents
+- [x] T-020 Add file flows: New/Open/Save/Save As equivalents
 - [ ] T-021 Add MRU list (local storage based)
 - [ ] T-022 Decide `.dbb` support strategy and implement or explicitly drop
 - [ ] T-023 Add print/export strategy for web (PDF or print stylesheet)

@@ -58,6 +58,10 @@ body {
   margin-bottom: 0;
 }
 
+.header-copy {
+  min-width: min(100%, 460px);
+}
+
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -77,10 +81,25 @@ h1 {
   color: var(--muted);
 }
 
+.file-status {
+  margin: 0.28rem 0 0;
+  font-size: 0.82rem;
+  color: #4f5a5e;
+}
+
+.file-status-dirty {
+  color: #8a2a18;
+  font-weight: 600;
+}
+
 .header-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
+}
+
+.hidden-file-input {
+  display: none;
 }
 
 .action {

@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
 import { parseJbb, serializeJbb } from './io/jbb/format'
 import { loadProject, saveProject } from './storage/db'
 import { BeadCanvas } from './ui/canvas/BeadCanvas'
 import { BeadPreviewCanvas } from './ui/canvas/BeadPreviewCanvas'
-import type { CellPoint, SelectionRect, ToolId, ViewPaneId } from './domain/types'
+import type { CellPoint, JBeadDocument, SelectionRect, ToolId, ViewPaneId } from './domain/types'
 import './index.css'
 
 const LOCAL_PROJECT_ID = 'local-default'
+const LOCAL_PROJECT_NAME = 'Local Draft'
+const DEFAULT_FILE_NAME = 'design.jbb'
+const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
 const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'pencil', label: 'Pencil' },
   { id: 'line', label: 'Line' },
@@ -26,6 +29,30 @@ const MAX_PATTERN_WIDTH = 500
 const MIN_PATTERN_HEIGHT = 5
 const MAX_PATTERN_HEIGHT = 10000
 const ZOOM_TABLE = [6, 8, 10, 12, 14, 16, 18, 20]
+
+interface FileSystemWritableStreamLike {
+  write: (data: string | Blob) => Promise<void>
+  close: () => Promise<void>
+}
+
+interface FileSystemFileHandleLike {
+  name: string
+  getFile: () => Promise<File>
+  createWritable: () => Promise<FileSystemWritableStreamLike>
+}
+
+interface WindowWithFilePicker extends Window {
+  showOpenFilePicker?: (options?: {
+    multiple?: boolean
+    types?: Array<{ description?: string; accept: Record<string, string[]> }>
+    excludeAcceptAllOption?: boolean
+  }) => Promise<FileSystemFileHandleLike[]>
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string
+    types?: Array<{ description?: string; accept: Record<string, string[]> }>
+    excludeAcceptAllOption?: boolean
+  }) => Promise<FileSystemFileHandleLike>
+}
 
 function colorToCss(color: [number, number, number, number?]): string {
   const [red, green, blue, alpha = 255] = color
@@ -86,6 +113,26 @@ function shortcutFromKeyboardCode(code: string): number | null {
   return null
 }
 
+function ensureJbbFileName(fileName: string): string {
+  const trimmed = fileName.trim()
+  if (trimmed.length === 0) {
+    return DEFAULT_FILE_NAME
+  }
+  return trimmed.toLowerCase().endsWith('.jbb') ? trimmed : `${trimmed}.jbb`
+}
+
+function createJbbBlob(document: JBeadDocument): Blob {
+  const content = serializeJbb(document)
+  return new Blob([content], { type: 'text/plain;charset=utf-8' })
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  return 'Unexpected error'
+}
+
 function App() {
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
@@ -117,13 +164,16 @@ function App() {
   const arrangeSelection = useEditorStore((state) => state.arrangeSelection)
   const undo = useEditorStore((state) => state.undo)
   const redo = useEditorStore((state) => state.redo)
+  const dirty = useEditorStore((state) => state.dirty)
   const canUndo = useEditorStore((state) => state.canUndo)
   const canRedo = useEditorStore((state) => state.canRedo)
   const mirrorHorizontal = useEditorStore((state) => state.mirrorHorizontal)
   const mirrorVertical = useEditorStore((state) => state.mirrorVertical)
   const rotateClockwise = useEditorStore((state) => state.rotateClockwise)
+  const markSaved = useEditorStore((state) => state.markSaved)
   const setDocument = useEditorStore((state) => state.setDocument)
   const paletteColorPickerRef = useRef<HTMLInputElement | null>(null)
+  const openFileInputRef = useRef<HTMLInputElement | null>(null)
   const dragStartRef = useRef<CellPoint | null>(null)
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
   const correctedScrollRef = useRef<HTMLDivElement | null>(null)
@@ -142,6 +192,8 @@ function App() {
   const [patternHeightInput, setPatternHeightInput] = useState('120')
   const [isZoomFitMode, setIsZoomFitMode] = useState(false)
   const [editingPaletteColorIndex, setEditingPaletteColorIndex] = useState<number | null>(null)
+  const [openFileName, setOpenFileName] = useState(DEFAULT_FILE_NAME)
+  const [openFileHandle, setOpenFileHandle] = useState<FileSystemFileHandleLike | null>(null)
 
   useEffect(() => {
     void loadProject(LOCAL_PROJECT_ID).then((project) => {
@@ -154,7 +206,7 @@ function App() {
   useEffect(() => {
     void saveProject({
       id: LOCAL_PROJECT_ID,
-      name: 'Local Draft',
+      name: LOCAL_PROJECT_NAME,
       updatedAt: Date.now(),
       document,
     })
@@ -195,7 +247,7 @@ function App() {
     return null
   }, [dragPreview, selectedTool])
 
-  const reportSummary = useMemo(() => buildReportSummary(document, 'Local Draft'), [document])
+  const reportSummary = useMemo(() => buildReportSummary(document, openFileName), [document, openFileName])
   const visibleColorCounts = useMemo(
     () => reportSummary.colorCounts.filter((item) => item.count > 0),
     [reportSummary.colorCounts],
@@ -266,11 +318,11 @@ function App() {
   const onDraftPointerDown = (point: CellPoint) => onPointerDown(point, true)
   const onPreviewPointerDown = (point: CellPoint) => onPointerDown(point, false)
 
-  const onDeleteSelection = () => {
+  const onDeleteSelection = useCallback(() => {
     dragStartRef.current = null
     setDragPreview(null)
     deleteSelection()
-  }
+  }, [deleteSelection])
 
   const parseArrangeValue = (rawValue: string, fallback: number): number => {
     const parsed = Number(rawValue)
@@ -369,6 +421,141 @@ function App() {
     setPaletteColor(editingPaletteColorIndex, [rgb[0], rgb[1], rgb[2], 255])
   }
 
+  const onDownloadFile = useCallback(
+    (fileName: string) => {
+      const blob = createJbbBlob(document)
+      const url = URL.createObjectURL(blob)
+      const link = window.document.createElement('a')
+      link.href = url
+      link.download = ensureJbbFileName(fileName)
+      link.click()
+      URL.revokeObjectURL(url)
+    },
+    [document],
+  )
+
+  const onLoadFile = useCallback(
+    async (file: File, handle: FileSystemFileHandleLike | null) => {
+      try {
+        const content = await file.text()
+        const importedDocument = parseJbb(content)
+        setDocument(importedDocument)
+        setOpenFileHandle(handle)
+        setOpenFileName(ensureJbbFileName(file.name))
+      } catch (error) {
+        window.alert(`Could not open file: ${getErrorMessage(error)}`)
+      }
+    },
+    [setDocument],
+  )
+
+  const onDiscardUnsavedChanges = useCallback((): boolean => {
+    if (!dirty) {
+      return true
+    }
+    return window.confirm('There are unsaved changes. Continue and discard them?')
+  }, [dirty])
+
+  const onNewDocument = useCallback((): boolean => {
+    if (!onDiscardUnsavedChanges()) {
+      return false
+    }
+    reset()
+    setOpenFileHandle(null)
+    setOpenFileName(DEFAULT_FILE_NAME)
+    return true
+  }, [onDiscardUnsavedChanges, reset])
+
+  const onOpenDocument = useCallback(async (): Promise<void> => {
+    if (!onDiscardUnsavedChanges()) {
+      return
+    }
+
+    const pickerWindow = window as WindowWithFilePicker
+    if (pickerWindow.showOpenFilePicker) {
+      try {
+        const handles = await pickerWindow.showOpenFilePicker({
+          multiple: false,
+          types: [{ description: 'JBead files', accept: JBB_FILE_PICKER_ACCEPT }],
+          excludeAcceptAllOption: false,
+        })
+        const handle = handles[0]
+        if (!handle) {
+          return
+        }
+        const file = await handle.getFile()
+        await onLoadFile(file, handle)
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return
+        }
+        window.alert(`Could not open file: ${getErrorMessage(error)}`)
+      }
+      return
+    }
+
+    openFileInputRef.current?.click()
+  }, [onDiscardUnsavedChanges, onLoadFile])
+
+  const onSaveAsDocument = useCallback(async (): Promise<boolean> => {
+    const targetFileName = ensureJbbFileName(openFileName)
+    const pickerWindow = window as WindowWithFilePicker
+    if (pickerWindow.showSaveFilePicker) {
+      try {
+        const handle = await pickerWindow.showSaveFilePicker({
+          suggestedName: targetFileName,
+          types: [{ description: 'JBead files', accept: JBB_FILE_PICKER_ACCEPT }],
+          excludeAcceptAllOption: false,
+        })
+        const writable = await handle.createWritable()
+        await writable.write(createJbbBlob(document))
+        await writable.close()
+        setOpenFileHandle(handle)
+        setOpenFileName(ensureJbbFileName(handle.name))
+        markSaved()
+        return true
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return false
+        }
+        window.alert(`Could not save file: ${getErrorMessage(error)}`)
+        return false
+      }
+    }
+
+    onDownloadFile(targetFileName)
+    setOpenFileHandle(null)
+    setOpenFileName(targetFileName)
+    markSaved()
+    return true
+  }, [document, markSaved, onDownloadFile, openFileName])
+
+  const onSaveDocument = useCallback(async (): Promise<boolean> => {
+    if (!openFileHandle) {
+      return onSaveAsDocument()
+    }
+
+    try {
+      const writable = await openFileHandle.createWritable()
+      await writable.write(createJbbBlob(document))
+      await writable.close()
+      markSaved()
+      return true
+    } catch (error) {
+      window.alert(`Could not save file: ${getErrorMessage(error)}`)
+      return false
+    }
+  }, [document, markSaved, onSaveAsDocument, openFileHandle])
+
+  const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!file) {
+      return
+    }
+    void onLoadFile(file, null)
+  }
+
   const paneVisibilityById: Record<ViewPaneId, boolean> = {
     draft: isDraftVisible,
     corrected: isCorrectedVisible,
@@ -376,19 +563,22 @@ function App() {
     report: isReportVisible,
   }
 
-  const getPaneMaxScrollTop = (pane: HTMLDivElement | null): number => {
+  const getPaneMaxScrollTop = useCallback((pane: HTMLDivElement | null): number => {
     if (!pane) {
       return 0
     }
     return Math.max(0, pane.scrollHeight - pane.clientHeight)
-  }
+  }, [])
 
-  const getPaneMaxScrollRow = (pane: HTMLDivElement | null): number => {
-    const maxScrollTop = getPaneMaxScrollTop(pane)
-    return Math.max(0, Math.ceil(maxScrollTop / cellSize))
-  }
+  const getPaneMaxScrollRow = useCallback(
+    (pane: HTMLDivElement | null): number => {
+      const maxScrollTop = getPaneMaxScrollTop(pane)
+      return Math.max(0, Math.ceil(maxScrollTop / cellSize))
+    },
+    [cellSize, getPaneMaxScrollTop],
+  )
 
-  const getSharedMaxRow = (): number => {
+  const getSharedMaxRow = useCallback((): number => {
     const referencePane =
       (isDraftVisible ? draftScrollRef.current : null) ??
       (isCorrectedVisible ? correctedScrollRef.current : null) ??
@@ -397,7 +587,7 @@ function App() {
       return Math.max(0, height - 1)
     }
     return getPaneMaxScrollRow(referencePane)
-  }
+  }, [getPaneMaxScrollRow, height, isCorrectedVisible, isDraftVisible, isSimulationVisible])
 
   const onPaneScroll = (source: HTMLDivElement) => {
     if (syncingScrollRef.current) {
@@ -503,6 +693,20 @@ function App() {
   ])
 
   useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!dirty) {
+        return
+      }
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
+  }, [dirty])
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isArrangeDialogOpen || isPatternWidthDialogOpen || isPatternHeightDialogOpen) {
         if (event.key === 'Escape') {
@@ -533,24 +737,37 @@ function App() {
         } else if (lowerKey === 'y') {
           redo()
           handled = true
+        } else if (lowerKey === 'n' && !event.shiftKey) {
+          onNewDocument()
+          handled = true
+        } else if (lowerKey === 'o' && !event.shiftKey) {
+          void onOpenDocument()
+          handled = true
+        } else if (lowerKey === 's') {
+          if (event.shiftKey) {
+            void onSaveAsDocument()
+          } else {
+            void onSaveDocument()
+          }
+          handled = true
         } else {
           const shortcut = shortcutFromKeyboardCode(event.code)
-          if (shortcut === 1) {
-          setSelectedTool('pencil')
-          handled = true
-          } else if (shortcut === 2) {
+          if (shortcut === 1 && !event.shiftKey) {
+            setSelectedTool('pencil')
+            handled = true
+          } else if (shortcut === 2 && !event.shiftKey) {
             setSelectedTool('line')
             handled = true
-          } else if (shortcut === 3) {
+          } else if (shortcut === 3 && !event.shiftKey) {
             setSelectedTool('fill')
             handled = true
-          } else if (shortcut === 4) {
+          } else if (shortcut === 4 && !event.shiftKey) {
             setSelectedTool('select')
             handled = true
-          } else if (shortcut === 5) {
+          } else if (shortcut === 5 && !event.shiftKey) {
             onDeleteSelection()
             handled = true
-          } else if (shortcut === 6) {
+          } else if (shortcut === 6 && !event.shiftKey) {
             setSelectedTool('pipette')
             handled = true
           }
@@ -586,6 +803,10 @@ function App() {
     isPatternHeightDialogOpen,
     isPatternWidthDialogOpen,
     onDeleteSelection,
+    onNewDocument,
+    onOpenDocument,
+    onSaveAsDocument,
+    onSaveDocument,
     redo,
     setSelectedColor,
     setSelectedTool,
@@ -596,12 +817,16 @@ function App() {
 
   useEffect(() => {
     const nextSharedMaxRow = getSharedMaxRow()
-    setSharedMaxScrollRow((current) => (current === nextSharedMaxRow ? current : nextSharedMaxRow))
+    const frame = requestAnimationFrame(() => {
+      setSharedMaxScrollRow((current) => (current === nextSharedMaxRow ? current : nextSharedMaxRow))
+    })
 
     const targetScrollRow = Math.max(0, Math.min(nextSharedMaxRow, sharedScrollRow))
     if (targetScrollRow !== sharedScrollRow) {
       setViewScroll(targetScrollRow)
-      return
+      return () => {
+        cancelAnimationFrame(frame)
+      }
     }
 
     syncingScrollRef.current = true
@@ -618,9 +843,15 @@ function App() {
     requestAnimationFrame(() => {
       syncingScrollRef.current = false
     })
+    return () => {
+      cancelAnimationFrame(frame)
+    }
   }, [
     cellSize,
     document.model.rows,
+    getPaneMaxScrollRow,
+    getPaneMaxScrollTop,
+    getSharedMaxRow,
     isCorrectedVisible,
     isDraftVisible,
     isSimulationVisible,
@@ -632,47 +863,37 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div>
+        <div className="header-copy">
           <p className="eyebrow">JBead Modernization</p>
           <h1>jbead-web</h1>
           <p className="subtitle">Offline-first editor with .jbb compatibility.</p>
+          <p className="file-status">
+            File: <strong>{openFileName}</strong>
+            {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
+          </p>
         </div>
         <div className="header-actions">
-          <button className="action" onClick={() => reset()}>
-            New canvas
+          <button className="action" onClick={onNewDocument}>
+            New
+          </button>
+          <button className="action" onClick={() => void onOpenDocument()}>
+            Open...
+          </button>
+          <button className="action" onClick={() => void onSaveDocument()}>
+            Save
+          </button>
+          <button className="action" onClick={() => void onSaveAsDocument()}>
+            Save As...
           </button>
           <button
             className="action"
             onClick={() => {
-              const content = serializeJbb(document)
-              const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-              const url = URL.createObjectURL(blob)
-              const link = window.document.createElement('a')
-              link.href = url
-              link.download = 'design.jbb'
-              link.click()
-              URL.revokeObjectURL(url)
+              onDownloadFile(openFileName)
             }}
           >
             Export .jbb
           </button>
-          <label className="action file-input-label">
-            Import .jbb
-            <input
-              type="file"
-              accept=".jbb,text/plain"
-              onChange={(event) => {
-                const file = event.target.files?.[0]
-                if (!file) {
-                  return
-                }
-                void file.text().then((content) => {
-                  const importedDocument = parseJbb(content)
-                  setDocument(importedDocument)
-                })
-              }}
-            />
-          </label>
+          <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
         </div>
       </header>
 

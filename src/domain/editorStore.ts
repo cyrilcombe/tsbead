@@ -41,6 +41,7 @@ interface EditorState {
   mirrorHorizontal: () => void
   mirrorVertical: () => void
   rotateClockwise: () => void
+  markSaved: () => void
   setDocument: (document: JBeadDocument) => void
   reset: () => void
 }
@@ -873,6 +874,14 @@ export const useEditorStore = create<EditorState>((set) => ({
       }
       pushUndoSnapshot(state)
       return { document, dirty: true, ...applyHistoryFlags() }
+    })
+  },
+  markSaved: () => {
+    set((state) => {
+      if (!state.dirty) {
+        return state
+      }
+      return { dirty: false }
     })
   },
   setDocument: (document) => {

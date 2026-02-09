@@ -461,6 +461,22 @@ describe('editor store', () => {
     expect(state.canRedo).toBe(false)
   })
 
+  it('marks current state as saved without clearing history', () => {
+    useEditorStore.getState().setCell(1, 1, 6)
+    expect(useEditorStore.getState().dirty).toBe(true)
+    expect(useEditorStore.getState().canUndo).toBe(true)
+
+    useEditorStore.getState().markSaved()
+    let state = useEditorStore.getState()
+    expect(state.dirty).toBe(false)
+    expect(state.canUndo).toBe(true)
+
+    useEditorStore.getState().undo()
+    state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(0)
+    expect(state.dirty).toBe(false)
+  })
+
   it('clears redo stack when a new edit happens after undo', () => {
     useEditorStore.getState().setCell(0, 0, 1)
     useEditorStore.getState().setCell(1, 0, 2)
