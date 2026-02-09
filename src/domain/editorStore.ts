@@ -10,6 +10,7 @@ interface EditorState {
   canUndo: boolean
   canRedo: boolean
   setCell: (x: number, y: number, value: number) => void
+  toggleCell: (x: number, y: number, value: number) => void
   pickColorAt: (point: CellPoint) => void
   drawLine: (start: CellPoint, end: CellPoint, value: number) => void
   fillLine: (point: CellPoint, value: number) => void
@@ -205,6 +206,28 @@ export const useEditorStore = create<EditorState>((set) => ({
       pushUndoSnapshot(state)
       const document = cloneDocument(state.document)
       document.model.rows[y][x] = value
+      return { document, dirty: true, ...applyHistoryFlags() }
+    })
+  },
+  toggleCell: (x, y, value) => {
+    set((state) => {
+      const rows = state.document.model.rows
+      if (y < 0 || y >= rows.length) {
+        return state
+      }
+      const row = rows[y]
+      if (x < 0 || x >= row.length) {
+        return state
+      }
+
+      const nextValue = row[x] === value ? 0 : value
+      if (row[x] === nextValue) {
+        return state
+      }
+
+      pushUndoSnapshot(state)
+      const document = cloneDocument(state.document)
+      document.model.rows[y][x] = nextValue
       return { document, dirty: true, ...applyHistoryFlags() }
     })
   },

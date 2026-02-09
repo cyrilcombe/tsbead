@@ -15,6 +15,26 @@ describe('editor store', () => {
     expect(state.dirty).toBe(true)
   })
 
+  it('toggles a bead value like legacy pencil click', () => {
+    useEditorStore.getState().toggleCell(1, 1, 4)
+    let state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(4)
+    expect(state.dirty).toBe(true)
+
+    useEditorStore.getState().toggleCell(1, 1, 4)
+    state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(0)
+    expect(state.canUndo).toBe(true)
+
+    useEditorStore.getState().undo()
+    state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(4)
+
+    useEditorStore.getState().redo()
+    state = useEditorStore.getState()
+    expect(state.document.model.rows[1][1]).toBe(0)
+  })
+
   it('updates selected color within bounds', () => {
     useEditorStore.getState().setSelectedColor(3)
     expect(useEditorStore.getState().document.view.selectedColor).toBe(3)

@@ -174,7 +174,7 @@ function formatLegacyChunkLabel(totalRows: number, rowStart: number, rowEndExclu
 function App() {
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
-  const setCell = useEditorStore((state) => state.setCell)
+  const toggleCell = useEditorStore((state) => state.toggleCell)
   const pickColorAt = useEditorStore((state) => state.pickColorAt)
   const drawLine = useEditorStore((state) => state.drawLine)
   const fillLine = useEditorStore((state) => state.fillLine)
@@ -343,7 +343,7 @@ function App() {
   }, [dragPreview, selectedTool, selection])
 
   const linePreview = useMemo(() => {
-    if (selectedTool === 'line') {
+    if (selectedTool === 'line' || selectedTool === 'pencil') {
       return dragPreview
     }
     return null
@@ -376,15 +376,13 @@ function App() {
     }
 
     dragStartRef.current = point
-    if (selectedTool === 'line' || selectedTool === 'select') {
+    if (selectedTool === 'line' || selectedTool === 'select' || selectedTool === 'pencil') {
       setDragPreview({ start: point, end: point })
     } else {
       setDragPreview(null)
     }
 
-    if (selectedTool === 'pencil') {
-      setCell(point.x, point.y, selectedColor)
-    } else if (selectedTool === 'fill') {
+    if (selectedTool === 'fill') {
       fillLine(point, selectedColor)
     } else if (selectedTool === 'pipette') {
       pickColorAt(point)
@@ -397,12 +395,7 @@ function App() {
       return
     }
 
-    if (selectedTool === 'pencil') {
-      setCell(point.x, point.y, selectedColor)
-      return
-    }
-
-    if (selectedTool === 'line' || selectedTool === 'select') {
+    if (selectedTool === 'line' || selectedTool === 'select' || selectedTool === 'pencil') {
       setDragPreview({ start, end: point })
     }
   }
@@ -418,6 +411,12 @@ function App() {
 
     if (selectedTool === 'line') {
       drawLine(start, point, selectedColor)
+    } else if (selectedTool === 'pencil') {
+      if (start.x === point.x && start.y === point.y) {
+        toggleCell(start.x, start.y, selectedColor)
+      } else {
+        drawLine(start, point, selectedColor)
+      }
     } else if (selectedTool === 'select') {
       setSelection({ start, end: point })
     }
