@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { CellPoint, JBeadDocument, RgbaColor } from '../../domain/types'
 import { getBeadSymbol, getContrastingSymbolColor } from './beadStyle'
 
@@ -209,6 +209,7 @@ export function BeadPreviewCanvas({
   onPointerUp,
   onPointerCancel,
 }: BeadPreviewCanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const isPointerDownRef = useRef(false)
   const lastPointRef = useRef<CellPoint | null>(null)
   const cellSize = getCellSize(document.view.zoom)
@@ -227,6 +228,47 @@ export function BeadPreviewCanvas({
   const handlePointerMove = onPointerMove ?? (() => undefined)
   const handlePointerUp = onPointerUp ?? (() => undefined)
   const handlePointerCancel = onPointerCancel ?? (() => undefined)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) {
+      return
+    }
+    const context = canvas.getContext('2d')
+    if (!context) {
+      return
+    }
+
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.fillStyle = '#f4f1ea'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    if (document.view.drawSymbols) {
+      context.textAlign = 'center'
+      context.textBaseline = 'middle'
+      context.font = `${Math.max(7, Math.floor(cellSize * 0.75))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
+    }
+
+    for (const cell of layout.cells) {
+      const { px, py, pw, ph } = getCellPixelRect(cell, layout, cellSize)
+      const fillWidth = Math.max(1, pw - 1)
+      const fillHeight = Math.max(1, ph - 1)
+      const color = document.colors[cell.colorIndex] ?? [0, 0, 0, 255]
+      if (document.view.drawColors) {
+        context.fillStyle = toCss(color)
+        context.fillRect(px + 1, py + 1, fillWidth, fillHeight)
+      }
+      context.strokeStyle = 'rgba(30, 35, 40, 0.7)'
+      context.lineWidth = 1
+      context.strokeRect(px + 0.5, py + 0.5, Math.max(0, pw), Math.max(0, ph))
+
+      if (document.view.drawSymbols) {
+        context.fillStyle = document.view.drawColors
+          ? getContrastingSymbolColor(color)
+          : 'rgba(0, 0, 0, 0.95)'
+        context.fillText(getBeadSymbol(cell.colorIndex), px + pw / 2 + 0.5, py + ph / 2 + 0.5)
+      }
+    }
+  }, [cellSize, document.colors, document.view.drawColors, document.view.drawSymbols, layout])
 
   const getPoint = (event: React.PointerEvent<HTMLCanvasElement>): CellPoint | null => {
     if (!isInteractive) {
@@ -249,6 +291,7 @@ export function BeadPreviewCanvas({
 
   return (
     <canvas
+      ref={canvasRef}
       className="bead-preview-canvas"
       width={canvasWidth}
       height={canvasHeight}
@@ -299,45 +342,6 @@ export function BeadPreviewCanvas({
           event.currentTarget.releasePointerCapture(event.pointerId)
         }
         handlePointerCancel()
-      }}
-      ref={(canvas) => {
-        if (!canvas) {
-          return
-        }
-        const context = canvas.getContext('2d')
-        if (!context) {
-          return
-        }
-
-        context.clearRect(0, 0, canvas.width, canvas.height)
-        context.fillStyle = '#f4f1ea'
-        context.fillRect(0, 0, canvas.width, canvas.height)
-        if (document.view.drawSymbols) {
-          context.textAlign = 'center'
-          context.textBaseline = 'middle'
-          context.font = `${Math.max(7, Math.floor(cellSize * 0.75))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
-        }
-
-        for (const cell of layout.cells) {
-          const { px, py, pw, ph } = getCellPixelRect(cell, layout, cellSize)
-          const fillWidth = Math.max(1, pw - 1)
-          const fillHeight = Math.max(1, ph - 1)
-          const color = document.colors[cell.colorIndex] ?? [0, 0, 0, 255]
-          if (document.view.drawColors) {
-            context.fillStyle = toCss(color)
-            context.fillRect(px + 1, py + 1, fillWidth, fillHeight)
-          }
-          context.strokeStyle = 'rgba(30, 35, 40, 0.7)'
-          context.lineWidth = 1
-          context.strokeRect(px + 0.5, py + 0.5, Math.max(0, pw), Math.max(0, ph))
-
-          if (document.view.drawSymbols) {
-            context.fillStyle = document.view.drawColors
-              ? getContrastingSymbolColor(color)
-              : 'rgba(0, 0, 0, 0.95)'
-            context.fillText(getBeadSymbol(cell.colorIndex), px + pw / 2 + 0.5, py + ph / 2 + 0.5)
-          }
-        }
       }}
       role="img"
       aria-label={variant === 'corrected' ? 'Corrected preview' : 'Simulation preview'}

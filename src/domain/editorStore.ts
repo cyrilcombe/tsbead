@@ -47,6 +47,7 @@ interface EditorState {
 
 interface HistorySnapshot {
   rows: number[][]
+  colors: JBeadDocument['colors']
   dirty: boolean
 }
 
@@ -156,6 +157,7 @@ export const useEditorStore = create<EditorState>((set) => ({
 
     const toSnapshot = (state: EditorState): HistorySnapshot => ({
       rows: cloneRows(state.document.model.rows),
+      colors: state.document.colors.map((color) => [...color] as typeof color),
       dirty: state.dirty,
     })
 
@@ -334,7 +336,8 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const document = cloneDocument(state.document)
       document.colors[index] = normalized
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   setColorAsBackground: (index) => {
@@ -351,7 +354,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       }
       document.colors[0] = [...selected]
       document.colors[index] = [...background]
-      return { document, dirty: true }
+      pushUndoSnapshot(state)
+      return { document, dirty: true, ...applyHistoryFlags() }
     })
   },
   setSelectedColor: (colorIndex) => {
@@ -748,6 +752,7 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const document = cloneDocument(state.document)
       document.model.rows = cloneRows(previous.rows)
+      document.colors = previous.colors.map((color) => [...color] as typeof color)
       return { document, dirty: previous.dirty, ...applyHistoryFlags() }
     })
   },
@@ -769,6 +774,7 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const document = cloneDocument(state.document)
       document.model.rows = cloneRows(next.rows)
+      document.colors = next.colors.map((color) => [...color] as typeof color)
       return { document, dirty: next.dirty, ...applyHistoryFlags() }
     })
   },
