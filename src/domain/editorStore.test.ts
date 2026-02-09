@@ -293,36 +293,36 @@ describe('editor store', () => {
     const state = useEditorStore.getState()
 
     expect(state.document.model.rows).toEqual([
-      [1, 2, 1, 2, 1],
-      [2, 3, 0, 3, 0],
-      [3, 0, 0, 0, 0],
+      [3, 2, 1, 2, 1],
+      [0, 3, 0, 3, 0],
+      [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
     ])
     expect(state.selection).not.toBeNull()
     expect(state.dirty).toBe(true)
   })
 
-  it('arranges selection with vertical offset based on pattern width', () => {
+  it('arranges selection upward with positive vertical offset', () => {
     const document = createEmptyDocument(4, 4)
     document.model.rows = [
-      [0, 0, 0, 7],
       [0, 0, 0, 0],
+      [0, 7, 0, 0],
       [0, 0, 0, 0],
       [0, 0, 0, 0],
     ]
     useEditorStore.getState().setDocument(document)
     useEditorStore.getState().setSelection({
-      start: { x: 2, y: 0 },
-      end: { x: 3, y: 1 },
+      start: { x: 0, y: 1 },
+      end: { x: 1, y: 2 },
     })
 
-    useEditorStore.getState().arrangeSelection(1, 1, 1)
+    useEditorStore.getState().arrangeSelection(1, 0, 1)
     const rows = useEditorStore.getState().document.model.rows
 
     expect(rows).toEqual([
-      [0, 0, 0, 7],
+      [0, 7, 0, 0],
+      [0, 7, 0, 0],
       [0, 0, 0, 0],
-      [7, 0, 0, 0],
       [0, 0, 0, 0],
     ])
   })

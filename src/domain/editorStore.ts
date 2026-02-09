@@ -617,6 +617,8 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const buffer = rows.map((row) => [...row])
       const lastIndex = width * height - 1
+      const toLegacyY = (topDownY: number) => height - 1 - topDownY
+      const toTopDownY = (legacyY: number) => height - 1 - legacyY
       let changed = false
 
       for (let y = top; y <= bottom; y += 1) {
@@ -626,14 +628,14 @@ export const useEditorStore = create<EditorState>((set) => ({
             continue
           }
 
-          let index = y * width + x
+          let index = x + width * toLegacyY(y)
           for (let copyIndex = 0; copyIndex < normalizedCopies; copyIndex += 1) {
             index += offset
             if (index < 0 || index > lastIndex) {
               continue
             }
             const targetX = index % width
-            const targetY = Math.floor(index / width)
+            const targetY = toTopDownY(Math.floor(index / width))
             if (rows[targetY][targetX] !== color) {
               rows[targetY][targetX] = color
               changed = true

@@ -131,7 +131,8 @@ export function BeadCanvas({
     context.textBaseline = 'middle'
     context.font = `${Math.max(9, Math.floor(cellSize * 0.9))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
     for (let y = 0; y <= height; y += 1) {
-      if (y % 10 !== 0) {
+      const legacyRowIndex = height - y
+      if (legacyRowIndex % 10 !== 0) {
         continue
       }
       const markerY = y * cellSize + 0.5
@@ -139,9 +140,11 @@ export function BeadCanvas({
       context.moveTo(GRID_OFFSET_X - MARKER_GAP - MARKER_WIDTH, markerY)
       context.lineTo(GRID_OFFSET_X - MARKER_GAP, markerY)
       context.stroke()
-      if (y > 0) {
-        context.fillText(String(y), GRID_OFFSET_X - MARKER_GAP - MARKER_WIDTH / 2, markerY - cellSize / 2)
-      }
+      context.fillText(
+        String(legacyRowIndex),
+        GRID_OFFSET_X - MARKER_GAP - MARKER_WIDTH / 2,
+        markerY + cellSize / 2,
+      )
     }
 
     if (selectionOverlay) {
