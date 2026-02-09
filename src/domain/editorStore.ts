@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createEmptyDocument } from './defaults'
 import { getLinePoints, normalizeRect, snapLineEnd, type NormalizedRect } from './gridMath'
-import type { CellPoint, JBeadDocument, SelectionRect, ToolId, ViewPaneId } from './types'
+import type { CellPoint, JBeadDocument, RgbaColor, SelectionRect, ToolId, ViewPaneId } from './types'
 
 interface EditorState {
   document: JBeadDocument
@@ -14,6 +14,8 @@ interface EditorState {
   drawLine: (start: CellPoint, end: CellPoint, value: number) => void
   fillLine: (point: CellPoint, value: number) => void
   setMetadata: (metadata: Partial<Pick<JBeadDocument, 'author' | 'organization' | 'notes'>>) => void
+  setPaletteColor: (index: number, color: RgbaColor) => void
+  setColorAsBackground: (index: number) => void
   setSelectedColor: (colorIndex: number) => void
   setSelectedTool: (tool: ToolId) => void
   setViewVisibility: (pane: ViewPaneId, visible: boolean) => void
@@ -306,6 +308,49 @@ export const useEditorStore = create<EditorState>((set) => ({
       document.author = nextAuthor
       document.organization = nextOrganization
       document.notes = nextNotes
+      return { document, dirty: true }
+    })
+  },
+  setPaletteColor: (index, color) => {
+    set((state) => {
+      if (index < 0 || index >= state.document.colors.length) {
+        return state
+      }
+      const normalized: RgbaColor = [
+        clamp(Math.floor(color[0]), 0, 255),
+        clamp(Math.floor(color[1]), 0, 255),
+        clamp(Math.floor(color[2]), 0, 255),
+        clamp(Math.floor(color[3] ?? 255), 0, 255),
+      ]
+      const current = state.document.colors[index] ?? [0, 0, 0, 255]
+      if (
+        normalized[0] === current[0] &&
+        normalized[1] === current[1] &&
+        normalized[2] === current[2] &&
+        normalized[3] === (current[3] ?? 255)
+      ) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.colors[index] = normalized
+      return { document, dirty: true }
+    })
+  },
+  setColorAsBackground: (index) => {
+    set((state) => {
+      if (index <= 0 || index >= state.document.colors.length) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      const background = document.colors[0]
+      const selected = document.colors[index]
+      if (!background || !selected) {
+        return state
+      }
+      document.colors[0] = [...selected]
+      document.colors[index] = [...background]
       return { document, dirty: true }
     })
   },

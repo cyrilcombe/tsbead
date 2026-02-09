@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-009)
+Last updated: 2026-02-09 (S-010)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -43,9 +43,9 @@ Status legend:
 | F-026 | Pattern | Preferences (author, organization, symbols, update-check setting) | `PatternPreferencesAction`, `PreferencesDialog` | `TODO` |
 | F-027 | Model | Shift left/right (pattern phase shift) | `JBeadFrame.rotateLeft/Right`, `Model.shiftLeft/Right()` | `DONE` |
 | F-028 | Model | Repeat detection (`beads per repeat`, rows per repeat) | `Model.updateRepeat()`, `Model.calcRepeat()` | `DONE` |
-| F-029 | Palette | 32-color palette with selected color indicator | `ui/ColorPalette.java` | `PARTIAL` (palette exists; not full legacy behavior) |
-| F-030 | Palette | Double-click/popup color edit | `ColorPalette.chooseColor()` | `TODO` |
-| F-031 | Palette | Set clicked color as background (swap with color 0) | `ColorPalette.asBackground()` | `TODO` |
+| F-029 | Palette | 32-color palette with selected color indicator | `ui/ColorPalette.java` | `DONE` |
+| F-030 | Palette | Double-click/popup color edit | `ColorPalette.chooseColor()` | `DONE` |
+| F-031 | Palette | Set clicked color as background (swap with color 0) | `ColorPalette.asBackground()` | `DONE` |
 | F-032 | Input | Numeric shortcuts 0-9 for color selection | `JBeadFrame.formKeyUp()` | `DONE` |
 | F-033 | Input | Keyboard shortcuts and accelerators from actions | action classes `putValue(ACCELERATOR_KEY, ...)` | `PARTIAL` (tool accelerators Ctrl/Cmd+1..4 implemented) |
 | F-034 | Input | Space/Escape/arrow interactions for tools/shift | `JBeadFrame.formKeyDown/formKeyUp()` | `PARTIAL` (left/right shift implemented; space/escape still pending) |
@@ -88,7 +88,7 @@ Status legend:
 - [x] T-015 Add view options: zoom in/normal/out, draw colors/symbols toggles
 
 ### Phase 4 - Palette/report completeness
-- [ ] T-016 Add full 32-color palette behavior (edit color + set as background)
+- [x] T-016 Add full 32-color palette behavior (edit color + set as background)
 - [x] T-017 Build report infos panel (pattern, repeat, row/bead totals)
 - [x] T-018 Build color usage block and bead run list
 - [x] T-019 Add metadata editors (author, organization, notes)

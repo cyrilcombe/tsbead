@@ -195,7 +195,15 @@ export function parseJbb(content: string): JBeadDocument {
       .map(parseColor)
 
     if (colors.length > 0) {
-      doc.colors = colors
+      const mergedColors = [...doc.colors]
+      colors.forEach((color, index) => {
+        if (index < mergedColors.length) {
+          mergedColors[index] = color
+        } else {
+          mergedColors.push(color)
+        }
+      })
+      doc.colors = mergedColors
     }
   }
 

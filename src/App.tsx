@@ -32,6 +32,24 @@ function colorToCss(color: [number, number, number, number?]): string {
   return `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`
 }
 
+function colorToHex(color: [number, number, number, number?]): string {
+  const [red, green, blue] = color
+  const toHex = (value: number) => Math.max(0, Math.min(255, value)).toString(16).padStart(2, '0')
+  return `#${toHex(red)}${toHex(green)}${toHex(blue)}`
+}
+
+function hexToRgb(value: string): [number, number, number] | null {
+  const hex = value.startsWith('#') ? value.slice(1) : value
+  if (!/^[\da-fA-F]{6}$/.test(hex)) {
+    return null
+  }
+  return [
+    Number.parseInt(hex.slice(0, 2), 16),
+    Number.parseInt(hex.slice(2, 4), 16),
+    Number.parseInt(hex.slice(4, 6), 16),
+  ]
+}
+
 function getCellSize(zoomIndex: number): number {
   return ZOOM_TABLE[Math.max(0, Math.min(zoomIndex, ZOOM_TABLE.length - 1))]
 }
@@ -77,6 +95,8 @@ function App() {
   const fillLine = useEditorStore((state) => state.fillLine)
   const reset = useEditorStore((state) => state.reset)
   const setMetadata = useEditorStore((state) => state.setMetadata)
+  const setPaletteColor = useEditorStore((state) => state.setPaletteColor)
+  const setColorAsBackground = useEditorStore((state) => state.setColorAsBackground)
   const setSelectedColor = useEditorStore((state) => state.setSelectedColor)
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
   const setViewVisibility = useEditorStore((state) => state.setViewVisibility)
@@ -103,6 +123,7 @@ function App() {
   const mirrorVertical = useEditorStore((state) => state.mirrorVertical)
   const rotateClockwise = useEditorStore((state) => state.rotateClockwise)
   const setDocument = useEditorStore((state) => state.setDocument)
+  const paletteColorPickerRef = useRef<HTMLInputElement | null>(null)
   const dragStartRef = useRef<CellPoint | null>(null)
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
   const correctedScrollRef = useRef<HTMLDivElement | null>(null)
@@ -120,6 +141,7 @@ function App() {
   const [patternWidthInput, setPatternWidthInput] = useState('15')
   const [patternHeightInput, setPatternHeightInput] = useState('120')
   const [isZoomFitMode, setIsZoomFitMode] = useState(false)
+  const [editingPaletteColorIndex, setEditingPaletteColorIndex] = useState<number | null>(null)
 
   useEffect(() => {
     void loadProject(LOCAL_PROJECT_ID).then((project) => {
@@ -324,6 +346,27 @@ function App() {
     )
     setPatternHeight(nextHeight)
     setIsPatternHeightDialogOpen(false)
+  }
+
+  const onEditPaletteColor = (index: number) => {
+    if (index < 0 || index >= document.colors.length) {
+      return
+    }
+    setEditingPaletteColorIndex(index)
+    requestAnimationFrame(() => {
+      paletteColorPickerRef.current?.click()
+    })
+  }
+
+  const onPaletteColorPicked = (value: string) => {
+    if (editingPaletteColorIndex === null) {
+      return
+    }
+    const rgb = hexToRgb(value)
+    if (!rgb) {
+      return
+    }
+    setPaletteColor(editingPaletteColorIndex, [rgb[0], rgb[1], rgb[2], 255])
   }
 
   const paneVisibilityById: Record<ViewPaneId, boolean> = {
@@ -919,6 +962,18 @@ function App() {
             <h2>Palette</h2>
             <span>{document.colors.length} colors</span>
           </div>
+          <div className="palette-actions">
+            <button
+              className="action"
+              onClick={() => onEditPaletteColor(selectedColor)}
+              disabled={selectedColor < 0 || selectedColor >= document.colors.length}
+            >
+              Edit color...
+            </button>
+            <button className="action" onClick={() => setColorAsBackground(selectedColor)} disabled={selectedColor === 0}>
+              As background
+            </button>
+          </div>
           <div className="palette-grid">
             {document.colors.map((color, index) => {
               const selected = document.view.selectedColor === index
@@ -928,11 +983,22 @@ function App() {
                   className={`swatch ${selected ? 'selected' : ''}`}
                   style={{ backgroundColor: colorToCss(color) }}
                   onClick={() => setSelectedColor(index)}
+                  onDoubleClick={() => onEditPaletteColor(index)}
                   title={`Color ${index}`}
                 />
               )
             })}
           </div>
+          <input
+            ref={paletteColorPickerRef}
+            className="palette-color-picker"
+            type="color"
+            value={colorToHex(
+              document.colors[editingPaletteColorIndex ?? selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255],
+            )}
+            onChange={(event) => onPaletteColorPicked(event.currentTarget.value)}
+            onBlur={() => setEditingPaletteColorIndex(null)}
+          />
           <section className="metadata-section">
             <div className="panel-title">
               <h2>Metadata</h2>

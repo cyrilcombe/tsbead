@@ -419,13 +419,20 @@ h1 {
 
 .palette-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.34rem;
+}
+
+.palette-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.55rem;
 }
 
 .swatch {
   border: 2px solid transparent;
-  border-radius: 10px;
+  border-radius: 6px;
   aspect-ratio: 1;
   cursor: pointer;
 }
@@ -433,6 +440,14 @@ h1 {
 .swatch.selected {
   border-color: var(--accent);
   transform: translateY(-1px);
+}
+
+.palette-color-picker {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .metadata-section {

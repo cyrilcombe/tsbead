@@ -119,6 +119,26 @@ describe('jbb format', () => {
     expect(parsed.view.drawSymbols).toBe(true)
   })
 
+  it('fills missing palette entries with legacy defaults when jbb has fewer colors', () => {
+    const fixture = `
+      (jbb
+        (version 1)
+        (colors
+          (rgb 1 2 3 255)
+          (rgb 4 5 6 255)
+        )
+        (model
+          (row 0 1)
+        )
+      )
+    `
+
+    const parsed = parseJbb(fixture)
+    expect(parsed.colors.length).toBeGreaterThanOrEqual(32)
+    expect(parsed.colors[0]).toEqual([1, 2, 3, 255])
+    expect(parsed.colors[1]).toEqual([4, 5, 6, 255])
+  })
+
   it('serializes draw colors and draw symbols in jbb view settings', () => {
     const fixture = `
       (jbb

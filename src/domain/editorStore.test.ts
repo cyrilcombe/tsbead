@@ -37,6 +37,24 @@ describe('editor store', () => {
     expect(state.dirty).toBe(true)
   })
 
+  it('updates a palette color', () => {
+    useEditorStore.getState().setPaletteColor(2, [10, 20, 30, 255])
+    const color = useEditorStore.getState().document.colors[2]
+    expect(color).toEqual([10, 20, 30, 255])
+    expect(useEditorStore.getState().dirty).toBe(true)
+  })
+
+  it('swaps selected color with background color', () => {
+    const beforeBackground = [...useEditorStore.getState().document.colors[0]]
+    const beforeIndexThree = [...useEditorStore.getState().document.colors[3]]
+
+    useEditorStore.getState().setColorAsBackground(3)
+    const state = useEditorStore.getState()
+    expect(state.document.colors[0]).toEqual(beforeIndexThree)
+    expect(state.document.colors[3]).toEqual(beforeBackground)
+    expect(state.dirty).toBe(true)
+  })
+
   it('picks selected color from a bead cell', () => {
     const document = createEmptyDocument(3, 3)
     document.model.rows = [
