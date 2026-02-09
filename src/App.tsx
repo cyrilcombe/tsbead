@@ -24,7 +24,8 @@ const LOCAL_PROJECT_NAME = 'Local Draft'
 const DEFAULT_FILE_NAME = 'design.jbb'
 const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
 const RECENT_FILES_LIMIT = 8
-const PRINT_CHUNK_SIZE_PORTRAIT = 100
+const PRINT_CHUNK_SIZE_A4_PORTRAIT = 100
+const PRINT_CHUNK_SIZE_LETTER_PORTRAIT = 90
 const PRINT_CHUNK_SIZE_LANDSCAPE = 60
 const DEFAULT_APP_SETTINGS: AppSettings = {
   defaultAuthor: '',
@@ -355,13 +356,17 @@ function App() {
   )
   const printChunks = useMemo(() => {
     const printChunkSize =
-      appSettings.printOrientation === 'landscape' ? PRINT_CHUNK_SIZE_LANDSCAPE : PRINT_CHUNK_SIZE_PORTRAIT
+      appSettings.printOrientation === 'landscape'
+        ? PRINT_CHUNK_SIZE_LANDSCAPE
+        : appSettings.printPageSize === 'letter'
+          ? PRINT_CHUNK_SIZE_LETTER_PORTRAIT
+          : PRINT_CHUNK_SIZE_A4_PORTRAIT
     const chunks: Array<{ start: number; end: number }> = []
     for (let start = 0; start < height; start += printChunkSize) {
       chunks.push({ start, end: Math.min(height, start + printChunkSize) })
     }
     return chunks
-  }, [appSettings.printOrientation, height])
+  }, [appSettings.printOrientation, appSettings.printPageSize, height])
 
   const onPointerDown = (point: CellPoint, allowShapeTools: boolean) => {
     if ((selectedTool === 'line' || selectedTool === 'select') && !allowShapeTools) {
