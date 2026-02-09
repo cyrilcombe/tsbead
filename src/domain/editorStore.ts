@@ -17,6 +17,7 @@ interface EditorState {
   setSelectedTool: (tool: ToolId) => void
   setViewVisibility: (pane: ViewPaneId, visible: boolean) => void
   setViewScroll: (scroll: number) => void
+  setZoom: (zoom: number) => void
   setDrawColors: (drawColors: boolean) => void
   setDrawSymbols: (drawSymbols: boolean) => void
   zoomIn: () => void
@@ -337,6 +338,18 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const document = cloneDocument(state.document)
       document.view.scroll = normalized
+      return { document }
+    })
+  },
+  setZoom: (zoom) => {
+    set((state) => {
+      const normalized = clamp(Math.floor(zoom), MIN_ZOOM_INDEX, MAX_ZOOM_INDEX)
+      if (state.document.view.zoom === normalized) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.zoom = normalized
       return { document }
     })
   },

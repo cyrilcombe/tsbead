@@ -373,6 +373,12 @@ describe('editor store', () => {
       useEditorStore.getState().zoomOut()
     }
     expect(useEditorStore.getState().document.view.zoom).toBe(0)
+
+    useEditorStore.getState().setZoom(99)
+    expect(useEditorStore.getState().document.view.zoom).toBe(7)
+
+    useEditorStore.getState().setZoom(-3)
+    expect(useEditorStore.getState().document.view.zoom).toBe(0)
   })
 
   it('shifts preview phase left and right with wrap-around', () => {

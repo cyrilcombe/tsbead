@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
 import { parseJbb, serializeJbb } from './io/jbb/format'
@@ -25,6 +25,7 @@ const MIN_PATTERN_WIDTH = 5
 const MAX_PATTERN_WIDTH = 500
 const MIN_PATTERN_HEIGHT = 5
 const MAX_PATTERN_HEIGHT = 10000
+const ZOOM_TABLE = [6, 8, 10, 12, 14, 16, 18, 20]
 
 function colorToCss(color: [number, number, number, number?]): string {
   const [red, green, blue, alpha = 255] = color
@@ -32,8 +33,7 @@ function colorToCss(color: [number, number, number, number?]): string {
 }
 
 function getCellSize(zoomIndex: number): number {
-  const zoomTable = [6, 8, 10, 12, 14, 16, 18, 20]
-  return zoomTable[Math.max(0, Math.min(zoomIndex, zoomTable.length - 1))]
+  return ZOOM_TABLE[Math.max(0, Math.min(zoomIndex, ZOOM_TABLE.length - 1))]
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -80,10 +80,10 @@ function App() {
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
   const setViewVisibility = useEditorStore((state) => state.setViewVisibility)
   const setViewScroll = useEditorStore((state) => state.setViewScroll)
+  const setZoom = useEditorStore((state) => state.setZoom)
   const setDrawColors = useEditorStore((state) => state.setDrawColors)
   const setDrawSymbols = useEditorStore((state) => state.setDrawSymbols)
   const zoomIn = useEditorStore((state) => state.zoomIn)
-  const zoomNormal = useEditorStore((state) => state.zoomNormal)
   const zoomOut = useEditorStore((state) => state.zoomOut)
   const shiftLeft = useEditorStore((state) => state.shiftLeft)
   const shiftRight = useEditorStore((state) => state.shiftRight)
@@ -118,6 +118,7 @@ function App() {
   const [isPatternHeightDialogOpen, setIsPatternHeightDialogOpen] = useState(false)
   const [patternWidthInput, setPatternWidthInput] = useState('15')
   const [patternHeightInput, setPatternHeightInput] = useState('120')
+  const [isZoomFitMode, setIsZoomFitMode] = useState(false)
 
   useEffect(() => {
     void loadProject(LOCAL_PROJECT_ID).then((project) => {
@@ -365,6 +366,66 @@ function App() {
     setViewScroll(nextScrollRow)
   }
 
+  const getPaneCanvasViewportWidth = (pane: HTMLDivElement): number => {
+    const style = window.getComputedStyle(pane)
+    const paddingLeft = Number.parseFloat(style.paddingLeft) || 0
+    const paddingRight = Number.parseFloat(style.paddingRight) || 0
+    return Math.max(0, pane.clientWidth - paddingLeft - paddingRight)
+  }
+
+  const getFittedZoomIndex = useCallback((): number => {
+    const visiblePanes: HTMLDivElement[] = []
+    if (isDraftVisible && draftScrollRef.current) {
+      visiblePanes.push(draftScrollRef.current)
+    }
+    if (isCorrectedVisible && correctedScrollRef.current) {
+      visiblePanes.push(correctedScrollRef.current)
+    }
+    if (isSimulationVisible && simulationScrollRef.current) {
+      visiblePanes.push(simulationScrollRef.current)
+    }
+    if (visiblePanes.length === 0) {
+      return zoomIndex
+    }
+
+    const currentCellSize = getCellSize(zoomIndex)
+    const paneContentUnits = visiblePanes.map((pane) => {
+      const canvas = pane.querySelector('canvas')
+      if (!canvas) {
+        return null
+      }
+      const isDraftCanvas = canvas.classList.contains('bead-canvas')
+      const fixedPixels = isDraftCanvas ? 37 : 2
+      const dynamicWidth = Math.max(0, canvas.width - fixedPixels)
+      const units = dynamicWidth / currentCellSize
+      return {
+        pane,
+        fixedPixels,
+        units,
+      }
+    })
+
+    for (let candidate = ZOOM_TABLE.length - 1; candidate >= 0; candidate -= 1) {
+      const candidateCellSize = getCellSize(candidate)
+      const fits = paneContentUnits.every((item) => {
+        if (!item) {
+          return true
+        }
+        const requiredCanvasWidth = Math.ceil(item.units * candidateCellSize) + item.fixedPixels
+        return requiredCanvasWidth <= getPaneCanvasViewportWidth(item.pane) + 1
+      })
+      if (fits) {
+        return candidate
+      }
+    }
+
+    return 0
+  }, [isCorrectedVisible, isDraftVisible, isSimulationVisible, zoomIndex])
+
+  const applyZoomFit = useCallback(() => {
+    setZoom(getFittedZoomIndex())
+  }, [getFittedZoomIndex, setZoom])
+
   useEffect(() => {
     const onResize = () => {
       setViewportTick((value) => value + 1)
@@ -374,6 +435,28 @@ function App() {
       window.removeEventListener('resize', onResize)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isZoomFitMode) {
+      return
+    }
+    const frame = requestAnimationFrame(() => {
+      applyZoomFit()
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+    }
+  }, [
+    applyZoomFit,
+    document.model.rows,
+    document.view.shift,
+    isCorrectedVisible,
+    isDraftVisible,
+    isReportVisible,
+    isSimulationVisible,
+    isZoomFitMode,
+    viewportTick,
+  ])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -634,13 +717,34 @@ function App() {
         <div className="view-row">
           <span className="view-row-label">Display</span>
           <div className="button-strip">
-            <button className="action" onClick={() => zoomOut()} disabled={!canZoomOut}>
+            <button
+              className="action"
+              onClick={() => {
+                setIsZoomFitMode(false)
+                zoomOut()
+              }}
+              disabled={!canZoomOut}
+            >
               Zoom -
             </button>
-            <button className="action" onClick={() => zoomNormal()} disabled={zoomIndex === 3}>
+            <button
+              className={`action ${isZoomFitMode ? 'view-toggle active' : ''}`}
+              onClick={() => {
+                setIsZoomFitMode(true)
+                applyZoomFit()
+              }}
+              disabled={!hasCanvasPaneVisible}
+            >
               Zoom 100%
             </button>
-            <button className="action" onClick={() => zoomIn()} disabled={!canZoomIn}>
+            <button
+              className="action"
+              onClick={() => {
+                setIsZoomFitMode(false)
+                zoomIn()
+              }}
+              disabled={!canZoomIn}
+            >
               Zoom +
             </button>
             <button
