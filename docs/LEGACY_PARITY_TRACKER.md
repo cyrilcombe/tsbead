@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-016)
+Last updated: 2026-02-09 (S-017)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -15,7 +15,7 @@ Status legend:
 
 | ID | Area | Legacy Feature | Java Reference | Web Status |
 |---|---|---|---|---|
-| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (all 4 panes present; report block layout still not pixel-parity) |
+| F-001 | Layout | 4 main panes: Draft / Corrected / Simulation / Report | `src/ch/jbead/JBeadFrame.java` `createMainGUI()` | `PARTIAL` (all 4 panes present; report layout compacted and legacy-like, final pixel parity pending visual validation) |
 | F-002 | Layout | Per-pane visibility toggles | `ViewDraftAction`, `ViewCorrectedAction`, `ViewSimulationAction`, `ViewReportAction` | `DONE` |
 | F-003 | Layout | Vertical scroll tied to row index | `JBeadFrame.java` + `Model.setScroll()` | `DONE` |
 | F-004 | Views | Draft rendering with row markers | `view/DraftPanel.java` | `DONE` |

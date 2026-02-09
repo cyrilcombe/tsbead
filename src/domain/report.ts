@@ -145,8 +145,8 @@ export function buildReportSummary(document: JBeadDocument, patternName: string)
     { label: 'Circumference', value: String(width) },
     { label: 'Repeat of colors', value: `${repeat} beads` },
     { label: 'Rows per repeat', value: formatRowsPerRepeat(repeat, width) },
-    { label: 'Total number of rows', value: String(usedHeight) },
-    { label: 'Total number of beads', value: `${usedHeight * width} beads` },
+    { label: 'Number of rows', value: String(usedHeight) },
+    { label: 'Number of beads', value: `${usedHeight * width} beads` },
   )
 
   return {

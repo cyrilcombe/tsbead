@@ -65,10 +65,10 @@ describe('report summary', () => {
       'Circumference',
       'Repeat of colors',
       'Rows per repeat',
-      'Total number of rows',
-      'Total number of beads',
+      'Number of rows',
+      'Number of beads',
     ])
-    expect(summary.entries.find((entry) => entry.label === 'Total number of beads')?.value).toBe('6 beads')
+    expect(summary.entries.find((entry) => entry.label === 'Number of beads')?.value).toBe('6 beads')
   })
 
   it('builds bead runs using legacy reverse traversal order', () => {

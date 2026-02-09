@@ -1374,7 +1374,6 @@ function App() {
               <section className="panel canvas-panel report-panel">
                 <div className="panel-title">
                   <h2>Report</h2>
-                  <span>{reportSummary.usedColorCount} colors used</span>
                 </div>
                 <div className="report-content">
                   <dl className="report-info-list">
@@ -1387,7 +1386,6 @@ function App() {
                   </dl>
                   {reportSummary.repeat > 0 ? (
                     <section className="report-color-usage">
-                      <h3>Color usage</h3>
                       <div className="report-color-grid">
                         {visibleColorCounts.map((item) => {
                           const color = document.colors[item.colorIndex]
@@ -1526,7 +1524,6 @@ function App() {
           <section className="panel canvas-panel report-panel print-report-panel">
             <div className="panel-title">
               <h2>Report</h2>
-              <span>{reportSummary.usedColorCount} colors used</span>
             </div>
             <div className="report-content">
               <dl className="report-info-list">
@@ -1539,7 +1536,6 @@ function App() {
               </dl>
               {reportSummary.repeat > 0 ? (
                 <section className="report-color-usage">
-                  <h3>Color usage</h3>
                   <div className="report-color-grid">
                     {visibleColorCounts.map((item) => {
                       const color = document.colors[item.colorIndex]
