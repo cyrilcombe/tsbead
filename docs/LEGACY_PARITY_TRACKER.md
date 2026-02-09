@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-012)
+Last updated: 2026-02-09 (S-013)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -51,7 +51,7 @@ Status legend:
 | F-034 | Input | Space/Escape/arrow interactions for tools/shift | `JBeadFrame.formKeyDown/formKeyUp()` | `PARTIAL` (left/right shift implemented; space/escape still pending) |
 | F-035 | File IO | Open `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
 | F-036 | File IO | Save/export `.jbb` | `JBeadFileFormat`, `JBeadMemento` | `DONE` |
-| F-037 | File IO | Open/save `.dbb` legacy format | `DbbFileFormat`, `DbbMemento` | `TODO` |
+| F-037 | File IO | Open/save `.dbb` legacy format | `DbbFileFormat`, `DbbMemento` | `N/A` (dropped: web scope is `.jbb` only) |
 | F-038 | File IO | New/Open/Save/Save As flows | `FileNewAction`, `FileOpenAction`, `FileSaveAction`, `FileSaveAsAction` | `DONE` |
 | F-039 | File IO | MRU recent files list | `FileMRUAction`, `JBeadFrame.addToMRU()` | `DONE` |
 | F-040 | Metadata | Author / organization / notes persisted in file | `Model.saveTo/loadFrom`, `Memento` | `DONE` |
@@ -96,7 +96,7 @@ Status legend:
 ### Phase 5 - File/compat/print
 - [x] T-020 Add file flows: New/Open/Save/Save As equivalents
 - [x] T-021 Add MRU list (local storage based)
-- [ ] T-022 Decide `.dbb` support strategy and implement or explicitly drop
+- [x] T-022 Explicitly drop `.dbb` support (keep `.jbb` as single web format)
 - [ ] T-023 Add print/export strategy for web (PDF or print stylesheet)
 
 ## Next Recommended Slice

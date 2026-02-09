@@ -6,6 +6,11 @@ Modern web rewrite of JBead, focused on:
 - offline local persistence
 - compatibility with existing `.jbb` files
 
+## File Format Scope
+
+- Supported in web app: `.jbb`
+- Not planned in web app: `.dbb` legacy format
+
 ## Tech Stack
 
 - React + TypeScript + Vite
