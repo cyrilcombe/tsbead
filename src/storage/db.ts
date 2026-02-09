@@ -31,13 +31,13 @@ interface AppSettingsRecord extends AppSettings {
   id: string
 }
 
-class JBeadDatabase extends Dexie {
+class TsBeadDatabase extends Dexie {
   projects!: Table<ProjectRecord, string>
   recentFiles!: Table<RecentFileRecord, string>
   appSettings!: Table<AppSettingsRecord, string>
 
   constructor() {
-    super('jbead-web')
+    super('tsbead')
     this.version(1).stores({
       projects: 'id, updatedAt',
     })
@@ -53,7 +53,7 @@ class JBeadDatabase extends Dexie {
   }
 }
 
-export const db = new JBeadDatabase()
+export const db = new TsBeadDatabase()
 
 export async function loadProject(id: string): Promise<ProjectRecord | undefined> {
   return db.projects.get(id)
