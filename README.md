@@ -1,4 +1,4 @@
-# jbead-web
+# TsBead
 
 Modern web rewrite of JBead, focused on:
 - no Java runtime required
@@ -57,7 +57,7 @@ The Vite `base` path is computed from `GITHUB_REPOSITORY` during GitHub Actions 
 
 ## Legacy Parity Tracking
 
-See `/Users/cyrilcombe/Dev/perso/jbead-web/docs/LEGACY_PARITY_TRACKER.md` for the exhaustive Java feature inventory and task breakdown.
+See `docs/LEGACY_PARITY_TRACKER.md` for the exhaustive Java feature inventory and task breakdown.
 
 ## License
 

@@ -1,4 +1,4 @@
-# Codex Context - jbead-web
+# Codex Context - TsBead
 
 ## Goal
 Modernize legacy JBead (Java/Swing) into a web app that:
@@ -9,7 +9,7 @@ Modernize legacy JBead (Java/Swing) into a web app that:
 
 ## Repositories / Paths
 - Legacy Java reference: `/Users/cyrilcombe/Dev/perso/jbead`
-- New web project: `/Users/cyrilcombe/Dev/perso/jbead-web`
+- New web project: `/Users/cyrilcombe/Dev/perso/jbead-web` (to be renamed to `/Users/cyrilcombe/Dev/perso/TsBead`)
 
 ## What was done
 - Bootstrapped React + TypeScript + Vite project.
@@ -50,7 +50,7 @@ Modernize legacy JBead (Java/Swing) into a web app that:
 - No backend required for current scope.
 
 ## Suggested next steps
-1. Initialize git for `jbead-web` and push to a new public GitHub repo.
+1. Rename repo/project from `jbead-web` to `TsBead` (GitHub repo + local folder + IDE project).
 2. Enable GitHub Pages in repo settings (GitHub Actions source).
 3. Implement missing editing tools parity with legacy app:
    - fill, select, line, rotate, mirror, undo/redo history.
