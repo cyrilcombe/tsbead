@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } f
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
 import { parseJbb, serializeJbb } from './io/jbb/format'
-import { loadProject, saveProject } from './storage/db'
+import {
+  deleteRecentFile,
+  listRecentFiles,
+  loadProject,
+  type RecentFileRecord,
+  saveProject,
+  saveRecentFile,
+} from './storage/db'
 import { BeadCanvas } from './ui/canvas/BeadCanvas'
 import { BeadPreviewCanvas } from './ui/canvas/BeadPreviewCanvas'
 import type { CellPoint, JBeadDocument, SelectionRect, ToolId, ViewPaneId } from './domain/types'
@@ -12,6 +19,7 @@ const LOCAL_PROJECT_ID = 'local-default'
 const LOCAL_PROJECT_NAME = 'Local Draft'
 const DEFAULT_FILE_NAME = 'design.jbb'
 const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
+const RECENT_FILES_LIMIT = 8
 const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'pencil', label: 'Pencil' },
   { id: 'line', label: 'Line' },
@@ -133,6 +141,16 @@ function getErrorMessage(error: unknown): string {
   return 'Unexpected error'
 }
 
+function formatRecentTimestamp(timestamp: number): string {
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(timestamp))
+}
+
 function App() {
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
@@ -194,6 +212,8 @@ function App() {
   const [editingPaletteColorIndex, setEditingPaletteColorIndex] = useState<number | null>(null)
   const [openFileName, setOpenFileName] = useState(DEFAULT_FILE_NAME)
   const [openFileHandle, setOpenFileHandle] = useState<FileSystemFileHandleLike | null>(null)
+  const [recentFiles, setRecentFiles] = useState<RecentFileRecord[]>([])
+  const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
 
   useEffect(() => {
     void loadProject(LOCAL_PROJECT_ID).then((project) => {
@@ -211,6 +231,20 @@ function App() {
       document,
     })
   }, [document])
+
+  const refreshRecentFiles = useCallback(async () => {
+    const files = await listRecentFiles(RECENT_FILES_LIMIT)
+    setRecentFiles(files)
+  }, [])
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      void refreshRecentFiles()
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+    }
+  }, [refreshRecentFiles])
 
   const width = document.model.rows[0]?.length ?? 0
   const height = document.model.rows.length
@@ -439,14 +473,17 @@ function App() {
       try {
         const content = await file.text()
         const importedDocument = parseJbb(content)
+        const normalizedName = ensureJbbFileName(file.name)
         setDocument(importedDocument)
         setOpenFileHandle(handle)
-        setOpenFileName(ensureJbbFileName(file.name))
+        setOpenFileName(normalizedName)
+        await saveRecentFile(normalizedName, content)
+        await refreshRecentFiles()
       } catch (error) {
         window.alert(`Could not open file: ${getErrorMessage(error)}`)
       }
     },
-    [setDocument],
+    [refreshRecentFiles, setDocument],
   )
 
   const onDiscardUnsavedChanges = useCallback((): boolean => {
@@ -499,6 +536,7 @@ function App() {
 
   const onSaveAsDocument = useCallback(async (): Promise<boolean> => {
     const targetFileName = ensureJbbFileName(openFileName)
+    const serializedContent = serializeJbb(document)
     const pickerWindow = window as WindowWithFilePicker
     if (pickerWindow.showSaveFilePicker) {
       try {
@@ -508,10 +546,13 @@ function App() {
           excludeAcceptAllOption: false,
         })
         const writable = await handle.createWritable()
-        await writable.write(createJbbBlob(document))
+        await writable.write(serializedContent)
         await writable.close()
+        const normalizedName = ensureJbbFileName(handle.name)
         setOpenFileHandle(handle)
-        setOpenFileName(ensureJbbFileName(handle.name))
+        setOpenFileName(normalizedName)
+        await saveRecentFile(normalizedName, serializedContent)
+        await refreshRecentFiles()
         markSaved()
         return true
       } catch (error) {
@@ -526,9 +567,11 @@ function App() {
     onDownloadFile(targetFileName)
     setOpenFileHandle(null)
     setOpenFileName(targetFileName)
+    await saveRecentFile(targetFileName, serializedContent)
+    await refreshRecentFiles()
     markSaved()
     return true
-  }, [document, markSaved, onDownloadFile, openFileName])
+  }, [document, markSaved, onDownloadFile, openFileName, refreshRecentFiles])
 
   const onSaveDocument = useCallback(async (): Promise<boolean> => {
     if (!openFileHandle) {
@@ -536,16 +579,19 @@ function App() {
     }
 
     try {
+      const serializedContent = serializeJbb(document)
       const writable = await openFileHandle.createWritable()
-      await writable.write(createJbbBlob(document))
+      await writable.write(serializedContent)
       await writable.close()
+      await saveRecentFile(openFileName, serializedContent)
+      await refreshRecentFiles()
       markSaved()
       return true
     } catch (error) {
       window.alert(`Could not save file: ${getErrorMessage(error)}`)
       return false
     }
-  }, [document, markSaved, onSaveAsDocument, openFileHandle])
+  }, [document, markSaved, onSaveAsDocument, openFileHandle, openFileName, refreshRecentFiles])
 
   const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0]
@@ -555,6 +601,38 @@ function App() {
     }
     void onLoadFile(file, null)
   }
+
+  const onOpenRecentDialog = useCallback(() => {
+    void refreshRecentFiles()
+    setIsRecentDialogOpen(true)
+  }, [refreshRecentFiles])
+
+  const onOpenRecentFile = useCallback(
+    async (entry: RecentFileRecord) => {
+      if (!onDiscardUnsavedChanges()) {
+        return
+      }
+      try {
+        const importedDocument = parseJbb(entry.content)
+        setDocument(importedDocument)
+        setOpenFileHandle(null)
+        setOpenFileName(entry.name)
+        await saveRecentFile(entry.name, entry.content)
+        await refreshRecentFiles()
+        setIsRecentDialogOpen(false)
+      } catch (error) {
+        await deleteRecentFile(entry.id)
+        await refreshRecentFiles()
+        window.alert(`Could not open recent file: ${getErrorMessage(error)}`)
+      }
+    },
+    [onDiscardUnsavedChanges, refreshRecentFiles, setDocument],
+  )
+
+  const onDeleteRecentEntry = useCallback(async (entryId: string) => {
+    await deleteRecentFile(entryId)
+    await refreshRecentFiles()
+  }, [refreshRecentFiles])
 
   const paneVisibilityById: Record<ViewPaneId, boolean> = {
     draft: isDraftVisible,
@@ -708,8 +786,9 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isArrangeDialogOpen || isPatternWidthDialogOpen || isPatternHeightDialogOpen) {
+      if (isRecentDialogOpen || isArrangeDialogOpen || isPatternWidthDialogOpen || isPatternHeightDialogOpen) {
         if (event.key === 'Escape') {
+          setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
           setIsPatternWidthDialogOpen(false)
           setIsPatternHeightDialogOpen(false)
@@ -740,8 +819,12 @@ function App() {
         } else if (lowerKey === 'n' && !event.shiftKey) {
           onNewDocument()
           handled = true
-        } else if (lowerKey === 'o' && !event.shiftKey) {
-          void onOpenDocument()
+        } else if (lowerKey === 'o') {
+          if (event.shiftKey) {
+            onOpenRecentDialog()
+          } else {
+            void onOpenDocument()
+          }
           handled = true
         } else if (lowerKey === 's') {
           if (event.shiftKey) {
@@ -800,11 +883,13 @@ function App() {
     }
   }, [
     isArrangeDialogOpen,
+    isRecentDialogOpen,
     isPatternHeightDialogOpen,
     isPatternWidthDialogOpen,
     onDeleteSelection,
     onNewDocument,
     onOpenDocument,
+    onOpenRecentDialog,
     onSaveAsDocument,
     onSaveDocument,
     redo,
@@ -878,6 +963,9 @@ function App() {
           </button>
           <button className="action" onClick={() => void onOpenDocument()}>
             Open...
+          </button>
+          <button className="action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
+            Open recent...
           </button>
           <button className="action" onClick={() => void onSaveDocument()}>
             Save
@@ -1253,6 +1341,39 @@ function App() {
           </section>
         </aside>
       </main>
+
+      {isRecentDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog recent-dialog panel" role="dialog" aria-modal="true" aria-label="Open recent">
+            <div className="panel-title">
+              <h2>Open Recent</h2>
+              <span>{recentFiles.length} files</span>
+            </div>
+            {recentFiles.length === 0 ? (
+              <p className="recent-empty">No recent files yet.</p>
+            ) : (
+              <div className="recent-list">
+                {recentFiles.map((entry) => (
+                  <div key={entry.id} className="recent-item">
+                    <button className="action recent-open" onClick={() => void onOpenRecentFile(entry)}>
+                      <span className="recent-name">{entry.name}</span>
+                      <span className="recent-date">{formatRecentTimestamp(entry.updatedAt)}</span>
+                    </button>
+                    <button className="action recent-remove" onClick={() => void onDeleteRecentEntry(entry.id)}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsRecentDialogOpen(false)}>
+                Close
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {isPatternWidthDialogOpen ? (
         <div className="dialog-backdrop">
