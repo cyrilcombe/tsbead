@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { createEmptyDocument } from './defaults'
+import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './defaults'
 import { getLinePoints, normalizeRect, snapLineEnd, type NormalizedRect } from './gridMath'
 import type { CellPoint, JBeadDocument, RgbaColor, SelectionRect, ToolId, ViewPaneId } from './types'
 
@@ -23,6 +23,7 @@ interface EditorState {
   setZoom: (zoom: number) => void
   setDrawColors: (drawColors: boolean) => void
   setDrawSymbols: (drawSymbols: boolean) => void
+  setSymbols: (symbols: string) => void
   zoomIn: () => void
   zoomNormal: () => void
   zoomOut: () => void
@@ -60,6 +61,7 @@ function cloneDocument(document: JBeadDocument): JBeadDocument {
       ...document.view,
       drawColors: document.view.drawColors ?? true,
       drawSymbols: document.view.drawSymbols ?? false,
+      symbols: document.view.symbols && document.view.symbols.length > 0 ? document.view.symbols : DEFAULT_BEAD_SYMBOLS,
     },
     model: {
       rows: document.model.rows.map((row) => [...row]),
@@ -444,6 +446,18 @@ export const useEditorStore = create<EditorState>((set) => ({
       const document = cloneDocument(state.document)
       document.view.drawSymbols = drawSymbols
       return { document }
+    })
+  },
+  setSymbols: (symbols) => {
+    set((state) => {
+      const normalized = symbols.length > 0 ? symbols : DEFAULT_BEAD_SYMBOLS
+      if (state.document.view.symbols === normalized) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.view.symbols = normalized
+      return { document, dirty: true }
     })
   },
   zoomIn: () => {

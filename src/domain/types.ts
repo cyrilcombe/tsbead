@@ -20,6 +20,7 @@ export interface JBeadView {
   reportVisible: boolean
   drawColors: boolean
   drawSymbols: boolean
+  symbols: string
   selectedTool: ToolId
   selectedColor: number
   zoom: number

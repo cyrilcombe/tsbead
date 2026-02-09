@@ -138,7 +138,7 @@ export function BeadCanvas({
             ? getContrastingSymbolColor(color)
             : 'rgba(0, 0, 0, 0.95)'
           context.fillText(
-            getBeadSymbol(colorIndex),
+            getBeadSymbol(colorIndex, document.view.symbols),
             GRID_OFFSET_X + x * cellSize + cellSize / 2 + 0.5,
             y * cellSize + cellSize / 2 + 0.5,
           )

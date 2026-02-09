@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createEmptyDocument } from './defaults'
+import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './defaults'
 import { useEditorStore } from './editorStore'
 
 describe('editor store', () => {
@@ -35,6 +35,17 @@ describe('editor store', () => {
     expect(state.document.organization).toBe('JBead')
     expect(state.document.notes).toBe('Test notes')
     expect(state.dirty).toBe(true)
+  })
+
+  it('updates symbols and falls back to defaults when empty', () => {
+    useEditorStore.getState().setSymbols('ABC123')
+    let state = useEditorStore.getState()
+    expect(state.document.view.symbols).toBe('ABC123')
+    expect(state.dirty).toBe(true)
+
+    useEditorStore.getState().setSymbols('')
+    state = useEditorStore.getState()
+    expect(state.document.view.symbols).toBe(DEFAULT_BEAD_SYMBOLS)
   })
 
   it('updates a palette color', () => {

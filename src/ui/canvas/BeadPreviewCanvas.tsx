@@ -282,10 +282,10 @@ export function BeadPreviewCanvas({
         context.fillStyle = document.view.drawColors
           ? getContrastingSymbolColor(color)
           : 'rgba(0, 0, 0, 0.95)'
-        context.fillText(getBeadSymbol(cell.colorIndex), px + pw / 2 + 0.5, py + ph / 2 + 0.5)
+        context.fillText(getBeadSymbol(cell.colorIndex, document.view.symbols), px + pw / 2 + 0.5, py + ph / 2 + 0.5)
       }
     }
-  }, [cellSize, document.colors, document.view.drawColors, document.view.drawSymbols, layout])
+  }, [cellSize, document.colors, document.view.drawColors, document.view.drawSymbols, document.view.symbols, layout])
 
   const getPoint = (event: React.PointerEvent<HTMLCanvasElement>): CellPoint | null => {
     if (!isInteractive) {

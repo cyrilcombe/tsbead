@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-015)
+Last updated: 2026-02-09 (S-016)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -40,7 +40,7 @@ Status legend:
 | F-023 | View Options | Zoom in/normal/out | `ViewZoomInAction`, `ViewZoomNormalAction`, `ViewZoomOutAction` | `DONE` |
 | F-024 | Pattern | Pattern width dialog and resize | `PatternWidthAction`, `PatternWidthDialog`, `Model.setWidth()` | `DONE` |
 | F-025 | Pattern | Pattern height dialog and resize | `PatternHeightAction`, `PatternHeightDialog`, `Model.setHeight()` | `DONE` |
-| F-026 | Pattern | Preferences (author, organization, symbols, update-check setting) | `PatternPreferencesAction`, `PreferencesDialog` | `TODO` |
+| F-026 | Pattern | Preferences (author, organization, symbols, update-check setting) | `PatternPreferencesAction`, `PreferencesDialog` | `PARTIAL` (author/organization/symbols persistence implemented; update-check option intentionally omitted in web) |
 | F-027 | Model | Shift left/right (pattern phase shift) | `JBeadFrame.rotateLeft/Right`, `Model.shiftLeft/Right()` | `DONE` |
 | F-028 | Model | Repeat detection (`beads per repeat`, rows per repeat) | `Model.updateRepeat()`, `Model.calcRepeat()` | `DONE` |
 | F-029 | Palette | 32-color palette with selected color indicator | `ui/ColorPalette.java` | `DONE` |
@@ -92,6 +92,7 @@ Status legend:
 - [x] T-017 Build report infos panel (pattern, repeat, row/bead totals)
 - [x] T-018 Build color usage block and bead run list
 - [x] T-019 Add metadata editors (author, organization, notes)
+- [x] T-024 Add preferences dialog and local default metadata/symbols
 
 ### Phase 5 - File/compat/print
 - [x] T-020 Add file flows: New/Open/Save/Save As equivalents

@@ -1,6 +1,5 @@
 import type { RgbaColor } from '../../domain/types'
-
-const DEFAULT_BEAD_SYMBOLS = '\u00b7abcdefghijklmnopqrstuvwxyz+-/\\*'
+import { DEFAULT_BEAD_SYMBOLS } from '../../domain/defaults'
 
 function contrast(a: [number, number, number], b: [number, number, number]): number {
   const redDiff = a[0] - b[0]
@@ -9,11 +8,11 @@ function contrast(a: [number, number, number], b: [number, number, number]): num
   return Math.sqrt(redDiff * redDiff + greenDiff * greenDiff + blueDiff * blueDiff)
 }
 
-export function getBeadSymbol(index: number): string {
-  if (index < 0 || index >= DEFAULT_BEAD_SYMBOLS.length) {
+export function getBeadSymbol(index: number, symbols = DEFAULT_BEAD_SYMBOLS): string {
+  if (index < 0 || index >= symbols.length) {
     return ' '
   }
-  return DEFAULT_BEAD_SYMBOLS[index]
+  return symbols[index]
 }
 
 export function getContrastingSymbolColor(color: RgbaColor): string {

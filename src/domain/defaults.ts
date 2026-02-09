@@ -1,5 +1,7 @@
 import type { JBeadDocument } from './types'
 
+export const DEFAULT_BEAD_SYMBOLS = '\u00b7abcdefghijklmnopqrstuvwxyz+-/\\*'
+
 const DEFAULT_COLORS: JBeadDocument['colors'] = [
   [255, 255, 255, 255],
   [128, 0, 0, 255],
@@ -35,11 +37,18 @@ const DEFAULT_COLORS: JBeadDocument['colors'] = [
   [0, 0, 0, 255],
 ]
 
-export function createEmptyDocument(width = 15, height = 120): JBeadDocument {
+interface CreateDocumentOptions {
+  author?: string
+  organization?: string
+  symbols?: string
+}
+
+export function createEmptyDocument(width = 15, height = 120, options: CreateDocumentOptions = {}): JBeadDocument {
+  const symbols = options.symbols && options.symbols.length > 0 ? options.symbols : DEFAULT_BEAD_SYMBOLS
   return {
     version: 1,
-    author: '',
-    organization: '',
+    author: options.author ?? '',
+    organization: options.organization ?? '',
     notes: '',
     colors: DEFAULT_COLORS,
     view: {
@@ -49,6 +58,7 @@ export function createEmptyDocument(width = 15, height = 120): JBeadDocument {
       reportVisible: true,
       drawColors: true,
       drawSymbols: false,
+      symbols,
       selectedTool: 'pencil',
       selectedColor: 1,
       zoom: 2,

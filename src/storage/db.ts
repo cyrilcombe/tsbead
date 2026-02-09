@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import { DEFAULT_BEAD_SYMBOLS } from '../domain/defaults'
 import type { JBeadDocument } from '../domain/types'
 
 export interface ProjectRecord {
@@ -16,10 +17,22 @@ export interface RecentFileRecord {
 }
 
 const MAX_RECENT_FILES = 12
+const APP_SETTINGS_ID = 'app-settings'
+
+export interface AppSettings {
+  defaultAuthor: string
+  defaultOrganization: string
+  symbols: string
+}
+
+interface AppSettingsRecord extends AppSettings {
+  id: string
+}
 
 class JBeadDatabase extends Dexie {
   projects!: Table<ProjectRecord, string>
   recentFiles!: Table<RecentFileRecord, string>
+  appSettings!: Table<AppSettingsRecord, string>
 
   constructor() {
     super('jbead-web')
@@ -29,6 +42,11 @@ class JBeadDatabase extends Dexie {
     this.version(2).stores({
       projects: 'id, updatedAt',
       recentFiles: 'id, updatedAt',
+    })
+    this.version(3).stores({
+      projects: 'id, updatedAt',
+      recentFiles: 'id, updatedAt',
+      appSettings: 'id',
     })
   }
 }
@@ -81,4 +99,23 @@ export async function listRecentFiles(limit = MAX_RECENT_FILES): Promise<RecentF
 
 export async function deleteRecentFile(id: string): Promise<void> {
   await db.recentFiles.delete(id)
+}
+
+export async function loadAppSettings(): Promise<AppSettings> {
+  const record = await db.appSettings.get(APP_SETTINGS_ID)
+  return {
+    defaultAuthor: record?.defaultAuthor ?? '',
+    defaultOrganization: record?.defaultOrganization ?? '',
+    symbols: record?.symbols && record.symbols.length > 0 ? record.symbols : DEFAULT_BEAD_SYMBOLS,
+  }
+}
+
+export async function saveAppSettings(settings: AppSettings): Promise<void> {
+  const normalizedSymbols = settings.symbols.length > 0 ? settings.symbols : DEFAULT_BEAD_SYMBOLS
+  await db.appSettings.put({
+    id: APP_SETTINGS_ID,
+    defaultAuthor: settings.defaultAuthor,
+    defaultOrganization: settings.defaultOrganization,
+    symbols: normalizedSymbols,
+  })
 }

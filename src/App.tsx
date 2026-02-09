@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
 import { parseJbb, serializeJbb } from './io/jbb/format'
 import {
+  type AppSettings,
   deleteRecentFile,
   listRecentFiles,
+  loadAppSettings,
   loadProject,
   type RecentFileRecord,
+  saveAppSettings,
   saveProject,
   saveRecentFile,
 } from './storage/db'
@@ -21,6 +25,11 @@ const DEFAULT_FILE_NAME = 'design.jbb'
 const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
 const RECENT_FILES_LIMIT = 8
 const PRINT_CHUNK_SIZE = 100
+const DEFAULT_APP_SETTINGS: AppSettings = {
+  defaultAuthor: '',
+  defaultOrganization: '',
+  symbols: DEFAULT_BEAD_SYMBOLS,
+}
 const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'pencil', label: 'Pencil' },
   { id: 'line', label: 'Line' },
@@ -165,8 +174,8 @@ function App() {
   const pickColorAt = useEditorStore((state) => state.pickColorAt)
   const drawLine = useEditorStore((state) => state.drawLine)
   const fillLine = useEditorStore((state) => state.fillLine)
-  const reset = useEditorStore((state) => state.reset)
   const setMetadata = useEditorStore((state) => state.setMetadata)
+  const setSymbols = useEditorStore((state) => state.setSymbols)
   const setPaletteColor = useEditorStore((state) => state.setPaletteColor)
   const setColorAsBackground = useEditorStore((state) => state.setColorAsBackground)
   const setSelectedColor = useEditorStore((state) => state.setSelectedColor)
@@ -223,13 +232,47 @@ function App() {
   const [openFileHandle, setOpenFileHandle] = useState<FileSystemFileHandleLike | null>(null)
   const [recentFiles, setRecentFiles] = useState<RecentFileRecord[]>([])
   const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
+  const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
+  const [preferencesAuthorInput, setPreferencesAuthorInput] = useState('')
+  const [preferencesOrganizationInput, setPreferencesOrganizationInput] = useState('')
+  const [preferencesSymbolsInput, setPreferencesSymbolsInput] = useState(DEFAULT_BEAD_SYMBOLS)
 
   useEffect(() => {
-    void loadProject(LOCAL_PROJECT_ID).then((project) => {
-      if (project) {
-        setDocument(project.document)
+    let cancelled = false
+    void (async () => {
+      try {
+        const loadedSettings = await loadAppSettings()
+        if (cancelled) {
+          return
+        }
+        setAppSettings(loadedSettings)
+
+        const project = await loadProject(LOCAL_PROJECT_ID)
+        if (cancelled) {
+          return
+        }
+        if (project) {
+          setDocument(project.document)
+        } else {
+          setDocument(
+            createEmptyDocument(15, 120, {
+              author: loadedSettings.defaultAuthor,
+              organization: loadedSettings.defaultOrganization,
+              symbols: loadedSettings.symbols,
+            }),
+          )
+        }
+      } catch {
+        if (cancelled) {
+          return
+        }
+        setAppSettings(DEFAULT_APP_SETTINGS)
       }
-    })
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [setDocument])
 
   useEffect(() => {
@@ -509,15 +552,25 @@ function App() {
     return window.confirm('There are unsaved changes. Continue and discard them?')
   }, [dirty])
 
+  const createDocumentFromPreferences = useCallback(
+    (settings: AppSettings): JBeadDocument =>
+      createEmptyDocument(15, 120, {
+        author: settings.defaultAuthor,
+        organization: settings.defaultOrganization,
+        symbols: settings.symbols,
+      }),
+    [],
+  )
+
   const onNewDocument = useCallback((): boolean => {
     if (!onDiscardUnsavedChanges()) {
       return false
     }
-    reset()
+    setDocument(createDocumentFromPreferences(appSettings))
     setOpenFileHandle(null)
     setOpenFileName(DEFAULT_FILE_NAME)
     return true
-  }, [onDiscardUnsavedChanges, reset])
+  }, [appSettings, createDocumentFromPreferences, onDiscardUnsavedChanges, setDocument])
 
   const onOpenDocument = useCallback(async (): Promise<void> => {
     if (!onDiscardUnsavedChanges()) {
@@ -621,6 +674,49 @@ function App() {
     }
     void onLoadFile(file, null)
   }
+
+  const onOpenPreferencesDialog = useCallback(() => {
+    setPreferencesAuthorInput(appSettings.defaultAuthor)
+    setPreferencesOrganizationInput(appSettings.defaultOrganization)
+    setPreferencesSymbolsInput(appSettings.symbols)
+    setIsPreferencesDialogOpen(true)
+  }, [appSettings])
+
+  const onApplyPreferences = useCallback(async () => {
+    const nextSettings: AppSettings = {
+      defaultAuthor: preferencesAuthorInput.trim(),
+      defaultOrganization: preferencesOrganizationInput.trim(),
+      symbols: preferencesSymbolsInput.length > 0 ? preferencesSymbolsInput : DEFAULT_BEAD_SYMBOLS,
+    }
+
+    try {
+      await saveAppSettings(nextSettings)
+      setAppSettings(nextSettings)
+
+      if (document.author !== nextSettings.defaultAuthor || document.organization !== nextSettings.defaultOrganization) {
+        setMetadata({
+          author: nextSettings.defaultAuthor,
+          organization: nextSettings.defaultOrganization,
+        })
+      }
+      if (document.view.symbols !== nextSettings.symbols) {
+        setSymbols(nextSettings.symbols)
+      }
+
+      setIsPreferencesDialogOpen(false)
+    } catch (error) {
+      window.alert(`Could not save preferences: ${getErrorMessage(error)}`)
+    }
+  }, [
+    document.author,
+    document.organization,
+    document.view.symbols,
+    preferencesAuthorInput,
+    preferencesOrganizationInput,
+    preferencesSymbolsInput,
+    setMetadata,
+    setSymbols,
+  ])
 
   const onOpenRecentDialog = useCallback(() => {
     void refreshRecentFiles()
@@ -806,8 +902,9 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isRecentDialogOpen || isArrangeDialogOpen || isPatternWidthDialogOpen || isPatternHeightDialogOpen) {
+      if (isPreferencesDialogOpen || isRecentDialogOpen || isArrangeDialogOpen || isPatternWidthDialogOpen || isPatternHeightDialogOpen) {
         if (event.key === 'Escape') {
+          setIsPreferencesDialogOpen(false)
           setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
           setIsPatternWidthDialogOpen(false)
@@ -838,6 +935,9 @@ function App() {
           handled = true
         } else if (lowerKey === 'p' && !event.shiftKey) {
           onPrintDocument()
+          handled = true
+        } else if (event.code === 'Comma' && !event.shiftKey) {
+          onOpenPreferencesDialog()
           handled = true
         } else if (lowerKey === 'i' && !event.shiftKey) {
           setIsZoomFitMode(false)
@@ -950,12 +1050,14 @@ function App() {
   }, [
     clearSelection,
     isArrangeDialogOpen,
+    isPreferencesDialogOpen,
     isRecentDialogOpen,
     isPatternHeightDialogOpen,
     isPatternWidthDialogOpen,
     onDeleteSelection,
     onNewDocument,
     onOpenDocument,
+    onOpenPreferencesDialog,
     onOpenRecentDialog,
     onOpenArrangeDialog,
     onPrintDocument,
@@ -1037,6 +1139,9 @@ function App() {
           </button>
           <button className="action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
             Open recent...
+          </button>
+          <button className="action" onClick={onOpenPreferencesDialog}>
+            Preferences...
           </button>
           <button className="action" onClick={() => void onSaveDocument()}>
             Save
@@ -1527,6 +1632,53 @@ function App() {
             })
           : null}
       </section>
+
+      {isPreferencesDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Preferences">
+            <div className="panel-title">
+              <h2>Preferences</h2>
+            </div>
+            <div className="arrange-form">
+              <label className="arrange-field">
+                Default author
+                <input
+                  className="arrange-input"
+                  type="text"
+                  value={preferencesAuthorInput}
+                  onChange={(event) => setPreferencesAuthorInput(event.currentTarget.value)}
+                />
+              </label>
+              <label className="arrange-field">
+                Default organization
+                <input
+                  className="arrange-input"
+                  type="text"
+                  value={preferencesOrganizationInput}
+                  onChange={(event) => setPreferencesOrganizationInput(event.currentTarget.value)}
+                />
+              </label>
+              <label className="arrange-field">
+                Symbols
+                <input
+                  className="arrange-input"
+                  type="text"
+                  value={preferencesSymbolsInput}
+                  onChange={(event) => setPreferencesSymbolsInput(event.currentTarget.value)}
+                />
+              </label>
+            </div>
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsPreferencesDialogOpen(false)}>
+                Cancel
+              </button>
+              <button className="action tool-action active" onClick={() => void onApplyPreferences()}>
+                Apply
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {isRecentDialogOpen ? (
         <div className="dialog-backdrop">

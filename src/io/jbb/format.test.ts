@@ -170,4 +170,35 @@ describe('jbb format', () => {
     expect(reparsed.view.drawColors).toBe(false)
     expect(reparsed.view.drawSymbols).toBe(true)
   })
+
+  it('parses and serializes custom symbol strings', () => {
+    const fixture = `
+      (jbb
+        (version 1)
+        (colors
+          (rgb 0 0 0 255)
+          (rgb 255 0 0 255)
+        )
+        (view
+          (symbols "XYZ")
+          (selected-tool "pencil")
+          (selected-color 1)
+          (zoom 2)
+          (scroll 0)
+          (shift 0)
+        )
+        (model
+          (row 0 0)
+          (row 0 0)
+        )
+      )
+    `
+
+    const parsed = parseJbb(fixture)
+    expect(parsed.view.symbols).toBe('XYZ')
+
+    const serialized = serializeJbb(parsed)
+    const reparsed = parseJbb(serialized)
+    expect(reparsed.view.symbols).toBe('XYZ')
+  })
 })
