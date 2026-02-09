@@ -642,8 +642,28 @@ h1 {
 }
 
 @media print {
-  @page {
+  @page jbead-default {
     size: auto;
+    margin: 10mm;
+  }
+
+  @page jbead-a4-portrait {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  @page jbead-a4-landscape {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  @page jbead-letter-portrait {
+    size: Letter portrait;
+    margin: 10mm;
+  }
+
+  @page jbead-letter-landscape {
+    size: Letter landscape;
     margin: 10mm;
   }
 
@@ -661,6 +681,31 @@ h1 {
     color: #000;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    page: jbead-default;
+  }
+
+  .app-shell {
+    page: jbead-default;
+  }
+
+  body.print-page-a4.print-orientation-portrait,
+  body.print-page-a4.print-orientation-portrait .app-shell {
+    page: jbead-a4-portrait;
+  }
+
+  body.print-page-a4.print-orientation-landscape,
+  body.print-page-a4.print-orientation-landscape .app-shell {
+    page: jbead-a4-landscape;
+  }
+
+  body.print-page-letter.print-orientation-portrait,
+  body.print-page-letter.print-orientation-portrait .app-shell {
+    page: jbead-letter-portrait;
+  }
+
+  body.print-page-letter.print-orientation-landscape,
+  body.print-page-letter.print-orientation-landscape .app-shell {
+    page: jbead-letter-landscape;
   }
 
   .app-shell {

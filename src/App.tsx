@@ -24,11 +24,14 @@ const LOCAL_PROJECT_NAME = 'Local Draft'
 const DEFAULT_FILE_NAME = 'design.jbb'
 const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
 const RECENT_FILES_LIMIT = 8
-const PRINT_CHUNK_SIZE = 100
+const PRINT_CHUNK_SIZE_PORTRAIT = 100
+const PRINT_CHUNK_SIZE_LANDSCAPE = 60
 const DEFAULT_APP_SETTINGS: AppSettings = {
   defaultAuthor: '',
   defaultOrganization: '',
   symbols: DEFAULT_BEAD_SYMBOLS,
+  printPageSize: 'a4',
+  printOrientation: 'portrait',
 }
 const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'pencil', label: 'Pencil' },
@@ -234,9 +237,12 @@ function App() {
   const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
+  const [isPageSetupDialogOpen, setIsPageSetupDialogOpen] = useState(false)
   const [preferencesAuthorInput, setPreferencesAuthorInput] = useState('')
   const [preferencesOrganizationInput, setPreferencesOrganizationInput] = useState('')
   const [preferencesSymbolsInput, setPreferencesSymbolsInput] = useState(DEFAULT_BEAD_SYMBOLS)
+  const [pageSetupSizeInput, setPageSetupSizeInput] = useState<AppSettings['printPageSize']>('a4')
+  const [pageSetupOrientationInput, setPageSetupOrientationInput] = useState<AppSettings['printOrientation']>('portrait')
 
   useEffect(() => {
     let cancelled = false
@@ -274,6 +280,15 @@ function App() {
       cancelled = true
     }
   }, [setDocument])
+
+  useEffect(() => {
+    const bodyClassList = window.document.body.classList
+    bodyClassList.remove('print-page-a4', 'print-page-letter', 'print-orientation-portrait', 'print-orientation-landscape')
+    bodyClassList.add(`print-page-${appSettings.printPageSize}`, `print-orientation-${appSettings.printOrientation}`)
+    return () => {
+      bodyClassList.remove(`print-page-${appSettings.printPageSize}`, `print-orientation-${appSettings.printOrientation}`)
+    }
+  }, [appSettings.printOrientation, appSettings.printPageSize])
 
   useEffect(() => {
     void saveProject({
@@ -339,12 +354,14 @@ function App() {
     [reportSummary.colorCounts],
   )
   const printChunks = useMemo(() => {
+    const printChunkSize =
+      appSettings.printOrientation === 'landscape' ? PRINT_CHUNK_SIZE_LANDSCAPE : PRINT_CHUNK_SIZE_PORTRAIT
     const chunks: Array<{ start: number; end: number }> = []
-    for (let start = 0; start < height; start += PRINT_CHUNK_SIZE) {
-      chunks.push({ start, end: Math.min(height, start + PRINT_CHUNK_SIZE) })
+    for (let start = 0; start < height; start += printChunkSize) {
+      chunks.push({ start, end: Math.min(height, start + printChunkSize) })
     }
     return chunks
-  }, [height])
+  }, [appSettings.printOrientation, height])
 
   const onPointerDown = (point: CellPoint, allowShapeTools: boolean) => {
     if ((selectedTool === 'line' || selectedTool === 'select') && !allowShapeTools) {
@@ -682,8 +699,15 @@ function App() {
     setIsPreferencesDialogOpen(true)
   }, [appSettings])
 
+  const onOpenPageSetupDialog = useCallback(() => {
+    setPageSetupSizeInput(appSettings.printPageSize)
+    setPageSetupOrientationInput(appSettings.printOrientation)
+    setIsPageSetupDialogOpen(true)
+  }, [appSettings.printOrientation, appSettings.printPageSize])
+
   const onApplyPreferences = useCallback(async () => {
     const nextSettings: AppSettings = {
+      ...appSettings,
       defaultAuthor: preferencesAuthorInput.trim(),
       defaultOrganization: preferencesOrganizationInput.trim(),
       symbols: preferencesSymbolsInput.length > 0 ? preferencesSymbolsInput : DEFAULT_BEAD_SYMBOLS,
@@ -708,6 +732,7 @@ function App() {
       window.alert(`Could not save preferences: ${getErrorMessage(error)}`)
     }
   }, [
+    appSettings,
     document.author,
     document.organization,
     document.view.symbols,
@@ -717,6 +742,22 @@ function App() {
     setMetadata,
     setSymbols,
   ])
+
+  const onApplyPageSetup = useCallback(async () => {
+    const nextSettings: AppSettings = {
+      ...appSettings,
+      printPageSize: pageSetupSizeInput,
+      printOrientation: pageSetupOrientationInput,
+    }
+
+    try {
+      await saveAppSettings(nextSettings)
+      setAppSettings(nextSettings)
+      setIsPageSetupDialogOpen(false)
+    } catch (error) {
+      window.alert(`Could not save page setup: ${getErrorMessage(error)}`)
+    }
+  }, [appSettings, pageSetupOrientationInput, pageSetupSizeInput])
 
   const onOpenRecentDialog = useCallback(() => {
     void refreshRecentFiles()
@@ -902,9 +943,17 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isPreferencesDialogOpen || isRecentDialogOpen || isArrangeDialogOpen || isPatternWidthDialogOpen || isPatternHeightDialogOpen) {
+      if (
+        isPreferencesDialogOpen ||
+        isPageSetupDialogOpen ||
+        isRecentDialogOpen ||
+        isArrangeDialogOpen ||
+        isPatternWidthDialogOpen ||
+        isPatternHeightDialogOpen
+      ) {
         if (event.key === 'Escape') {
           setIsPreferencesDialogOpen(false)
+          setIsPageSetupDialogOpen(false)
           setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
           setIsPatternWidthDialogOpen(false)
@@ -932,6 +981,9 @@ function App() {
           handled = true
         } else if (lowerKey === 'y') {
           redo()
+          handled = true
+        } else if (lowerKey === 'p' && event.shiftKey) {
+          onOpenPageSetupDialog()
           handled = true
         } else if (lowerKey === 'p' && !event.shiftKey) {
           onPrintDocument()
@@ -1050,6 +1102,7 @@ function App() {
   }, [
     clearSelection,
     isArrangeDialogOpen,
+    isPageSetupDialogOpen,
     isPreferencesDialogOpen,
     isRecentDialogOpen,
     isPatternHeightDialogOpen,
@@ -1057,6 +1110,7 @@ function App() {
     onDeleteSelection,
     onNewDocument,
     onOpenDocument,
+    onOpenPageSetupDialog,
     onOpenPreferencesDialog,
     onOpenRecentDialog,
     onOpenArrangeDialog,
@@ -1142,6 +1196,9 @@ function App() {
           </button>
           <button className="action" onClick={onOpenPreferencesDialog}>
             Preferences...
+          </button>
+          <button className="action" onClick={onOpenPageSetupDialog}>
+            Page setup...
           </button>
           <button className="action" onClick={() => void onSaveDocument()}>
             Save
@@ -1628,6 +1685,50 @@ function App() {
             })
           : null}
       </section>
+
+      {isPageSetupDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Page setup">
+            <div className="panel-title">
+              <h2>Page Setup</h2>
+            </div>
+            <div className="arrange-form">
+              <label className="arrange-field">
+                Paper
+                <select
+                  className="arrange-input"
+                  value={pageSetupSizeInput}
+                  onChange={(event) => setPageSetupSizeInput(event.currentTarget.value as AppSettings['printPageSize'])}
+                >
+                  <option value="a4">A4</option>
+                  <option value="letter">Letter</option>
+                </select>
+              </label>
+              <label className="arrange-field">
+                Orientation
+                <select
+                  className="arrange-input"
+                  value={pageSetupOrientationInput}
+                  onChange={(event) =>
+                    setPageSetupOrientationInput(event.currentTarget.value as AppSettings['printOrientation'])
+                  }
+                >
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Landscape</option>
+                </select>
+              </label>
+            </div>
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsPageSetupDialogOpen(false)}>
+                Cancel
+              </button>
+              <button className="action tool-action active" onClick={() => void onApplyPageSetup()}>
+                Apply
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {isPreferencesDialogOpen ? (
         <div className="dialog-backdrop">

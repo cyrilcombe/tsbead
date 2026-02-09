@@ -23,6 +23,8 @@ export interface AppSettings {
   defaultAuthor: string
   defaultOrganization: string
   symbols: string
+  printPageSize: 'a4' | 'letter'
+  printOrientation: 'portrait' | 'landscape'
 }
 
 interface AppSettingsRecord extends AppSettings {
@@ -103,10 +105,14 @@ export async function deleteRecentFile(id: string): Promise<void> {
 
 export async function loadAppSettings(): Promise<AppSettings> {
   const record = await db.appSettings.get(APP_SETTINGS_ID)
+  const printPageSize = record?.printPageSize === 'letter' ? 'letter' : 'a4'
+  const printOrientation = record?.printOrientation === 'landscape' ? 'landscape' : 'portrait'
   return {
     defaultAuthor: record?.defaultAuthor ?? '',
     defaultOrganization: record?.defaultOrganization ?? '',
     symbols: record?.symbols && record.symbols.length > 0 ? record.symbols : DEFAULT_BEAD_SYMBOLS,
+    printPageSize,
+    printOrientation,
   }
 }
 
@@ -117,5 +123,7 @@ export async function saveAppSettings(settings: AppSettings): Promise<void> {
     defaultAuthor: settings.defaultAuthor,
     defaultOrganization: settings.defaultOrganization,
     symbols: normalizedSymbols,
+    printPageSize: settings.printPageSize === 'letter' ? 'letter' : 'a4',
+    printOrientation: settings.printOrientation === 'landscape' ? 'landscape' : 'portrait',
   })
 }
