@@ -1269,7 +1269,7 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="header-main">
-          <h1>jbead-web</h1>
+          <h1>TsBead</h1>
           <p className="file-status">
             File: <strong>{openFileName}</strong>
             {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
