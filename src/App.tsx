@@ -3,7 +3,12 @@ import {
   ArrowLeft,
   ArrowRight,
   Copy,
+  Download,
   Eraser,
+  FilePlus2,
+  FolderClock,
+  FolderOpen,
+  Printer,
   LayoutGrid,
   Minus,
   MoveHorizontal,
@@ -16,6 +21,9 @@ import {
   Redo2,
   RotateCw,
   Scan,
+  Save,
+  SaveAll,
+  Settings2,
   Slash,
   SquareDashed,
   Type,
@@ -273,7 +281,6 @@ function App() {
   const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
-  const [isPageSetupDialogOpen, setIsPageSetupDialogOpen] = useState(false)
   const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false)
   const [isViewsMenuOpen, setIsViewsMenuOpen] = useState(false)
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false)
@@ -775,6 +782,8 @@ function App() {
     setPreferencesAuthorInput(appSettings.defaultAuthor)
     setPreferencesOrganizationInput(appSettings.defaultOrganization)
     setPreferencesSymbolsInput(appSettings.symbols)
+    setPageSetupSizeInput(appSettings.printPageSize)
+    setPageSetupOrientationInput(appSettings.printOrientation)
     setIsPreferencesDialogOpen(true)
   }, [appSettings])
 
@@ -785,18 +794,14 @@ function App() {
     setIsMetadataDialogOpen(true)
   }, [document.author, document.notes, document.organization])
 
-  const onOpenPageSetupDialog = useCallback(() => {
-    setPageSetupSizeInput(appSettings.printPageSize)
-    setPageSetupOrientationInput(appSettings.printOrientation)
-    setIsPageSetupDialogOpen(true)
-  }, [appSettings.printOrientation, appSettings.printPageSize])
-
   const onApplyPreferences = useCallback(async () => {
     const nextSettings: AppSettings = {
       ...appSettings,
       defaultAuthor: preferencesAuthorInput.trim(),
       defaultOrganization: preferencesOrganizationInput.trim(),
       symbols: preferencesSymbolsInput.length > 0 ? preferencesSymbolsInput : DEFAULT_BEAD_SYMBOLS,
+      printPageSize: pageSetupSizeInput,
+      printOrientation: pageSetupOrientationInput,
     }
 
     try {
@@ -825,25 +830,11 @@ function App() {
     preferencesAuthorInput,
     preferencesOrganizationInput,
     preferencesSymbolsInput,
+    pageSetupOrientationInput,
+    pageSetupSizeInput,
     setMetadata,
     setSymbols,
   ])
-
-  const onApplyPageSetup = useCallback(async () => {
-    const nextSettings: AppSettings = {
-      ...appSettings,
-      printPageSize: pageSetupSizeInput,
-      printOrientation: pageSetupOrientationInput,
-    }
-
-    try {
-      await saveAppSettings(nextSettings)
-      setAppSettings(nextSettings)
-      setIsPageSetupDialogOpen(false)
-    } catch (error) {
-      window.alert(`Could not save page setup: ${getErrorMessage(error)}`)
-    }
-  }, [appSettings, pageSetupOrientationInput, pageSetupSizeInput])
 
   const onApplyMetadata = useCallback(() => {
     setMetadata({
@@ -1048,7 +1039,6 @@ function App() {
 
       if (
         isPreferencesDialogOpen ||
-        isPageSetupDialogOpen ||
         isMetadataDialogOpen ||
         isRecentDialogOpen ||
         isArrangeDialogOpen ||
@@ -1056,7 +1046,6 @@ function App() {
       ) {
         if (event.key === 'Escape') {
           setIsPreferencesDialogOpen(false)
-          setIsPageSetupDialogOpen(false)
           setIsMetadataDialogOpen(false)
           setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
@@ -1086,7 +1075,7 @@ function App() {
           redo()
           handled = true
         } else if (lowerKey === 'p' && event.shiftKey) {
-          onOpenPageSetupDialog()
+          onOpenPreferencesDialog()
           handled = true
         } else if (lowerKey === 'p' && !event.shiftKey) {
           onPrintDocument()
@@ -1208,7 +1197,6 @@ function App() {
     isBackgroundMenuOpen,
     isColorMenuOpen,
     isMetadataDialogOpen,
-    isPageSetupDialogOpen,
     isPreferencesDialogOpen,
     isRecentDialogOpen,
     isViewsMenuOpen,
@@ -1216,7 +1204,6 @@ function App() {
     onDeleteSelection,
     onNewDocument,
     onOpenDocument,
-    onOpenPageSetupDialog,
     onOpenPreferencesDialog,
     onOpenRecentDialog,
     onOpenArrangeDialog,
@@ -1292,37 +1279,42 @@ function App() {
           </p>
         </div>
         <div className="header-actions">
-          <button className="action" onClick={onNewDocument}>
-            New
+          <button className="action header-action" onClick={onNewDocument}>
+            <FilePlus2 className="header-action-icon" aria-hidden="true" />
+            <span>New</span>
           </button>
-          <button className="action" onClick={() => void onOpenDocument()}>
-            Open...
+          <button className="action header-action" onClick={() => void onOpenDocument()}>
+            <FolderOpen className="header-action-icon" aria-hidden="true" />
+            <span>Open...</span>
           </button>
-          <button className="action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
-            Open recent...
+          <button className="action header-action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
+            <FolderClock className="header-action-icon" aria-hidden="true" />
+            <span>Open recent...</span>
           </button>
-          <button className="action" onClick={() => void onSaveDocument()}>
-            Save
+          <button className="action header-action" onClick={() => void onSaveDocument()}>
+            <Save className="header-action-icon" aria-hidden="true" />
+            <span>Save</span>
           </button>
-          <button className="action" onClick={() => void onSaveAsDocument()}>
-            Save As...
+          <button className="action header-action" onClick={() => void onSaveAsDocument()}>
+            <SaveAll className="header-action-icon" aria-hidden="true" />
+            <span>Save As...</span>
           </button>
           <button
-            className="action"
+            className="action header-action"
             onClick={() => {
               onDownloadFile(openFileName)
             }}
           >
-            Export .jbb
+            <Download className="header-action-icon" aria-hidden="true" />
+            <span>Export .jbb</span>
           </button>
-          <button className="action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
-            Print...
+          <button className="action header-action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
+            <Printer className="header-action-icon" aria-hidden="true" />
+            <span>Print...</span>
           </button>
-          <button className="action" onClick={onOpenPageSetupDialog}>
-            Page setup...
-          </button>
-          <button className="action" onClick={onOpenPreferencesDialog}>
-            Preferences...
+          <button className="action header-action" onClick={onOpenPreferencesDialog}>
+            <Settings2 className="header-action-icon" aria-hidden="true" />
+            <span>Preferences...</span>
           </button>
           <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
         </div>
@@ -1918,50 +1910,6 @@ function App() {
         </div>
       ) : null}
 
-      {isPageSetupDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Page setup">
-            <div className="panel-title">
-              <h2>Page Setup</h2>
-            </div>
-            <div className="arrange-form">
-              <label className="arrange-field">
-                Paper
-                <select
-                  className="arrange-input"
-                  value={pageSetupSizeInput}
-                  onChange={(event) => setPageSetupSizeInput(event.currentTarget.value as AppSettings['printPageSize'])}
-                >
-                  <option value="a4">A4</option>
-                  <option value="letter">Letter</option>
-                </select>
-              </label>
-              <label className="arrange-field">
-                Orientation
-                <select
-                  className="arrange-input"
-                  value={pageSetupOrientationInput}
-                  onChange={(event) =>
-                    setPageSetupOrientationInput(event.currentTarget.value as AppSettings['printOrientation'])
-                  }
-                >
-                  <option value="portrait">Portrait</option>
-                  <option value="landscape">Landscape</option>
-                </select>
-              </label>
-            </div>
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsPageSetupDialogOpen(false)}>
-                Cancel
-              </button>
-              <button className="action tool-action active" onClick={() => void onApplyPageSetup()}>
-                Apply
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
       {isPreferencesDialogOpen ? (
         <div className="dialog-backdrop">
           <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Preferences">
@@ -1995,6 +1943,28 @@ function App() {
                   value={preferencesSymbolsInput}
                   onChange={(event) => setPreferencesSymbolsInput(event.currentTarget.value)}
                 />
+              </label>
+              <label className="arrange-field">
+                Paper
+                <select
+                  className="arrange-input"
+                  value={pageSetupSizeInput}
+                  onChange={(event) => setPageSetupSizeInput(event.currentTarget.value as AppSettings['printPageSize'])}
+                >
+                  <option value="a4">A4</option>
+                  <option value="letter">Letter</option>
+                </select>
+              </label>
+              <label className="arrange-field">
+                Orientation
+                <select
+                  className="arrange-input"
+                  value={pageSetupOrientationInput}
+                  onChange={(event) => setPageSetupOrientationInput(event.currentTarget.value as AppSettings['printOrientation'])}
+                >
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Landscape</option>
+                </select>
               </label>
             </div>
             <div className="arrange-actions">

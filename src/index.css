@@ -96,6 +96,19 @@ h1 {
   gap: 0.38rem;
 }
 
+.header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+}
+
+.header-action-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  stroke-width: 2.1;
+  flex: none;
+}
+
 .metadata-inline-action {
   border: none;
   background: transparent;
