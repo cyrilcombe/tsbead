@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-019)
+Last updated: 2026-02-09 (S-020)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -23,7 +23,7 @@ Status legend:
 | F-006 | Views | Simulation rendering (wrapped/shifted woven preview) | `view/SimulationPanel.java` | `DONE` |
 | F-007 | Views | Report rendering (infos + color counts + bead run list) | `view/ReportPanel.java` | `DONE` |
 | F-008 | Tools | Pencil: click toggles point, drag draws snapped line | `ToolPencilAction`, `DraftPanel.handleMouse*` | `DONE` |
-| F-009 | Tools | Select: rectangular selection | `ToolSelectAction`, `Selection.java` | `PARTIAL` |
+| F-009 | Tools | Select: rectangular selection | `ToolSelectAction`, `Selection.java` | `DONE` |
 | F-010 | Tools | Fill (linear fill along flattened pattern) | `ToolFillAction`, `Model.fillLine()` | `DONE` |
 | F-011 | Tools | Pipette (pick color from bead) | `ToolPipetteAction`, `DraftPanel.selectColorFrom()` | `DONE` |
 | F-012 | Edit | Delete selection content | `EditDeleteAction`, `Model.delete()` | `DONE` |

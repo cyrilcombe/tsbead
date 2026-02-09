@@ -324,6 +324,28 @@ describe('editor store', () => {
     expect(state.document.view.selectedTool).toBe('pencil')
   })
 
+  it('clears selection when selecting tools (legacy tool action parity)', () => {
+    useEditorStore.getState().setSelectedTool('select')
+    useEditorStore.getState().setSelection({
+      start: { x: 0, y: 0 },
+      end: { x: 2, y: 2 },
+    })
+
+    useEditorStore.getState().setSelectedTool('select')
+    let state = useEditorStore.getState()
+    expect(state.selection).toBeNull()
+    expect(state.document.view.selectedTool).toBe('select')
+
+    useEditorStore.getState().setSelection({
+      start: { x: 0, y: 0 },
+      end: { x: 2, y: 2 },
+    })
+    useEditorStore.getState().setSelectedTool('fill')
+    state = useEditorStore.getState()
+    expect(state.selection).toBeNull()
+    expect(state.document.view.selectedTool).toBe('fill')
+  })
+
   it('deletes selected beads and clears selection', () => {
     const document = createEmptyDocument(4, 4)
     document.model.rows = [

@@ -418,7 +418,12 @@ function App() {
         drawLine(start, point, selectedColor)
       }
     } else if (selectedTool === 'select') {
-      setSelection({ start, end: point })
+      if (start.x === point.x && start.y === point.y) {
+        clearSelection()
+        toggleCell(start.x, start.y, selectedColor)
+      } else {
+        setSelection({ start, end: point })
+      }
     }
 
     setDragPreview(null)

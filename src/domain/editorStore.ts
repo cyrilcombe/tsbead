@@ -397,13 +397,13 @@ export const useEditorStore = create<EditorState>((set) => ({
   },
   setSelectedTool: (tool) => {
     set((state) => {
-      if (state.document.view.selectedTool === tool && (tool === 'select' || state.selection === null)) {
+      if (state.document.view.selectedTool === tool && state.selection === null) {
         return state
       }
 
       const document = cloneDocument(state.document)
       document.view.selectedTool = tool
-      const selection = tool === 'select' ? state.selection : null
+      const selection = null
       return { document, selection }
     })
   },
