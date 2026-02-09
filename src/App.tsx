@@ -1385,7 +1385,6 @@ function App() {
                           style={{ backgroundColor: colorToCss(color) }}
                           onClick={() => {
                             setColorAsBackground(index)
-                            setIsBackgroundMenuOpen(false)
                           }}
                           onDoubleClick={() => onEditPaletteColor(index)}
                           title={`Set background to color ${index}`}
@@ -1420,7 +1419,6 @@ function App() {
                           style={{ backgroundColor: colorToCss(color) }}
                           onClick={() => {
                             setSelectedColor(index)
-                            setIsColorMenuOpen(false)
                           }}
                           onDoubleClick={() => onEditPaletteColor(index)}
                           title={`Color ${index}`}

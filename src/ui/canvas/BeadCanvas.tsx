@@ -152,6 +152,7 @@ export function BeadCanvas({
     context.textAlign = 'center'
     context.textBaseline = 'middle'
     context.font = `${Math.max(9, Math.floor(cellSize * 0.9))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
+    const rulerLabelYOffset = Math.max(1, Math.floor(cellSize * 0.2))
     for (let y = 0; y <= height; y += 1) {
       const legacyRowIndex = totalHeight - (boundedRowStart + y)
       if (legacyRowIndex % 10 !== 0) {
@@ -165,7 +166,7 @@ export function BeadCanvas({
       context.fillText(
         String(legacyRowIndex),
         GRID_OFFSET_X - MARKER_GAP - MARKER_WIDTH / 2,
-        markerY + cellSize / 2,
+        markerY + cellSize / 2 + rulerLabelYOffset,
       )
     }
 
