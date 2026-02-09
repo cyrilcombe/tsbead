@@ -400,6 +400,9 @@ h1 {
 }
 
 .sidebar {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
   min-height: 0;
   overflow: auto;
 }
@@ -430,6 +433,38 @@ h1 {
 .swatch.selected {
   border-color: var(--accent);
   transform: translateY(-1px);
+}
+
+.metadata-section {
+  border-top: 1px solid #dfd7cb;
+  padding-top: 0.45rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.metadata-section .panel-title {
+  margin-bottom: 0.15rem;
+}
+
+.metadata-field {
+  display: grid;
+  gap: 0.24rem;
+  color: #4f5a5e;
+  font-size: 0.82rem;
+}
+
+.metadata-input {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fffefb;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.38rem 0.46rem;
+}
+
+.metadata-notes {
+  min-height: 5.2rem;
+  resize: vertical;
 }
 
 .dialog-backdrop {

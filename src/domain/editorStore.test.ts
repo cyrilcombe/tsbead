@@ -23,6 +23,20 @@ describe('editor store', () => {
     expect(useEditorStore.getState().document.view.selectedColor).toBe(3)
   })
 
+  it('updates metadata fields and marks document dirty', () => {
+    useEditorStore.getState().setMetadata({
+      author: 'Damian',
+      organization: 'JBead',
+      notes: 'Test notes',
+    })
+
+    const state = useEditorStore.getState()
+    expect(state.document.author).toBe('Damian')
+    expect(state.document.organization).toBe('JBead')
+    expect(state.document.notes).toBe('Test notes')
+    expect(state.dirty).toBe(true)
+  })
+
   it('picks selected color from a bead cell', () => {
     const document = createEmptyDocument(3, 3)
     document.model.rows = [

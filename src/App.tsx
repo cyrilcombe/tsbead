@@ -76,6 +76,7 @@ function App() {
   const drawLine = useEditorStore((state) => state.drawLine)
   const fillLine = useEditorStore((state) => state.fillLine)
   const reset = useEditorStore((state) => state.reset)
+  const setMetadata = useEditorStore((state) => state.setMetadata)
   const setSelectedColor = useEditorStore((state) => state.setSelectedColor)
   const setSelectedTool = useEditorStore((state) => state.setSelectedTool)
   const setViewVisibility = useEditorStore((state) => state.setViewVisibility)
@@ -932,6 +933,37 @@ function App() {
               )
             })}
           </div>
+          <section className="metadata-section">
+            <div className="panel-title">
+              <h2>Metadata</h2>
+            </div>
+            <label className="metadata-field">
+              Author
+              <input
+                className="metadata-input"
+                type="text"
+                value={document.author}
+                onChange={(event) => setMetadata({ author: event.currentTarget.value })}
+              />
+            </label>
+            <label className="metadata-field">
+              Organization
+              <input
+                className="metadata-input"
+                type="text"
+                value={document.organization}
+                onChange={(event) => setMetadata({ organization: event.currentTarget.value })}
+              />
+            </label>
+            <label className="metadata-field">
+              Notes
+              <textarea
+                className="metadata-input metadata-notes"
+                value={document.notes}
+                onChange={(event) => setMetadata({ notes: event.currentTarget.value })}
+              />
+            </label>
+          </section>
         </aside>
       </main>
 

@@ -13,6 +13,7 @@ interface EditorState {
   pickColorAt: (point: CellPoint) => void
   drawLine: (start: CellPoint, end: CellPoint, value: number) => void
   fillLine: (point: CellPoint, value: number) => void
+  setMetadata: (metadata: Partial<Pick<JBeadDocument, 'author' | 'organization' | 'notes'>>) => void
   setSelectedColor: (colorIndex: number) => void
   setSelectedTool: (tool: ToolId) => void
   setViewVisibility: (pane: ViewPaneId, visible: boolean) => void
@@ -286,6 +287,26 @@ export const useEditorStore = create<EditorState>((set) => ({
       }
       pushUndoSnapshot(state)
       return { document, dirty: true, ...applyHistoryFlags() }
+    })
+  },
+  setMetadata: (metadata) => {
+    set((state) => {
+      const nextAuthor = metadata.author ?? state.document.author
+      const nextOrganization = metadata.organization ?? state.document.organization
+      const nextNotes = metadata.notes ?? state.document.notes
+      if (
+        nextAuthor === state.document.author &&
+        nextOrganization === state.document.organization &&
+        nextNotes === state.document.notes
+      ) {
+        return state
+      }
+
+      const document = cloneDocument(state.document)
+      document.author = nextAuthor
+      document.organization = nextOrganization
+      document.notes = nextNotes
+      return { document, dirty: true }
     })
   },
   setSelectedColor: (colorIndex) => {

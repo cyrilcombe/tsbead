@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-008)
+Last updated: 2026-02-09 (S-009)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -54,7 +54,7 @@ Status legend:
 | F-037 | File IO | Open/save `.dbb` legacy format | `DbbFileFormat`, `DbbMemento` | `TODO` |
 | F-038 | File IO | New/Open/Save/Save As flows | `FileNewAction`, `FileOpenAction`, `FileSaveAction`, `FileSaveAsAction` | `PARTIAL` |
 | F-039 | File IO | MRU recent files list | `FileMRUAction`, `JBeadFrame.addToMRU()` | `TODO` |
-| F-040 | Metadata | Author / organization / notes persisted in file | `Model.saveTo/loadFrom`, `Memento` | `PARTIAL` |
+| F-040 | Metadata | Author / organization / notes persisted in file | `Model.saveTo/loadFrom`, `Memento` | `DONE` |
 | F-041 | Report | Pattern info block (circumference/repeat/rows/beads) | `ReportInfos.java` | `DONE` |
 | F-042 | Report | Color usage counts | `BeadCounts.java` | `DONE` |
 | F-043 | Report | Bead run list (sequence counts) | `BeadList.java`, `BeadRun.java` | `DONE` |
@@ -91,7 +91,7 @@ Status legend:
 - [ ] T-016 Add full 32-color palette behavior (edit color + set as background)
 - [x] T-017 Build report infos panel (pattern, repeat, row/bead totals)
 - [x] T-018 Build color usage block and bead run list
-- [ ] T-019 Add metadata editors (author, organization, notes)
+- [x] T-019 Add metadata editors (author, organization, notes)
 
 ### Phase 5 - File/compat/print
 - [ ] T-020 Add file flows: New/Open/Save/Save As equivalents
