@@ -37,6 +37,11 @@ npm run test
 npm run build
 ```
 
+## Print / PDF
+
+- Use `Print...` in the app header (or `Cmd/Ctrl+P`) to print visible panes.
+- Use your browser print dialog destination `Save as PDF` to export a PDF.
+
 ## GitHub Pages
 
 Deployment workflow is in `.github/workflows/deploy.yml`.

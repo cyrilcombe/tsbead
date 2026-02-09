@@ -22,6 +22,8 @@ interface PreviewLayout {
 interface BeadPreviewCanvasProps {
   document: JBeadDocument
   variant: 'corrected' | 'simulation'
+  rowStart?: number
+  rowEndExclusive?: number
   onPointerDown?: (point: CellPoint) => void
   onPointerMove?: (point: CellPoint) => void
   onPointerUp?: (point: CellPoint) => void
@@ -61,6 +63,10 @@ function floorDiv(a: number, b: number): number {
   return Math.floor(a / b)
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
 function getCellPixelRect(cell: PreviewCell, layout: PreviewLayout, cellSize: number): CellPixelRect {
   return {
     px: (cell.x - layout.minX) * cellSize + 1,
@@ -70,7 +76,7 @@ function getCellPixelRect(cell: PreviewCell, layout: PreviewLayout, cellSize: nu
   }
 }
 
-function buildCorrectedLayout(rows: number[][]): PreviewLayout {
+function buildCorrectedLayout(rows: number[][], rowStart: number, rowEndExclusive: number): PreviewLayout {
   const width = rows[0]?.length ?? 0
   const height = rows.length
   if (width === 0 || height === 0) {
@@ -87,24 +93,27 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
   for (let legacyY = 0; legacyY < height; legacyY += 1) {
     const sourceY = height - 1 - legacyY
     const row = rows[sourceY]
+    const includeRow = sourceY >= rowStart && sourceY < rowEndExclusive
     for (let x = 0; x < row.length; x += 1) {
       const corrected = correctedPointFromIndex(index, width)
-      const offset = corrected.y % 2 === 0 ? 0 : -0.5
-      const drawX = corrected.x + offset
-      const drawY = -corrected.y
-      const drawWidth = 1
-      cells.push({
-        x: drawX,
-        y: drawY,
-        width: drawWidth,
-        colorIndex: row[x],
-        sourceX: x,
-        sourceY,
-      })
-      minX = Math.min(minX, drawX)
-      maxX = Math.max(maxX, drawX + drawWidth)
-      minY = Math.min(minY, drawY)
-      maxY = Math.max(maxY, drawY + 1)
+      if (includeRow) {
+        const offset = corrected.y % 2 === 0 ? 0 : -0.5
+        const drawX = corrected.x + offset
+        const drawY = -corrected.y
+        const drawWidth = 1
+        cells.push({
+          x: drawX,
+          y: drawY,
+          width: drawWidth,
+          colorIndex: row[x],
+          sourceX: x,
+          sourceY,
+        })
+        minX = Math.min(minX, drawX)
+        maxX = Math.max(maxX, drawX + drawWidth)
+        minY = Math.min(minY, drawY)
+        maxY = Math.max(maxY, drawY + 1)
+      }
       index += 1
     }
   }
@@ -116,7 +125,7 @@ function buildCorrectedLayout(rows: number[][]): PreviewLayout {
   return { cells, minX, maxX, minY, maxY }
 }
 
-function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
+function buildSimulationLayout(rows: number[][], shift: number, rowStart: number, rowEndExclusive: number): PreviewLayout {
   const width = rows[0]?.length ?? 0
   const height = rows.length
   if (width === 0 || height === 0) {
@@ -132,6 +141,9 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
 
   for (let legacyY = 0; legacyY < height; legacyY += 1) {
     const sourceY = height - 1 - legacyY
+    if (sourceY < rowStart || sourceY >= rowEndExclusive) {
+      continue
+    }
     const row = rows[sourceY]
     for (let x = 0; x < row.length; x += 1) {
       const colorIndex = row[x]
@@ -204,6 +216,8 @@ function buildSimulationLayout(rows: number[][], shift: number): PreviewLayout {
 export function BeadPreviewCanvas({
   document,
   variant,
+  rowStart,
+  rowEndExclusive,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -213,13 +227,16 @@ export function BeadPreviewCanvas({
   const isPointerDownRef = useRef(false)
   const lastPointRef = useRef<CellPoint | null>(null)
   const cellSize = getCellSize(document.view.zoom)
+  const totalHeight = document.model.rows.length
+  const boundedRowStart = clamp(Math.floor(rowStart ?? 0), 0, totalHeight)
+  const boundedRowEnd = clamp(Math.floor(rowEndExclusive ?? totalHeight), boundedRowStart, totalHeight)
 
   const layout = useMemo(() => {
     if (variant === 'simulation') {
-      return buildSimulationLayout(document.model.rows, document.view.shift)
+      return buildSimulationLayout(document.model.rows, document.view.shift, boundedRowStart, boundedRowEnd)
     }
-    return buildCorrectedLayout(document.model.rows)
-  }, [document.model.rows, document.view.shift, variant])
+    return buildCorrectedLayout(document.model.rows, boundedRowStart, boundedRowEnd)
+  }, [boundedRowEnd, boundedRowStart, document.model.rows, document.view.shift, variant])
 
   const canvasWidth = Math.ceil((layout.maxX - layout.minX) * cellSize) + 2
   const canvasHeight = Math.ceil((layout.maxY - layout.minY) * cellSize) + 2

@@ -7,10 +7,12 @@ interface BeadCanvasProps {
   document: JBeadDocument
   selectionOverlay: SelectionRect | null
   linePreview: SelectionRect | null
-  onPointerDown: (point: CellPoint) => void
-  onPointerMove: (point: CellPoint) => void
-  onPointerUp: (point: CellPoint) => void
-  onPointerCancel: () => void
+  onPointerDown?: (point: CellPoint) => void
+  onPointerMove?: (point: CellPoint) => void
+  onPointerUp?: (point: CellPoint) => void
+  onPointerCancel?: () => void
+  rowStart?: number
+  rowEndExclusive?: number
 }
 
 const MARKER_WIDTH = 30
@@ -39,18 +41,28 @@ export function BeadCanvas({
   onPointerMove,
   onPointerUp,
   onPointerCancel,
+  rowStart,
+  rowEndExclusive,
 }: BeadCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const isPointerDownRef = useRef(false)
   const cellSize = getCellSize(document.view.zoom)
+  const totalHeight = document.model.rows.length
+  const boundedRowStart = clamp(Math.floor(rowStart ?? 0), 0, totalHeight)
+  const boundedRowEnd = clamp(Math.floor(rowEndExclusive ?? totalHeight), boundedRowStart, totalHeight)
+  const isInteractive = !!onPointerDown && !!onPointerMove && !!onPointerUp && !!onPointerCancel
+  const handlePointerDown = onPointerDown ?? (() => undefined)
+  const handlePointerMove = onPointerMove ?? (() => undefined)
+  const handlePointerUp = onPointerUp ?? (() => undefined)
+  const handlePointerCancel = onPointerCancel ?? (() => undefined)
 
   const width = useMemo(() => {
-    return document.model.rows[0]?.length ?? 0
-  }, [document.model.rows])
+    return document.model.rows[boundedRowStart]?.length ?? document.model.rows[0]?.length ?? 0
+  }, [boundedRowStart, document.model.rows])
 
   const height = useMemo(() => {
-    return document.model.rows.length
-  }, [document.model.rows])
+    return Math.max(0, boundedRowEnd - boundedRowStart)
+  }, [boundedRowEnd, boundedRowStart])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -72,8 +84,13 @@ export function BeadCanvas({
     context.fillRect(GRID_OFFSET_X, 0, width * cellSize + 1, canvas.height)
 
     for (let y = 0; y < height; y += 1) {
+      const sourceY = boundedRowStart + y
+      const row = document.model.rows[sourceY]
+      if (!row) {
+        continue
+      }
       for (let x = 0; x < width; x += 1) {
-        const colorIndex = document.model.rows[y][x]
+        const colorIndex = row[x] ?? 0
         const color = document.colors[colorIndex] ?? [0, 0, 0, 255]
         const beadX = GRID_OFFSET_X + x * cellSize
         const beadY = y * cellSize
@@ -109,8 +126,13 @@ export function BeadCanvas({
       context.textBaseline = 'middle'
       context.font = `${Math.max(7, Math.floor(cellSize * 0.8))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
       for (let y = 0; y < height; y += 1) {
+        const sourceY = boundedRowStart + y
+        const row = document.model.rows[sourceY]
+        if (!row) {
+          continue
+        }
         for (let x = 0; x < width; x += 1) {
-          const colorIndex = document.model.rows[y][x]
+          const colorIndex = row[x] ?? 0
           const color = document.colors[colorIndex] ?? [0, 0, 0, 255]
           context.fillStyle = document.view.drawColors
             ? getContrastingSymbolColor(color)
@@ -131,7 +153,7 @@ export function BeadCanvas({
     context.textBaseline = 'middle'
     context.font = `${Math.max(9, Math.floor(cellSize * 0.9))}px 'Avenir Next', 'Nunito Sans', 'Segoe UI', sans-serif`
     for (let y = 0; y <= height; y += 1) {
-      const legacyRowIndex = height - y
+      const legacyRowIndex = totalHeight - (boundedRowStart + y)
       if (legacyRowIndex % 10 !== 0) {
         continue
       }
@@ -151,8 +173,8 @@ export function BeadCanvas({
       const normalized = normalizeRect(selectionOverlay.start, selectionOverlay.end)
       const left = clamp(normalized.left, 0, width - 1)
       const right = clamp(normalized.right, 0, width - 1)
-      const top = clamp(normalized.top, 0, height - 1)
-      const bottom = clamp(normalized.bottom, 0, height - 1)
+      const top = clamp(normalized.top - boundedRowStart, 0, height - 1)
+      const bottom = clamp(normalized.bottom - boundedRowStart, 0, height - 1)
       context.strokeStyle = 'rgba(222, 56, 43, 0.95)'
       context.lineWidth = 2
       context.setLineDash([6, 4])
@@ -170,20 +192,24 @@ export function BeadCanvas({
       const points = getLinePoints(linePreview.start, snappedEnd)
       context.fillStyle = 'rgba(36, 90, 88, 0.45)'
       for (const point of points) {
-        if (point.x < 0 || point.x >= width || point.y < 0 || point.y >= height) {
+        const localY = point.y - boundedRowStart
+        if (point.x < 0 || point.x >= width || localY < 0 || localY >= height) {
           continue
         }
         context.fillRect(
           GRID_OFFSET_X + point.x * cellSize + 1,
-          point.y * cellSize + 1,
+          localY * cellSize + 1,
           Math.max(1, cellSize - 1),
           Math.max(1, cellSize - 1),
         )
       }
     }
-  }, [cellSize, document, height, linePreview, selectionOverlay, width])
+  }, [boundedRowStart, cellSize, document, height, linePreview, selectionOverlay, totalHeight, width])
 
   const getPoint = (event: React.PointerEvent<HTMLCanvasElement>): CellPoint | null => {
+    if (!isInteractive) {
+      return null
+    }
     const canvas = canvasRef.current
     if (!canvas || width === 0 || height === 0) {
       return null
@@ -195,10 +221,7 @@ export function BeadCanvas({
     if (rawX < 0 || rawX >= width || rawY < 0 || rawY >= height) {
       return null
     }
-    return {
-      x: clamp(rawX, 0, width - 1),
-      y: clamp(rawY, 0, height - 1),
-    }
+    return { x: clamp(rawX, 0, width - 1), y: clamp(rawY + boundedRowStart, boundedRowStart, boundedRowEnd - 1) }
   }
 
   return (
@@ -206,7 +229,7 @@ export function BeadCanvas({
       ref={canvasRef}
       className="bead-canvas"
       onPointerDown={(event) => {
-        if (event.button !== 0) {
+        if (!isInteractive || event.button !== 0) {
           return
         }
         const point = getPoint(event)
@@ -215,33 +238,36 @@ export function BeadCanvas({
         }
         isPointerDownRef.current = true
         event.currentTarget.setPointerCapture(event.pointerId)
-        onPointerDown(point)
+        handlePointerDown(point)
       }}
       onPointerMove={(event) => {
-        if (!isPointerDownRef.current) {
+        if (!isInteractive || !isPointerDownRef.current) {
           return
         }
         const point = getPoint(event)
         if (point) {
-          onPointerMove(point)
+          handlePointerMove(point)
         }
       }}
       onPointerUp={(event) => {
-        if (!isPointerDownRef.current) {
+        if (!isInteractive || !isPointerDownRef.current) {
           return
         }
         isPointerDownRef.current = false
         const point = getPoint(event)
         if (point) {
-          onPointerUp(point)
+          handlePointerUp(point)
         }
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId)
         }
       }}
       onPointerCancel={() => {
+        if (!isInteractive) {
+          return
+        }
         isPointerDownRef.current = false
-        onPointerCancel()
+        handlePointerCancel()
       }}
       role="img"
       aria-label="Bead pattern grid"

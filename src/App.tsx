@@ -20,6 +20,7 @@ const LOCAL_PROJECT_NAME = 'Local Draft'
 const DEFAULT_FILE_NAME = 'design.jbb'
 const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
 const RECENT_FILES_LIMIT = 8
+const PRINT_CHUNK_SIZE = 100
 const TOOLS: Array<{ id: ToolId; label: string }> = [
   { id: 'pencil', label: 'Pencil' },
   { id: 'line', label: 'Line' },
@@ -149,6 +150,12 @@ function formatRecentTimestamp(timestamp: number): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(timestamp))
+}
+
+function formatLegacyChunkLabel(totalRows: number, rowStart: number, rowEndExclusive: number): string {
+  const low = Math.max(1, totalRows - rowEndExclusive + 1)
+  const high = Math.max(low, totalRows - rowStart)
+  return `${low}-${high}`
 }
 
 function App() {
@@ -286,6 +293,13 @@ function App() {
     () => reportSummary.colorCounts.filter((item) => item.count > 0),
     [reportSummary.colorCounts],
   )
+  const printChunks = useMemo(() => {
+    const chunks: Array<{ start: number; end: number }> = []
+    for (let start = 0; start < height; start += PRINT_CHUNK_SIZE) {
+      chunks.push({ start, end: Math.min(height, start + PRINT_CHUNK_SIZE) })
+    }
+    return chunks
+  }, [height])
 
   const onPointerDown = (point: CellPoint, allowShapeTools: boolean) => {
     if ((selectedTool === 'line' || selectedTool === 'select') && !allowShapeTools) {
@@ -593,6 +607,10 @@ function App() {
     }
   }, [document, markSaved, onSaveAsDocument, openFileHandle, openFileName, refreshRecentFiles])
 
+  const onPrintDocument = useCallback(() => {
+    window.print()
+  }, [])
+
   const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0]
     event.currentTarget.value = ''
@@ -816,6 +834,9 @@ function App() {
         } else if (lowerKey === 'y') {
           redo()
           handled = true
+        } else if (lowerKey === 'p' && !event.shiftKey) {
+          onPrintDocument()
+          handled = true
         } else if (lowerKey === 'n' && !event.shiftKey) {
           onNewDocument()
           handled = true
@@ -890,6 +911,7 @@ function App() {
     onNewDocument,
     onOpenDocument,
     onOpenRecentDialog,
+    onPrintDocument,
     onSaveAsDocument,
     onSaveDocument,
     redo,
@@ -980,6 +1002,9 @@ function App() {
             }}
           >
             Export .jbb
+          </button>
+          <button className="action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
+            Print...
           </button>
           <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
         </div>
@@ -1341,6 +1366,118 @@ function App() {
           </section>
         </aside>
       </main>
+
+      <section className={`print-workspace ${isReportVisible ? 'has-report' : 'no-report'}`} aria-hidden="true">
+        {isReportVisible ? (
+          <section className="panel canvas-panel report-panel print-report-panel">
+            <div className="panel-title">
+              <h2>Report</h2>
+              <span>{reportSummary.usedColorCount} colors used</span>
+            </div>
+            <div className="report-content">
+              <dl className="report-info-list">
+                {reportSummary.entries.map((entry) => (
+                  <div key={`print-${entry.label}`} className="report-info-row">
+                    <dt>{entry.label}:</dt>
+                    <dd>{entry.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {reportSummary.repeat > 0 ? (
+                <section className="report-color-usage">
+                  <h3>Color usage</h3>
+                  <div className="report-color-grid">
+                    {visibleColorCounts.map((item) => {
+                      const color = document.colors[item.colorIndex]
+                      const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
+                      return (
+                        <div key={`print-${item.colorIndex}`} className="report-color-row">
+                          <span className="report-color-count">{item.count} x</span>
+                          <span className="report-color-swatch" style={swatchStyle} />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              ) : null}
+              {reportSummary.beadRuns.length > 0 ? (
+                <section className="report-bead-list">
+                  <h3>List of beads</h3>
+                  <div className="report-bead-grid">
+                    {reportSummary.beadRuns.map((item, index) => {
+                      const color = document.colors[item.colorIndex]
+                      const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
+                      return (
+                        <div key={`print-${item.colorIndex}-${item.count}-${index}`} className="report-bead-row">
+                          <span className="report-color-swatch" style={swatchStyle} />
+                          <span className="report-bead-count">{item.count}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {isDraftVisible
+          ? printChunks.map((chunk) => {
+              const chunkLabel = formatLegacyChunkLabel(height, chunk.start, chunk.end)
+              return (
+                <section key={`print-draft-${chunk.start}-${chunk.end}`} className="panel canvas-panel draft-panel print-panel">
+                  <div className="panel-title">
+                    <h2>Draft</h2>
+                    <span>Rows {chunkLabel}</span>
+                  </div>
+                  <div className="canvas-scroll">
+                    <BeadCanvas
+                      document={document}
+                      selectionOverlay={null}
+                      linePreview={null}
+                      rowStart={chunk.start}
+                      rowEndExclusive={chunk.end}
+                    />
+                  </div>
+                </section>
+              )
+            })
+          : null}
+
+        {isCorrectedVisible
+          ? printChunks.map((chunk) => {
+              const chunkLabel = formatLegacyChunkLabel(height, chunk.start, chunk.end)
+              return (
+                <section key={`print-corrected-${chunk.start}-${chunk.end}`} className="panel canvas-panel print-panel">
+                  <div className="panel-title">
+                    <h2>Corrected</h2>
+                    <span>Rows {chunkLabel}</span>
+                  </div>
+                  <div className="canvas-scroll">
+                    <BeadPreviewCanvas document={document} variant="corrected" rowStart={chunk.start} rowEndExclusive={chunk.end} />
+                  </div>
+                </section>
+              )
+            })
+          : null}
+
+        {isSimulationVisible
+          ? printChunks.map((chunk) => {
+              const chunkLabel = formatLegacyChunkLabel(height, chunk.start, chunk.end)
+              return (
+                <section key={`print-simulation-${chunk.start}-${chunk.end}`} className="panel canvas-panel print-panel">
+                  <div className="panel-title">
+                    <h2>Simulation</h2>
+                    <span>Rows {chunkLabel}</span>
+                  </div>
+                  <div className="canvas-scroll">
+                    <BeadPreviewCanvas document={document} variant="simulation" rowStart={chunk.start} rowEndExclusive={chunk.end} />
+                  </div>
+                </section>
+              )
+            })
+          : null}
+      </section>
 
       {isRecentDialogOpen ? (
         <div className="dialog-backdrop">
