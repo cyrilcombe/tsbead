@@ -13,6 +13,15 @@ describe('report summary', () => {
     expect(getUsedHeight(rows)).toBe(2)
   })
 
+  it('computes used height using legacy bottom-up indexing', () => {
+    const rows = [
+      [1, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ]
+    expect(getUsedHeight(rows)).toBe(3)
+  })
+
   it('matches legacy-style repeat detection on flattened used rows', () => {
     expect(calculateColorRepeatBeads([1, 2, 3, 1, 2, 3, 1, 2, 3])).toBe(3)
     expect(calculateColorRepeatBeads([1, 2, 1, 2, 1])).toBe(2)
@@ -33,10 +42,10 @@ describe('report summary', () => {
     document.author = 'Damian'
     document.organization = 'JBead'
     document.model.rows = [
-      [1, 2, 1],
+      [0, 0, 0],
+      [0, 0, 0],
       [2, 1, 2],
-      [0, 0, 0],
-      [0, 0, 0],
+      [1, 2, 1],
     ]
 
     const summary = buildReportSummary(document, 'pattern.jbb')
@@ -67,6 +76,26 @@ describe('report summary', () => {
       { colorIndex: 1, count: 2 },
       { colorIndex: 2, count: 2 },
       { colorIndex: 1, count: 2 },
+    ])
+  })
+
+  it('builds report bead list from bottom-left scan order then reversed', () => {
+    const document = createEmptyDocument(2, 3)
+    document.model.rows = [
+      [1, 0],
+      [2, 0],
+      [3, 0],
+    ]
+
+    const summary = buildReportSummary(document, 'pattern.jbb')
+    expect(summary.repeat).toBe(6)
+    expect(summary.beadRuns).toEqual([
+      { colorIndex: 0, count: 1 },
+      { colorIndex: 1, count: 1 },
+      { colorIndex: 0, count: 1 },
+      { colorIndex: 2, count: 1 },
+      { colorIndex: 0, count: 1 },
+      { colorIndex: 3, count: 1 },
     ])
   })
 })

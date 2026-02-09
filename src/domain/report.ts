@@ -33,9 +33,11 @@ function beadLabel(count: number): string {
 }
 
 export function getUsedHeight(rows: number[][]): number {
-  for (let y = rows.length - 1; y >= 0; y -= 1) {
+  // Legacy Model.getUsedHeight uses y=0 at visual bottom.
+  // Our rows are stored top-down, so we map to legacy with: legacyY = rows.length - 1 - y.
+  for (let y = 0; y < rows.length; y += 1) {
     if (rows[y].some((value) => value > 0)) {
-      return y + 1
+      return rows.length - y
     }
   }
   return 0
@@ -43,7 +45,9 @@ export function getUsedHeight(rows: number[][]): number {
 
 function flattenUsedRows(rows: number[][], width: number, usedHeight: number): number[] {
   const result: number[] = []
-  for (let y = 0; y < usedHeight; y += 1) {
+  // Match legacy linear index order: bottom row to top row, left to right inside each row.
+  for (let legacyY = 0; legacyY < usedHeight; legacyY += 1) {
+    const y = rows.length - 1 - legacyY
     const row = rows[y] ?? []
     for (let x = 0; x < width; x += 1) {
       result.push(row[x] ?? 0)
