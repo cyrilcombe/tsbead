@@ -226,8 +226,7 @@ function App() {
   const [arrangeCopies, setArrangeCopies] = useState('1')
   const [arrangeHorizontalOffset, setArrangeHorizontalOffset] = useState('0')
   const [arrangeVerticalOffset, setArrangeVerticalOffset] = useState('0')
-  const [isPatternWidthDialogOpen, setIsPatternWidthDialogOpen] = useState(false)
-  const [isPatternHeightDialogOpen, setIsPatternHeightDialogOpen] = useState(false)
+  const [isPatternSizeDialogOpen, setIsPatternSizeDialogOpen] = useState(false)
   const [patternWidthInput, setPatternWidthInput] = useState('15')
   const [patternHeightInput, setPatternHeightInput] = useState('120')
   const [isZoomFitMode, setIsZoomFitMode] = useState(false)
@@ -487,36 +486,32 @@ function App() {
     setIsArrangeDialogOpen(false)
   }
 
-  const onOpenPatternWidthDialog = () => {
+  const onOpenPatternSizeDialog = () => {
     setPatternWidthInput(String(width))
-    setIsPatternWidthDialogOpen(true)
-  }
-
-  const onOpenPatternHeightDialog = () => {
     setPatternHeightInput(String(height))
-    setIsPatternHeightDialogOpen(true)
+    setIsPatternSizeDialogOpen(true)
   }
 
-  const onApplyPatternWidth = () => {
+  const onApplyPatternSize = () => {
     const nextWidth = parsePatternDimensionValue(
       patternWidthInput,
       width,
       MIN_PATTERN_WIDTH,
       MAX_PATTERN_WIDTH,
     )
-    setPatternWidth(nextWidth)
-    setIsPatternWidthDialogOpen(false)
-  }
-
-  const onApplyPatternHeight = () => {
     const nextHeight = parsePatternDimensionValue(
       patternHeightInput,
       height,
       MIN_PATTERN_HEIGHT,
       MAX_PATTERN_HEIGHT,
     )
-    setPatternHeight(nextHeight)
-    setIsPatternHeightDialogOpen(false)
+    if (nextWidth !== width) {
+      setPatternWidth(nextWidth)
+    }
+    if (nextHeight !== height) {
+      setPatternHeight(nextHeight)
+    }
+    setIsPatternSizeDialogOpen(false)
   }
 
   const onEditPaletteColor = (index: number) => {
@@ -957,16 +952,14 @@ function App() {
         isPageSetupDialogOpen ||
         isRecentDialogOpen ||
         isArrangeDialogOpen ||
-        isPatternWidthDialogOpen ||
-        isPatternHeightDialogOpen
+        isPatternSizeDialogOpen
       ) {
         if (event.key === 'Escape') {
           setIsPreferencesDialogOpen(false)
           setIsPageSetupDialogOpen(false)
           setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
-          setIsPatternWidthDialogOpen(false)
-          setIsPatternHeightDialogOpen(false)
+          setIsPatternSizeDialogOpen(false)
           event.preventDefault()
         }
         return
@@ -1114,8 +1107,7 @@ function App() {
     isPageSetupDialogOpen,
     isPreferencesDialogOpen,
     isRecentDialogOpen,
-    isPatternHeightDialogOpen,
-    isPatternWidthDialogOpen,
+    isPatternSizeDialogOpen,
     onDeleteSelection,
     onNewDocument,
     onOpenDocument,
@@ -1184,10 +1176,8 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="header-copy">
-          <p className="eyebrow">JBead Modernization</p>
+        <div className="header-main">
           <h1>jbead-web</h1>
-          <p className="subtitle">Offline-first editor with .jbb compatibility.</p>
           <p className="file-status">
             File: <strong>{openFileName}</strong>
             {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
@@ -1202,12 +1192,6 @@ function App() {
           </button>
           <button className="action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
             Open recent...
-          </button>
-          <button className="action" onClick={onOpenPreferencesDialog}>
-            Preferences...
-          </button>
-          <button className="action" onClick={onOpenPageSetupDialog}>
-            Page setup...
           </button>
           <button className="action" onClick={() => void onSaveDocument()}>
             Save
@@ -1225,6 +1209,12 @@ function App() {
           </button>
           <button className="action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
             Print...
+          </button>
+          <button className="action" onClick={onOpenPageSetupDialog}>
+            Page setup...
+          </button>
+          <button className="action" onClick={onOpenPreferencesDialog}>
+            Preferences...
           </button>
           <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
         </div>
@@ -1274,11 +1264,8 @@ function App() {
             <button className="action" onClick={() => deleteRow()}>
               Delete row
             </button>
-            <button className="action" onClick={onOpenPatternWidthDialog}>
-              Pattern width...
-            </button>
-            <button className="action" onClick={onOpenPatternHeightDialog}>
-              Pattern height...
+            <button className="action" onClick={onOpenPatternSizeDialog}>
+              Pattern size...
             </button>
             <button className="action" onClick={onOpenArrangeDialog} disabled={selection === null}>
               Arrange...
@@ -1364,135 +1351,88 @@ function App() {
       </section>
 
       <main className="workspace">
-        <section className="preview-with-scrollbar">
-          <section className="preview-grid">
-            {isDraftVisible ? (
-              <section className="panel canvas-panel draft-panel">
-                <div className="panel-title">
-                  <h2>Draft</h2>
-                  <span>
-                    {width} x {height}
-                  </span>
-                </div>
-                <div
-                  ref={draftScrollRef}
-                  className="canvas-scroll"
-                  onScroll={(event) => onPaneScroll(event.currentTarget)}
-                >
-                  <BeadCanvas
-                    document={document}
-                    selectionOverlay={selectionOverlay}
-                    linePreview={linePreview}
-                    onPointerDown={onDraftPointerDown}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                    onPointerCancel={onPointerCancel}
-                  />
-                </div>
-              </section>
-            ) : null}
+        <section
+          className={`preview-with-scrollbar ${hasCanvasPaneVisible ? 'has-canvas' : 'no-canvas'} ${isReportVisible ? 'has-report' : 'no-report'}`}
+        >
+          {hasCanvasPaneVisible || !isReportVisible ? (
+            <section className="preview-grid">
+              {isDraftVisible ? (
+                <section className="panel canvas-panel draft-panel">
+                  <div className="panel-title">
+                    <h2>Draft</h2>
+                    <span>
+                      {width} x {height}
+                    </span>
+                  </div>
+                  <div
+                    ref={draftScrollRef}
+                    className="canvas-scroll"
+                    onScroll={(event) => onPaneScroll(event.currentTarget)}
+                  >
+                    <BeadCanvas
+                      document={document}
+                      selectionOverlay={selectionOverlay}
+                      linePreview={linePreview}
+                      onPointerDown={onDraftPointerDown}
+                      onPointerMove={onPointerMove}
+                      onPointerUp={onPointerUp}
+                      onPointerCancel={onPointerCancel}
+                    />
+                  </div>
+                </section>
+              ) : null}
 
-            {isCorrectedVisible ? (
-              <section className="panel canvas-panel">
-                <div className="panel-title">
-                  <h2>Corrected</h2>
-                </div>
-                <div
-                  ref={correctedScrollRef}
-                  className="canvas-scroll"
-                  onScroll={(event) => onPaneScroll(event.currentTarget)}
-                >
-                  <BeadPreviewCanvas
-                    document={document}
-                    variant="corrected"
-                    onPointerDown={onPreviewPointerDown}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                    onPointerCancel={onPointerCancel}
-                  />
-                </div>
-              </section>
-            ) : null}
+              {isCorrectedVisible ? (
+                <section className="panel canvas-panel">
+                  <div className="panel-title">
+                    <h2>Corrected</h2>
+                  </div>
+                  <div
+                    ref={correctedScrollRef}
+                    className="canvas-scroll"
+                    onScroll={(event) => onPaneScroll(event.currentTarget)}
+                  >
+                    <BeadPreviewCanvas
+                      document={document}
+                      variant="corrected"
+                      onPointerDown={onPreviewPointerDown}
+                      onPointerMove={onPointerMove}
+                      onPointerUp={onPointerUp}
+                      onPointerCancel={onPointerCancel}
+                    />
+                  </div>
+                </section>
+              ) : null}
 
-            {isSimulationVisible ? (
-              <section className="panel canvas-panel">
-                <div className="panel-title">
-                  <h2>Simulation</h2>
-                </div>
-                <div
-                  ref={simulationScrollRef}
-                  className="canvas-scroll"
-                  onScroll={(event) => onPaneScroll(event.currentTarget)}
-                >
-                  <BeadPreviewCanvas
-                    document={document}
-                    variant="simulation"
-                    onPointerDown={onPreviewPointerDown}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                    onPointerCancel={onPointerCancel}
-                  />
-                </div>
-              </section>
-            ) : null}
+              {isSimulationVisible ? (
+                <section className="panel canvas-panel">
+                  <div className="panel-title">
+                    <h2>Simulation</h2>
+                  </div>
+                  <div
+                    ref={simulationScrollRef}
+                    className="canvas-scroll"
+                    onScroll={(event) => onPaneScroll(event.currentTarget)}
+                  >
+                    <BeadPreviewCanvas
+                      document={document}
+                      variant="simulation"
+                      onPointerDown={onPreviewPointerDown}
+                      onPointerMove={onPointerMove}
+                      onPointerUp={onPointerUp}
+                      onPointerCancel={onPointerCancel}
+                    />
+                  </div>
+                </section>
+              ) : null}
 
-            {isReportVisible ? (
-              <section className="panel canvas-panel report-panel">
-                <div className="panel-title">
-                  <h2>Report</h2>
-                </div>
-                <div className="report-content">
-                  <dl className="report-info-list">
-                    {reportSummary.entries.map((entry) => (
-                      <div key={entry.label} className="report-info-row">
-                        <dt>{entry.label}:</dt>
-                        <dd>{entry.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                  {reportSummary.repeat > 0 ? (
-                    <section className="report-color-usage">
-                      <div className="report-color-grid">
-                        {visibleColorCounts.map((item) => {
-                          const color = document.colors[item.colorIndex]
-                          const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
-                          return (
-                            <div key={item.colorIndex} className="report-color-row">
-                              <span className="report-color-count">{item.count} x</span>
-                              <span className="report-color-swatch" style={swatchStyle} />
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </section>
-                  ) : null}
-                  {reportSummary.beadRuns.length > 0 ? (
-                    <section className="report-bead-list">
-                      <h3>List of beads</h3>
-                      <div className="report-bead-grid">
-                        {reportSummary.beadRuns.map((item, index) => {
-                          const color = document.colors[item.colorIndex]
-                          const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
-                          return (
-                            <div key={`${item.colorIndex}-${item.count}-${index}`} className="report-bead-row">
-                              <span className="report-color-swatch" style={swatchStyle} />
-                              <span className="report-bead-count">{item.count}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </section>
-                  ) : null}
-                </div>
-              </section>
-            ) : null}
-
-            {!hasAnyPaneVisible ? (
-              <section className="panel empty-pane">
-                <p>Select at least one view to display a pane.</p>
-              </section>
-            ) : null}
-          </section>
+              {!hasAnyPaneVisible ? (
+                <section className="panel empty-pane">
+                  <p>Select at least one view to display a pane.</p>
+                </section>
+              ) : null}
+            </section>
+          ) : null}
 
           {hasCanvasPaneVisible ? (
             <div className="shared-scrollbar-panel" aria-label="Shared pattern scroll">
@@ -1506,6 +1446,57 @@ function App() {
                 onChange={(event) => setViewScroll(Number(event.currentTarget.value))}
               />
             </div>
+          ) : null}
+
+          {isReportVisible ? (
+            <section className="panel canvas-panel report-panel report-split-panel">
+              <div className="panel-title">
+                <h2>Report</h2>
+              </div>
+              <div className="report-content">
+                <dl className="report-info-list">
+                  {reportSummary.entries.map((entry) => (
+                    <div key={entry.label} className="report-info-row">
+                      <dt>{entry.label}:</dt>
+                      <dd>{entry.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {reportSummary.repeat > 0 ? (
+                  <section className="report-color-usage">
+                    <div className="report-color-grid">
+                      {visibleColorCounts.map((item) => {
+                        const color = document.colors[item.colorIndex]
+                        const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
+                        return (
+                          <div key={item.colorIndex} className="report-color-row">
+                            <span className="report-color-count">{item.count} x</span>
+                            <span className="report-color-swatch" style={swatchStyle} />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                ) : null}
+                {reportSummary.beadRuns.length > 0 ? (
+                  <section className="report-bead-list">
+                    <h3>List of beads</h3>
+                    <div className="report-bead-grid">
+                      {reportSummary.beadRuns.map((item, index) => {
+                        const color = document.colors[item.colorIndex]
+                        const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
+                        return (
+                          <div key={`${item.colorIndex}-${item.count}-${index}`} className="report-bead-row">
+                            <span className="report-color-swatch" style={swatchStyle} />
+                            <span className="report-bead-count">{item.count}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                ) : null}
+              </div>
+            </section>
           ) : null}
         </section>
 
@@ -1819,11 +1810,11 @@ function App() {
         </div>
       ) : null}
 
-      {isPatternWidthDialogOpen ? (
+      {isPatternSizeDialogOpen ? (
         <div className="dialog-backdrop">
-          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Pattern width">
+          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Pattern size">
             <div className="panel-title">
-              <h2>Pattern Width</h2>
+              <h2>Pattern Size</h2>
             </div>
             <div className="arrange-form">
               <label className="arrange-field">
@@ -1838,26 +1829,6 @@ function App() {
                   onChange={(event) => setPatternWidthInput(event.currentTarget.value)}
                 />
               </label>
-            </div>
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsPatternWidthDialogOpen(false)}>
-                Cancel
-              </button>
-              <button className="action tool-action active" onClick={onApplyPatternWidth}>
-                Apply
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {isPatternHeightDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Pattern height">
-            <div className="panel-title">
-              <h2>Pattern Height</h2>
-            </div>
-            <div className="arrange-form">
               <label className="arrange-field">
                 Height (rows)
                 <input
@@ -1872,10 +1843,10 @@ function App() {
               </label>
             </div>
             <div className="arrange-actions">
-              <button className="action" onClick={() => setIsPatternHeightDialogOpen(false)}>
+              <button className="action" onClick={() => setIsPatternSizeDialogOpen(false)}>
                 Cancel
               </button>
-              <button className="action tool-action active" onClick={onApplyPatternHeight}>
+              <button className="action tool-action active" onClick={onApplyPatternSize}>
                 Apply
               </button>
             </div>
