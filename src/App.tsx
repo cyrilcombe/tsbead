@@ -185,6 +185,7 @@ function App() {
   const insertRow = useEditorStore((state) => state.insertRow)
   const deleteRow = useEditorStore((state) => state.deleteRow)
   const setSelection = useEditorStore((state) => state.setSelection)
+  const clearSelection = useEditorStore((state) => state.clearSelection)
   const deleteSelection = useEditorStore((state) => state.deleteSelection)
   const arrangeSelection = useEditorStore((state) => state.arrangeSelection)
   const undo = useEditorStore((state) => state.undo)
@@ -200,6 +201,7 @@ function App() {
   const paletteColorPickerRef = useRef<HTMLInputElement | null>(null)
   const openFileInputRef = useRef<HTMLInputElement | null>(null)
   const dragStartRef = useRef<CellPoint | null>(null)
+  const isSpaceToolActiveRef = useRef(false)
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
   const correctedScrollRef = useRef<HTMLDivElement | null>(null)
   const simulationScrollRef = useRef<HTMLDivElement | null>(null)
@@ -393,7 +395,7 @@ function App() {
     return Math.max(min, Math.min(max, Math.floor(parsed)))
   }
 
-  const onOpenArrangeDialog = () => {
+  const onOpenArrangeDialog = useCallback(() => {
     if (selection === null || width <= 0) {
       return
     }
@@ -406,7 +408,7 @@ function App() {
     setArrangeHorizontalOffset(String(defaultHorizontalOffset))
     setArrangeVerticalOffset(String(selectionHeight))
     setIsArrangeDialogOpen(true)
-  }
+  }, [selection, width])
 
   const onApplyArrange = () => {
     const copies = parseArrangeValue(arrangeCopies, 1)
@@ -837,6 +839,14 @@ function App() {
         } else if (lowerKey === 'p' && !event.shiftKey) {
           onPrintDocument()
           handled = true
+        } else if (lowerKey === 'i' && !event.shiftKey) {
+          setIsZoomFitMode(false)
+          zoomIn()
+          handled = true
+        } else if (lowerKey === 'u' && !event.shiftKey) {
+          setIsZoomFitMode(false)
+          zoomOut()
+          handled = true
         } else if (lowerKey === 'n' && !event.shiftKey) {
           onNewDocument()
           handled = true
@@ -881,6 +891,18 @@ function App() {
         if (colorFromCode !== null) {
           setSelectedColor(colorFromCode)
           handled = true
+        } else if (event.key === 'Escape') {
+          clearSelection()
+          handled = true
+        } else if (event.code === 'Space') {
+          if (!event.repeat) {
+            isSpaceToolActiveRef.current = true
+            setSelectedTool('pipette')
+          }
+          handled = true
+        } else if (event.key === 'F8') {
+          onOpenArrangeDialog()
+          handled = true
         } else if (event.key >= '0' && event.key <= '9') {
           setSelectedColor(Number(event.key))
           handled = true
@@ -898,11 +920,35 @@ function App() {
       }
     }
 
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) {
+        return
+      }
+      if (event.code === 'Space' && isSpaceToolActiveRef.current) {
+        isSpaceToolActiveRef.current = false
+        setSelectedTool('pencil')
+        event.preventDefault()
+      }
+    }
+
+    const onBlur = () => {
+      if (!isSpaceToolActiveRef.current) {
+        return
+      }
+      isSpaceToolActiveRef.current = false
+      setSelectedTool('pencil')
+    }
+
     window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
     }
   }, [
+    clearSelection,
     isArrangeDialogOpen,
     isRecentDialogOpen,
     isPatternHeightDialogOpen,
@@ -911,12 +957,15 @@ function App() {
     onNewDocument,
     onOpenDocument,
     onOpenRecentDialog,
+    onOpenArrangeDialog,
     onPrintDocument,
     onSaveAsDocument,
     onSaveDocument,
     redo,
     setSelectedColor,
     setSelectedTool,
+    zoomIn,
+    zoomOut,
     shiftLeft,
     shiftRight,
     undo,
