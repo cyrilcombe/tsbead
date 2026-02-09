@@ -1,6 +1,6 @@
 # Legacy Parity Tracker (Java -> Web)
 
-Last updated: 2026-02-09 (S-007)
+Last updated: 2026-02-09 (S-008)
 
 ## Purpose
 Track feature parity between legacy Java JBead (`/Users/cyrilcombe/Dev/perso/jbead`) and web app (`/Users/cyrilcombe/Dev/perso/jbead-web`), with an actionable task breakdown.
@@ -42,7 +42,7 @@ Status legend:
 | F-025 | Pattern | Pattern height dialog and resize | `PatternHeightAction`, `PatternHeightDialog`, `Model.setHeight()` | `DONE` |
 | F-026 | Pattern | Preferences (author, organization, symbols, update-check setting) | `PatternPreferencesAction`, `PreferencesDialog` | `TODO` |
 | F-027 | Model | Shift left/right (pattern phase shift) | `JBeadFrame.rotateLeft/Right`, `Model.shiftLeft/Right()` | `DONE` |
-| F-028 | Model | Repeat detection (`beads per repeat`, rows per repeat) | `Model.updateRepeat()`, `Model.calcRepeat()` | `PARTIAL` (implemented for report summary calculations) |
+| F-028 | Model | Repeat detection (`beads per repeat`, rows per repeat) | `Model.updateRepeat()`, `Model.calcRepeat()` | `DONE` |
 | F-029 | Palette | 32-color palette with selected color indicator | `ui/ColorPalette.java` | `PARTIAL` (palette exists; not full legacy behavior) |
 | F-030 | Palette | Double-click/popup color edit | `ColorPalette.chooseColor()` | `TODO` |
 | F-031 | Palette | Set clicked color as background (swap with color 0) | `ColorPalette.asBackground()` | `TODO` |
@@ -84,7 +84,7 @@ Status legend:
 - [x] T-011 Add undo/redo history stack equivalent to `BeadUndo`
 - [x] T-012 Add width/height pattern dialogs and model resizing
 - [x] T-013 Add shift controls (left/right buttons + key repeat)
-- [ ] T-014 Implement repeat detection and expose in UI
+- [x] T-014 Implement repeat detection and expose in UI
 - [x] T-015 Add view options: zoom in/normal/out, draw colors/symbols toggles
 
 ### Phase 4 - Palette/report completeness

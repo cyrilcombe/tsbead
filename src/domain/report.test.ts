@@ -16,6 +16,9 @@ describe('report summary', () => {
   it('matches legacy-style repeat detection on flattened used rows', () => {
     expect(calculateColorRepeatBeads([1, 2, 3, 1, 2, 3, 1, 2, 3])).toBe(3)
     expect(calculateColorRepeatBeads([1, 2, 1, 2, 1])).toBe(2)
+    expect(calculateColorRepeatBeads([1, 2, 1, 2, 3])).toBe(5)
+    expect(calculateColorRepeatBeads([0, 0, 0, 1, 2, 3])).toBe(6)
+    expect(calculateColorRepeatBeads([7, 7, 7, 7])).toBe(1)
     expect(calculateColorRepeatBeads([])).toBe(0)
   })
 

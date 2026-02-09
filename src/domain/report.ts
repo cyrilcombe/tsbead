@@ -57,28 +57,19 @@ export function calculateColorRepeatBeads(sequence: number[]): number {
   if (length === 0) {
     return 0
   }
-  if (length === 1) {
-    return 1
-  }
-
-  const z = new Array<number>(length).fill(0)
-  let left = 0
-  let right = 0
-  for (let i = 1; i < length; i += 1) {
-    if (i <= right) {
-      z[i] = Math.min(right - i + 1, z[i - left])
-    }
-    while (i + z[i] < length && sequence[z[i]] === sequence[i + z[i]]) {
-      z[i] += 1
-    }
-    if (i + z[i] - 1 > right) {
-      left = i
-      right = i + z[i] - 1
-    }
-  }
-
+  // Keep parity with legacy Model.calcRepeat().
   for (let repeat = 1; repeat < length; repeat += 1) {
-    if (z[repeat] >= length - repeat) {
+    if (sequence[repeat] !== sequence[0]) {
+      continue
+    }
+    let isMatch = true
+    for (let index = repeat + 1; index < length; index += 1) {
+      if (sequence[(index - repeat) % repeat] !== sequence[index]) {
+        isMatch = false
+        break
+      }
+    }
+    if (isMatch) {
       return repeat
     }
   }
