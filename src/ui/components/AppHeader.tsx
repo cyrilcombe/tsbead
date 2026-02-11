@@ -42,7 +42,7 @@ interface AppHeaderProps {
   onDownloadFile: (name: string) => void
   onPrintDocument: () => void
   onOpenPreferencesDialog: () => void
-  onOpenCreditsDialog: () => void
+  onOpenHelpDialog: () => void
   onOpenMetadataDialog: () => void
   onFileInputChange: (event: ChangeEvent<HTMLInputElement>) => void
 }
@@ -70,7 +70,7 @@ export function AppHeader({
   onDownloadFile,
   onPrintDocument,
   onOpenPreferencesDialog,
-  onOpenCreditsDialog,
+  onOpenHelpDialog,
   onOpenMetadataDialog,
   onFileInputChange,
 }: AppHeaderProps) {
@@ -178,11 +178,11 @@ export function AppHeader({
                 className="action header-action"
                 onClick={() => {
                   onCloseMobileActionsMenu()
-                  onOpenCreditsDialog()
+                  onOpenHelpDialog()
                 }}
               >
                 <Info className="header-action-icon" aria-hidden="true" />
-                <span>Credits...</span>
+                <span>Help...</span>
               </button>
               <div className="mobile-actions-file">
                 <strong>{openFileName}</strong>
@@ -242,9 +242,9 @@ export function AppHeader({
               <Settings2 className="header-action-icon" aria-hidden="true" />
               <span>Preferences...</span>
             </button>
-            <button className="action header-action" onClick={onOpenCreditsDialog}>
+            <button className="action header-action" onClick={onOpenHelpDialog}>
               <Info className="header-action-icon" aria-hidden="true" />
-              <span>Credits...</span>
+              <span>Help...</span>
             </button>
           </div>
           <p className="file-status">

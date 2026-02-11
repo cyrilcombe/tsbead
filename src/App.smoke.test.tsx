@@ -57,11 +57,11 @@ describe('App smoke', () => {
     setMatchMedia(false)
   })
 
-  it('renders and opens credits dialog', async () => {
+  it('renders and opens help dialog', async () => {
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Credits...' }))
-    expect(await screen.findByRole('heading', { name: 'Credits' })).toBeTruthy()
+    fireEvent.click(await screen.findByRole('button', { name: 'Help...' }))
+    expect(await screen.findByRole('heading', { name: 'Help' })).toBeTruthy()
   })
 
   it('keeps a single visible pane on initial mobile portrait render', async () => {

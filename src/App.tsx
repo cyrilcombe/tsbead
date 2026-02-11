@@ -13,7 +13,7 @@ import { MobileEditRail } from './ui/components/MobileEditRail'
 import { PrintWorkspace } from './ui/components/PrintWorkspace'
 import { WorkspacePanels } from './ui/components/WorkspacePanels'
 import { ArrangeDialog } from './ui/components/dialogs/ArrangeDialog'
-import { CreditsDialog } from './ui/components/dialogs/CreditsDialog'
+import { HelpDialog } from './ui/components/dialogs/HelpDialog'
 import { MetadataDialog } from './ui/components/dialogs/MetadataDialog'
 import { PatternSizeDialog } from './ui/components/dialogs/PatternSizeDialog'
 import { PreferencesDialog } from './ui/components/dialogs/PreferencesDialog'
@@ -174,7 +174,7 @@ function App() {
   const [editingPaletteColorIndex, setEditingPaletteColorIndex] = useState<number | null>(null)
   const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
-  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false)
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false)
   const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false)
   const [isViewsMenuOpen, setIsViewsMenuOpen] = useState(false)
   const [isMobileActionsMenuOpen, setIsMobileActionsMenuOpen] = useState(false)
@@ -416,8 +416,8 @@ function App() {
     setIsPreferencesDialogOpen(true)
   }, [appSettings])
 
-  const onOpenCreditsDialog = useCallback(() => {
-    setIsCreditsDialogOpen(true)
+  const onOpenHelpDialog = useCallback(() => {
+    setIsHelpDialogOpen(true)
   }, [])
 
   const onOpenMetadataDialog = useCallback(() => {
@@ -527,7 +527,7 @@ function App() {
 
   const onCloseBlockingDialogs = useCallback(() => {
     setIsPreferencesDialogOpen(false)
-    setIsCreditsDialogOpen(false)
+    setIsHelpDialogOpen(false)
     setIsMobileActionsMenuOpen(false)
     setIsMetadataDialogOpen(false)
     setIsRecentDialogOpen(false)
@@ -540,7 +540,7 @@ function App() {
   const areMenusOpen = isViewsMenuOpen || isColorMenuOpen || isBackgroundMenuOpen || isMobileActionsMenuOpen
   const areBlockingDialogsOpen =
     isPreferencesDialogOpen ||
-    isCreditsDialogOpen ||
+    isHelpDialogOpen ||
     isMobileActionsMenuOpen ||
     isMetadataDialogOpen ||
     isRecentDialogOpen ||
@@ -598,7 +598,7 @@ function App() {
         onDownloadFile={onDownloadFile}
         onPrintDocument={onPrintDocument}
         onOpenPreferencesDialog={onOpenPreferencesDialog}
-        onOpenCreditsDialog={onOpenCreditsDialog}
+        onOpenHelpDialog={onOpenHelpDialog}
         onOpenMetadataDialog={onOpenMetadataDialog}
         onFileInputChange={onFileInputChange}
       />
@@ -798,7 +798,7 @@ function App() {
         onClose={() => setIsPreferencesDialogOpen(false)}
       />
 
-      <CreditsDialog isOpen={isCreditsDialogOpen} onClose={() => setIsCreditsDialogOpen(false)} />
+      <HelpDialog isOpen={isHelpDialogOpen} onClose={() => setIsHelpDialogOpen(false)} />
 
       <RecentFilesDialog
         isOpen={isRecentDialogOpen}
