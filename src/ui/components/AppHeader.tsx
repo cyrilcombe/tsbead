@@ -12,6 +12,7 @@ import {
   Settings2,
 } from 'lucide-react'
 import type { ViewPaneId } from '../../domain/types'
+import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
 
 interface ViewPaneEntry {
   id: ViewPaneId
@@ -73,6 +74,8 @@ export function AppHeader({
   onOpenMetadataDialog,
   onFileInputChange,
 }: AppHeaderProps) {
+  const shortcuts = usePlatformShortcuts()
+
   return (
     <>
       <header className="app-header">
@@ -88,6 +91,7 @@ export function AppHeader({
                   onCloseMobileActionsMenu()
                   onNewDocument()
                 }}
+                title={shortcuts.newDocument}
               >
                 <FilePlus2 className="header-action-icon" aria-hidden="true" />
                 <span>New</span>
@@ -98,6 +102,7 @@ export function AppHeader({
                   onCloseMobileActionsMenu()
                   void onOpenDocument()
                 }}
+                title={shortcuts.openDocument}
               >
                 <FolderOpen className="header-action-icon" aria-hidden="true" />
                 <span>Open...</span>
@@ -109,6 +114,7 @@ export function AppHeader({
                   onOpenRecentDialog()
                 }}
                 disabled={recentFilesCount === 0}
+                title={shortcuts.openRecent}
               >
                 <FolderClock className="header-action-icon" aria-hidden="true" />
                 <span>Open recent...</span>
@@ -119,6 +125,7 @@ export function AppHeader({
                   onCloseMobileActionsMenu()
                   void onSaveDocument()
                 }}
+                title={shortcuts.save}
               >
                 <Save className="header-action-icon" aria-hidden="true" />
                 <span>Save</span>
@@ -129,6 +136,7 @@ export function AppHeader({
                   onCloseMobileActionsMenu()
                   void onSaveAsDocument()
                 }}
+                title={shortcuts.saveAs}
               >
                 <SaveAll className="header-action-icon" aria-hidden="true" />
                 <span>Save As...</span>
@@ -150,6 +158,7 @@ export function AppHeader({
                   onPrintDocument()
                 }}
                 disabled={!hasAnyPaneVisible}
+                title={shortcuts.print}
               >
                 <Printer className="header-action-icon" aria-hidden="true" />
                 <span>Print...</span>
@@ -160,6 +169,7 @@ export function AppHeader({
                   onCloseMobileActionsMenu()
                   onOpenPreferencesDialog()
                 }}
+                title={shortcuts.preferences}
               >
                 <Settings2 className="header-action-icon" aria-hidden="true" />
                 <span>Preferences...</span>
@@ -200,23 +210,23 @@ export function AppHeader({
         </p>
         <div className="header-controls">
           <div className="header-actions">
-            <button className="action header-action" onClick={onNewDocument}>
+            <button className="action header-action" onClick={onNewDocument} title={shortcuts.newDocument}>
               <FilePlus2 className="header-action-icon" aria-hidden="true" />
               <span>New</span>
             </button>
-            <button className="action header-action" onClick={() => void onOpenDocument()}>
+            <button className="action header-action" onClick={() => void onOpenDocument()} title={shortcuts.openDocument}>
               <FolderOpen className="header-action-icon" aria-hidden="true" />
               <span>Open...</span>
             </button>
-            <button className="action header-action" onClick={onOpenRecentDialog} disabled={recentFilesCount === 0}>
+            <button className="action header-action" onClick={onOpenRecentDialog} disabled={recentFilesCount === 0} title={shortcuts.openRecent}>
               <FolderClock className="header-action-icon" aria-hidden="true" />
               <span>Open recent...</span>
             </button>
-            <button className="action header-action" onClick={() => void onSaveDocument()}>
+            <button className="action header-action" onClick={() => void onSaveDocument()} title={shortcuts.save}>
               <Save className="header-action-icon" aria-hidden="true" />
               <span>Save</span>
             </button>
-            <button className="action header-action" onClick={() => void onSaveAsDocument()}>
+            <button className="action header-action" onClick={() => void onSaveAsDocument()} title={shortcuts.saveAs}>
               <SaveAll className="header-action-icon" aria-hidden="true" />
               <span>Save As...</span>
             </button>
@@ -224,11 +234,11 @@ export function AppHeader({
               <Download className="header-action-icon" aria-hidden="true" />
               <span>Export .jbb</span>
             </button>
-            <button className="action header-action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
+            <button className="action header-action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible} title={shortcuts.print}>
               <Printer className="header-action-icon" aria-hidden="true" />
               <span>Print...</span>
             </button>
-            <button className="action header-action" onClick={onOpenPreferencesDialog}>
+            <button className="action header-action" onClick={onOpenPreferencesDialog} title={shortcuts.preferences}>
               <Settings2 className="header-action-icon" aria-hidden="true" />
               <span>Preferences...</span>
             </button>

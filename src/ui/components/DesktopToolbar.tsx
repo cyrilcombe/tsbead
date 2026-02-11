@@ -24,6 +24,7 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import type { JBeadDocument, RgbaColor, ToolId, ViewPaneId } from '../../domain/types'
+import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
 
 interface ViewPaneEntry {
   id: ViewPaneId
@@ -133,6 +134,8 @@ export function DesktopToolbar({
   onSetDrawColors,
   onSetDrawSymbols,
 }: DesktopToolbarProps) {
+  const shortcuts = usePlatformShortcuts()
+
   return (
     <section className="panel tools-panel">
       <div className="toolbar-layout">
@@ -141,7 +144,7 @@ export function DesktopToolbar({
             <button
               className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('pencil')}
-              title="Pencil (Ctrl/Cmd+1)"
+              title={shortcuts.pencil}
               aria-label="Pencil"
             >
               <Pencil className="tool-icon" aria-hidden="true" />
@@ -149,7 +152,7 @@ export function DesktopToolbar({
             <button
               className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('line')}
-              title="Line (Ctrl/Cmd+2)"
+              title={shortcuts.line}
               aria-label="Line"
             >
               <Slash className="tool-icon" aria-hidden="true" />
@@ -157,7 +160,7 @@ export function DesktopToolbar({
             <button
               className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('fill')}
-              title="Fill (Ctrl/Cmd+3)"
+              title={shortcuts.fill}
               aria-label="Fill"
             >
               <PaintBucket className="tool-icon" aria-hidden="true" />
@@ -165,7 +168,7 @@ export function DesktopToolbar({
             <button
               className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('pipette')}
-              title="Pipette (Ctrl/Cmd+6)"
+              title={shortcuts.pipette}
               aria-label="Pipette"
             >
               <Pipette className="tool-icon" aria-hidden="true" />
@@ -238,7 +241,7 @@ export function DesktopToolbar({
             <button
               className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('select')}
-              title="Select (Ctrl/Cmd+4)"
+              title={shortcuts.select}
               aria-label="Select"
             >
               <SquareDashed className="tool-icon" aria-hidden="true" />
@@ -247,12 +250,12 @@ export function DesktopToolbar({
               className="action icon-action"
               onClick={onDeleteSelection}
               disabled={!selectionExists}
-              title="Delete selection (Ctrl/Cmd+5)"
+              title={shortcuts.deleteSelection}
               aria-label="Delete selection"
             >
               <Eraser className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title="Arrange... (F8)" aria-label="Arrange">
+            <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title={shortcuts.arrange} aria-label="Arrange">
               <Copy className="tool-icon" aria-hidden="true" />
             </button>
           </div>
@@ -285,10 +288,10 @@ export function DesktopToolbar({
           <span className="toolbar-separator" aria-hidden="true" />
 
           <div className="button-strip toolbar-group">
-            <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">
+            <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label="Undo">
               <Undo2 className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl/Cmd+Y)" aria-label="Redo">
+            <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label="Redo">
               <Redo2 className="tool-icon" aria-hidden="true" />
             </button>
           </div>
@@ -321,7 +324,7 @@ export function DesktopToolbar({
             <button className="action icon-action" onClick={onOpenPatternSizeDialog} title="Pattern size..." aria-label="Pattern size">
               <LayoutGrid className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onZoomOut} disabled={!canZoomOut} title="Zoom out (Ctrl/Cmd+U)" aria-label="Zoom out">
+            <button className="action icon-action" onClick={onZoomOut} disabled={!canZoomOut} title={shortcuts.zoomOut} aria-label="Zoom out">
               <ZoomOut className="tool-icon" aria-hidden="true" />
             </button>
             <button
@@ -333,13 +336,13 @@ export function DesktopToolbar({
             >
               <Scan className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onZoomIn} disabled={!canZoomIn} title="Zoom in (Ctrl/Cmd+I)" aria-label="Zoom in">
+            <button className="action icon-action" onClick={onZoomIn} disabled={!canZoomIn} title={shortcuts.zoomIn} aria-label="Zoom in">
               <ZoomIn className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onShiftLeft} title="Shift left (ArrowLeft)" aria-label="Shift left">
+            <button className="action icon-action" onClick={onShiftLeft} title={shortcuts.shiftLeft} aria-label="Shift left">
               <ArrowLeft className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onShiftRight} title="Shift right (ArrowRight)" aria-label="Shift right">
+            <button className="action icon-action" onClick={onShiftRight} title={shortcuts.shiftRight} aria-label="Shift right">
               <ArrowRight className="tool-icon" aria-hidden="true" />
             </button>
             <button

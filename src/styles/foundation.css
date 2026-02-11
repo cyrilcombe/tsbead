@@ -285,6 +285,131 @@ h1 {
   border-color: #d5ccc0;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .action[title],
+  .metadata-inline-action[title] {
+    position: relative;
+    --tooltip-bg: rgba(21, 27, 31, 0.96);
+    --tooltip-left: 50%;
+    --tooltip-top: auto;
+    --tooltip-bottom: calc(100% + 0.45rem);
+    --tooltip-transform-hidden: translate(-50%, 4px);
+    --tooltip-transform-visible: translate(-50%, 0);
+    --tooltip-arrow-left: 50%;
+    --tooltip-arrow-top: auto;
+    --tooltip-arrow-bottom: calc(100% + 0.2rem);
+    --tooltip-arrow-transform-hidden: translate(-50%, 4px);
+    --tooltip-arrow-transform-visible: translate(-50%, 0);
+    --tooltip-arrow-border-top: 5px solid var(--tooltip-bg);
+    --tooltip-arrow-border-right: 5px solid transparent;
+    --tooltip-arrow-border-bottom: 0 solid transparent;
+    --tooltip-arrow-border-left: 5px solid transparent;
+  }
+
+  .action[title]::before,
+  .metadata-inline-action[title]::before,
+  .action[title]::after,
+  .metadata-inline-action[title]::after {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease;
+    z-index: 80;
+  }
+
+  .action[title]::before,
+  .metadata-inline-action[title]::before {
+    content: '';
+    position: absolute;
+    left: var(--tooltip-arrow-left);
+    top: var(--tooltip-arrow-top);
+    bottom: var(--tooltip-arrow-bottom);
+    transform: var(--tooltip-arrow-transform-hidden);
+    border-top: var(--tooltip-arrow-border-top);
+    border-right: var(--tooltip-arrow-border-right);
+    border-bottom: var(--tooltip-arrow-border-bottom);
+    border-left: var(--tooltip-arrow-border-left);
+  }
+
+  .action[title]::after,
+  .metadata-inline-action[title]::after {
+    content: attr(title);
+    position: absolute;
+    left: var(--tooltip-left);
+    top: var(--tooltip-top);
+    bottom: var(--tooltip-bottom);
+    transform: var(--tooltip-transform-hidden);
+    white-space: nowrap;
+    max-width: min(80vw, 28rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0.25rem 0.45rem;
+    border-radius: 7px;
+    background: var(--tooltip-bg);
+    color: #f7f6f2;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    font-weight: 500;
+  }
+
+  .app-header .action[title],
+  .app-header .metadata-inline-action[title] {
+    --tooltip-top: calc(100% + 0.45rem);
+    --tooltip-bottom: auto;
+    --tooltip-transform-hidden: translate(-50%, -4px);
+    --tooltip-transform-visible: translate(-50%, 0);
+    --tooltip-arrow-top: calc(100% + 0.2rem);
+    --tooltip-arrow-bottom: auto;
+    --tooltip-arrow-transform-hidden: translate(-50%, -4px);
+    --tooltip-arrow-transform-visible: translate(-50%, 0);
+    --tooltip-arrow-border-top: 0 solid transparent;
+    --tooltip-arrow-border-right: 5px solid transparent;
+    --tooltip-arrow-border-bottom: 5px solid var(--tooltip-bg);
+    --tooltip-arrow-border-left: 5px solid transparent;
+  }
+
+  .mobile-edit-rail .action[title] {
+    --tooltip-left: calc(100% + 0.45rem);
+    --tooltip-top: 50%;
+    --tooltip-bottom: auto;
+    --tooltip-transform-hidden: translate(-4px, -50%);
+    --tooltip-transform-visible: translate(0, -50%);
+    --tooltip-arrow-left: calc(100% + 0.2rem);
+    --tooltip-arrow-top: 50%;
+    --tooltip-arrow-bottom: auto;
+    --tooltip-arrow-transform-hidden: translate(-4px, -50%);
+    --tooltip-arrow-transform-visible: translate(0, -50%);
+    --tooltip-arrow-border-top: 5px solid transparent;
+    --tooltip-arrow-border-right: 5px solid var(--tooltip-bg);
+    --tooltip-arrow-border-bottom: 5px solid transparent;
+    --tooltip-arrow-border-left: 0 solid transparent;
+  }
+
+  .action[title]:hover::before,
+  .action[title]:hover::after,
+  .action[title]:focus-visible::before,
+  .action[title]:focus-visible::after,
+  .metadata-inline-action[title]:hover::before,
+  .metadata-inline-action[title]:hover::after,
+  .metadata-inline-action[title]:focus-visible::before,
+  .metadata-inline-action[title]:focus-visible::after {
+    opacity: 1;
+  }
+
+  .action[title]:hover::before,
+  .action[title]:focus-visible::before,
+  .metadata-inline-action[title]:hover::before,
+  .metadata-inline-action[title]:focus-visible::before {
+    transform: var(--tooltip-arrow-transform-visible);
+  }
+
+  .action[title]:hover::after,
+  .action[title]:focus-visible::after,
+  .metadata-inline-action[title]:hover::after,
+  .metadata-inline-action[title]:focus-visible::after {
+    transform: var(--tooltip-transform-visible);
+  }
+}
+
 .tool-action.active {
   background: #245a58;
   border-color: #245a58;
@@ -311,4 +436,3 @@ h1 {
   min-height: 0;
   overflow: hidden;
 }
-

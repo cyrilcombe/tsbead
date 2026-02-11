@@ -16,6 +16,7 @@ import {
   Undo2,
 } from 'lucide-react'
 import type { JBeadDocument, ToolId } from '../../domain/types'
+import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
 
 interface MobileEditRailProps {
   selectedTool: ToolId
@@ -80,22 +81,24 @@ export function MobileEditRail({
   onUndo,
   onRedo,
 }: MobileEditRailProps) {
+  const shortcuts = usePlatformShortcuts()
+
   return (
     <aside className="panel mobile-edit-rail" aria-label="Editing tools">
       <div className="mobile-edit-group">
-        <button className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pencil')} title="Pencil (Ctrl/Cmd+1)" aria-label="Pencil">
+        <button className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pencil')} title={shortcuts.pencil} aria-label="Pencil">
           <Pencil className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`} onClick={() => onSetSelectedTool('line')} title="Line (Ctrl/Cmd+2)" aria-label="Line">
+        <button className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`} onClick={() => onSetSelectedTool('line')} title={shortcuts.line} aria-label="Line">
           <Slash className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`} onClick={() => onSetSelectedTool('fill')} title="Fill (Ctrl/Cmd+3)" aria-label="Fill">
+        <button className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`} onClick={() => onSetSelectedTool('fill')} title={shortcuts.fill} aria-label="Fill">
           <PaintBucket className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pipette')} title="Pipette (Ctrl/Cmd+6)" aria-label="Pipette">
+        <button className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pipette')} title={shortcuts.pipette} aria-label="Pipette">
           <Pipette className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`} onClick={() => onSetSelectedTool('select')} title="Select (Ctrl/Cmd+4)" aria-label="Select">
+        <button className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`} onClick={() => onSetSelectedTool('select')} title={shortcuts.select} aria-label="Select">
           <SquareDashed className="tool-icon" aria-hidden="true" />
         </button>
       </div>
@@ -153,10 +156,10 @@ export function MobileEditRail({
       <span className="mobile-edit-separator" aria-hidden="true" />
 
       <div className="mobile-edit-group">
-        <button className="action icon-action" onClick={onDeleteSelection} disabled={!selectionExists} title="Delete selection (Ctrl/Cmd+5)" aria-label="Delete selection">
+        <button className="action icon-action" onClick={onDeleteSelection} disabled={!selectionExists} title={shortcuts.deleteSelection} aria-label="Delete selection">
           <Eraser className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title="Arrange... (F8)" aria-label="Arrange">
+        <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title={shortcuts.arrange} aria-label="Arrange">
           <Copy className="tool-icon" aria-hidden="true" />
         </button>
         <button className="action icon-action" onClick={onInsertRow} title="Insert row" aria-label="Insert row">
@@ -174,10 +177,10 @@ export function MobileEditRail({
         <button className="action icon-action" onClick={onRotateClockwise} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
           <RotateCw className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">
+        <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label="Undo">
           <Undo2 className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl/Cmd+Y)" aria-label="Redo">
+        <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label="Redo">
           <Redo2 className="tool-icon" aria-hidden="true" />
         </button>
       </div>
