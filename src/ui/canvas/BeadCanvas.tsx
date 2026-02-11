@@ -45,6 +45,9 @@ export function BeadCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const isPointerDownRef = useRef(false)
   const lastPointRef = useRef<CellPoint | null>(null)
+  const activePointerIdRef = useRef<number | null>(null)
+  const activeTouchPointersRef = useRef<Set<number>>(new Set())
+  const multiTouchActiveRef = useRef(false)
   const cellSize = getCellSize(document.view.zoom)
   const isDragTool =
     document.view.selectedTool === 'pencil' ||
@@ -58,6 +61,36 @@ export function BeadCanvas({
   const handlePointerMove = onPointerMove ?? (() => undefined)
   const handlePointerUp = onPointerUp ?? (() => undefined)
   const handlePointerCancel = onPointerCancel ?? (() => undefined)
+
+  const endPointerInteraction = (target: HTMLCanvasElement, cancel: boolean) => {
+    const activePointerId = activePointerIdRef.current
+    if (activePointerId !== null && target.hasPointerCapture(activePointerId)) {
+      target.releasePointerCapture(activePointerId)
+    }
+    if (isPointerDownRef.current) {
+      isPointerDownRef.current = false
+      lastPointRef.current = null
+      if (cancel) {
+        handlePointerCancel()
+      }
+    }
+    activePointerIdRef.current = null
+  }
+
+  const onTouchPointerStart = (pointerId: number): boolean => {
+    activeTouchPointersRef.current.add(pointerId)
+    if (activeTouchPointersRef.current.size > 1) {
+      multiTouchActiveRef.current = true
+    }
+    return multiTouchActiveRef.current
+  }
+
+  const onTouchPointerEnd = (pointerId: number) => {
+    activeTouchPointersRef.current.delete(pointerId)
+    if (activeTouchPointersRef.current.size === 0) {
+      multiTouchActiveRef.current = false
+    }
+  }
 
   const width = useMemo(() => {
     return document.model.rows[boundedRowStart]?.length ?? document.model.rows[0]?.length ?? 0
@@ -237,19 +270,30 @@ export function BeadCanvas({
         if (!isInteractive || event.button !== 0) {
           return
         }
+        if (event.pointerType === 'touch' && onTouchPointerStart(event.pointerId)) {
+          endPointerInteraction(event.currentTarget, true)
+          return
+        }
         const point = getPoint(event)
         if (!point) {
           return
         }
         isPointerDownRef.current = true
         lastPointRef.current = point
+        activePointerIdRef.current = event.pointerId
         if (event.pointerType !== 'touch' || isDragTool) {
           event.currentTarget.setPointerCapture(event.pointerId)
         }
         handlePointerDown(point)
       }}
       onPointerMove={(event) => {
+        if (event.pointerType === 'touch' && multiTouchActiveRef.current) {
+          return
+        }
         if (!isInteractive || !isPointerDownRef.current) {
+          return
+        }
+        if (activePointerIdRef.current !== event.pointerId) {
           return
         }
         const point = getPoint(event, true)
@@ -259,12 +303,23 @@ export function BeadCanvas({
         }
       }}
       onPointerUp={(event) => {
+        if (event.pointerType === 'touch') {
+          onTouchPointerEnd(event.pointerId)
+          if (multiTouchActiveRef.current) {
+            endPointerInteraction(event.currentTarget, true)
+            return
+          }
+        }
         if (!isInteractive || !isPointerDownRef.current) {
+          return
+        }
+        if (activePointerIdRef.current !== event.pointerId) {
           return
         }
         isPointerDownRef.current = false
         const point = getPoint(event, true) ?? lastPointRef.current
         lastPointRef.current = null
+        activePointerIdRef.current = null
         if (point) {
           handlePointerUp(point)
         }
@@ -273,15 +328,16 @@ export function BeadCanvas({
         }
       }}
       onPointerCancel={(event) => {
+        if (event.pointerType === 'touch') {
+          onTouchPointerEnd(event.pointerId)
+        }
         if (!isInteractive) {
           return
         }
-        isPointerDownRef.current = false
-        lastPointRef.current = null
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId)
+        if (activePointerIdRef.current !== null && activePointerIdRef.current !== event.pointerId) {
+          return
         }
-        handlePointerCancel()
+        endPointerInteraction(event.currentTarget, true)
       }}
       role="img"
       aria-label={t('view.draft')}

@@ -55,6 +55,9 @@ interface HistorySnapshot {
   dirty: boolean
 }
 
+const MIN_PATTERN_SIZE = 5
+const MAX_PATTERN_SIZE = 2000
+
 function cloneDocument(document: JBeadDocument): JBeadDocument {
   return {
     ...document,
@@ -77,6 +80,33 @@ function cloneRows(rows: number[][]): number[][] {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
+}
+
+function sanitizeDocumentModel(document: JBeadDocument): JBeadDocument {
+  const sourceRows = document.model.rows
+  const sourceHeight = sourceRows.length
+  const sourceWidth = sourceRows.reduce((max, row) => Math.max(max, row.length), 0)
+  const targetWidth = clamp(sourceWidth > 0 ? sourceWidth : 1, 1, MAX_PATTERN_SIZE)
+  const targetHeight = clamp(sourceHeight > 0 ? sourceHeight : 1, 1, MAX_PATTERN_SIZE)
+
+  const rows = Array.from({ length: targetHeight }, (_, y) => {
+    const sourceRow = sourceRows[y] ?? []
+    return Array.from({ length: targetWidth }, (_, x) => {
+      const rawValue = sourceRow[x]
+      return Number.isFinite(rawValue) ? Math.max(0, Math.floor(rawValue as number)) : 0
+    })
+  })
+
+  return {
+    ...document,
+    model: { rows },
+    view: {
+      ...document.view,
+      selectedColor: clamp(document.view.selectedColor, 0, Math.max(0, document.colors.length - 1)),
+      scroll: clamp(document.view.scroll, 0, Math.max(0, targetHeight - 1)),
+      shift: ((document.view.shift % targetWidth) + targetWidth) % targetWidth,
+    },
+  }
 }
 
 function isInside(document: JBeadDocument, point: CellPoint): boolean {
@@ -546,7 +576,7 @@ export const useEditorStore = create<EditorState>((set) => ({
         return state
       }
 
-      const normalizedWidth = clamp(Math.floor(width), 5, 500)
+      const normalizedWidth = clamp(Math.floor(width), MIN_PATTERN_SIZE, MAX_PATTERN_SIZE)
       if (normalizedWidth === currentWidth) {
         return state
       }
@@ -577,7 +607,7 @@ export const useEditorStore = create<EditorState>((set) => ({
         return state
       }
 
-      const normalizedHeight = clamp(Math.floor(height), 5, 10000)
+      const normalizedHeight = clamp(Math.floor(height), MIN_PATTERN_SIZE, MAX_PATTERN_SIZE)
       if (normalizedHeight === currentHeight) {
         return state
       }
@@ -920,8 +950,9 @@ export const useEditorStore = create<EditorState>((set) => ({
   },
   setDocument: (document) => {
     clearHistory()
+    const normalizedDocument = sanitizeDocumentModel(document)
     set({
-      document: cloneDocument(document),
+      document: cloneDocument(normalizedDocument),
       selection: null,
       dirty: false,
       ...applyHistoryFlags(),

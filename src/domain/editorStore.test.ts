@@ -256,18 +256,38 @@ describe('editor store', () => {
     ])
   })
 
-  it('clamps pattern dimensions to legacy bounds', () => {
+  it('clamps pattern dimensions to app bounds', () => {
     useEditorStore.getState().setPatternWidth(1)
     expect(useEditorStore.getState().document.model.rows[0]).toHaveLength(5)
 
-    useEditorStore.getState().setPatternWidth(999)
-    expect(useEditorStore.getState().document.model.rows[0]).toHaveLength(500)
+    useEditorStore.getState().setPatternWidth(9999)
+    expect(useEditorStore.getState().document.model.rows[0]).toHaveLength(2000)
 
     useEditorStore.getState().setPatternHeight(1)
     expect(useEditorStore.getState().document.model.rows).toHaveLength(5)
 
     useEditorStore.getState().setPatternHeight(20000)
-    expect(useEditorStore.getState().document.model.rows).toHaveLength(10000)
+    expect(useEditorStore.getState().document.model.rows).toHaveLength(2000)
+  })
+
+  it('caps loaded documents to 2000x2000', () => {
+    const document = createEmptyDocument(3, 3)
+    document.model.rows = Array.from({ length: 2101 }, (_, y) => {
+      if (y === 0) {
+        return Array.from({ length: 2101 }, () => 7)
+      }
+      return [1, 0, 1]
+    })
+    document.view.scroll = 9999
+    document.view.shift = 9999
+
+    useEditorStore.getState().setDocument(document)
+    const state = useEditorStore.getState()
+
+    expect(state.document.model.rows).toHaveLength(2000)
+    expect(state.document.model.rows[0]).toHaveLength(2000)
+    expect(state.document.view.scroll).toBe(1999)
+    expect(state.document.view.shift).toBe(1999)
   })
 
   it('mirrors the selected area horizontally', () => {

@@ -18,6 +18,7 @@ import {
 import type { JBeadDocument, ToolId } from '../../domain/types'
 import { useI18n } from '../../i18n/I18nProvider'
 import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
+import { useTouchDoubleTap } from '../hooks/useTouchDoubleTap'
 
 interface MobileEditRailProps {
   selectedTool: ToolId
@@ -84,6 +85,7 @@ export function MobileEditRail({
 }: MobileEditRailProps) {
   const { t } = useI18n()
   const shortcuts = usePlatformShortcuts()
+  const onTouchDoubleTapSwatch = useTouchDoubleTap<number>(onEditPaletteColor)
 
   return (
     <aside className="panel mobile-edit-rail" aria-label={t('tool.editingTools')}>
@@ -123,6 +125,7 @@ export function MobileEditRail({
                     style={{ backgroundColor: colorToCss(color) }}
                     onClick={() => onSetColorAsBackground(index)}
                     onDoubleClick={() => onEditPaletteColor(index)}
+                    onPointerUp={(event) => onTouchDoubleTapSwatch(index, event)}
                     title={t('palette.setBackgroundToColor', { index })}
                   />
                 ))}
@@ -146,6 +149,7 @@ export function MobileEditRail({
                     style={{ backgroundColor: colorToCss(color) }}
                     onClick={() => onSetSelectedColor(index)}
                     onDoubleClick={() => onEditPaletteColor(index)}
+                    onPointerUp={(event) => onTouchDoubleTapSwatch(index, event)}
                     title={t('palette.colorIndex', { index })}
                   />
                 ))}

@@ -26,6 +26,7 @@ import {
 import type { JBeadDocument, RgbaColor, ToolId, ViewPaneId } from '../../domain/types'
 import { useI18n } from '../../i18n/I18nProvider'
 import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
+import { useTouchDoubleTap } from '../hooks/useTouchDoubleTap'
 
 interface ViewPaneEntry {
   id: ViewPaneId
@@ -137,6 +138,7 @@ export function DesktopToolbar({
 }: DesktopToolbarProps) {
   const { t } = useI18n()
   const shortcuts = usePlatformShortcuts()
+  const onTouchDoubleTapSwatch = useTouchDoubleTap<number>(onEditPaletteColor)
 
   return (
     <section className="panel tools-panel">
@@ -200,6 +202,7 @@ export function DesktopToolbar({
                         style={{ backgroundColor: colorToCss(color) }}
                         onClick={() => onSetColorAsBackground(index)}
                         onDoubleClick={() => onEditPaletteColor(index)}
+                        onPointerUp={(event) => onTouchDoubleTapSwatch(index, event)}
                         title={t('palette.setBackgroundToColor', { index })}
                       />
                     ))}
@@ -228,6 +231,7 @@ export function DesktopToolbar({
                         style={{ backgroundColor: colorToCss(color) }}
                         onClick={() => onSetSelectedColor(index)}
                         onDoubleClick={() => onEditPaletteColor(index)}
+                        onPointerUp={(event) => onTouchDoubleTapSwatch(index, event)}
                         title={t('palette.colorIndex', { index })}
                       />
                     ))}

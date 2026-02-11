@@ -39,9 +39,9 @@ const PRINT_CHUNK_SIZE_LETTER_PORTRAIT = 90
 const PRINT_CHUNK_SIZE_LANDSCAPE = 60
 const VIEW_PANES: ViewPaneId[] = ['draft', 'corrected', 'simulation', 'report']
 const MIN_PATTERN_WIDTH = 5
-const MAX_PATTERN_WIDTH = 500
+const MAX_PATTERN_WIDTH = 2000
 const MIN_PATTERN_HEIGHT = 5
-const MAX_PATTERN_HEIGHT = 10000
+const MAX_PATTERN_HEIGHT = 2000
 
 function colorToCss(color: [number, number, number, number?]): string {
   const [red, green, blue, alpha = 255] = color
@@ -428,9 +428,7 @@ function App() {
       return
     }
     setEditingPaletteColorIndex(index)
-    requestAnimationFrame(() => {
-      paletteColorPickerRef.current?.click()
-    })
+    paletteColorPickerRef.current?.click()
   }
 
   const onPaletteColorPicked = (value: string) => {
