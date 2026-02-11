@@ -1,38 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import {
-  ArrowLeft,
-  ArrowRight,
-  Copy,
-  Download,
-  Eraser,
-  FilePlus2,
-  FolderClock,
-  FolderOpen,
-  Info,
-  Printer,
-  LayoutGrid,
-  Menu,
-  Minus,
-  MoveHorizontal,
-  MoveVertical,
-  PaintBucket,
-  Palette,
-  Pencil,
-  Pipette,
-  Plus,
-  Redo2,
-  RotateCw,
-  Scan,
-  Save,
-  SaveAll,
-  Settings2,
-  Slash,
-  SquareDashed,
-  Type,
-  Undo2,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react'
 import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
@@ -48,8 +14,17 @@ import {
   saveProject,
   saveRecentFile,
 } from './storage/db'
-import { BeadCanvas } from './ui/canvas/BeadCanvas'
-import { BeadPreviewCanvas } from './ui/canvas/BeadPreviewCanvas'
+import { AppHeader } from './ui/components/AppHeader'
+import { DesktopToolbar } from './ui/components/DesktopToolbar'
+import { MobileEditRail } from './ui/components/MobileEditRail'
+import { PrintWorkspace } from './ui/components/PrintWorkspace'
+import { WorkspacePanels } from './ui/components/WorkspacePanels'
+import { ArrangeDialog } from './ui/components/dialogs/ArrangeDialog'
+import { CreditsDialog } from './ui/components/dialogs/CreditsDialog'
+import { MetadataDialog } from './ui/components/dialogs/MetadataDialog'
+import { PatternSizeDialog } from './ui/components/dialogs/PatternSizeDialog'
+import { PreferencesDialog } from './ui/components/dialogs/PreferencesDialog'
+import { RecentFilesDialog } from './ui/components/dialogs/RecentFilesDialog'
 import type { CellPoint, JBeadDocument, SelectionRect, ViewPaneId } from './domain/types'
 import tsbeadLogoHorizontal from './assets/tsbead-logo-horizontal.png'
 import './index.css'
@@ -1326,771 +1301,176 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div className="mobile-header-left" ref={mobileActionsMenuRef}>
-          <button
-            className="action icon-action mobile-menu-toggle"
-            aria-label="Open actions menu"
-            aria-expanded={isMobileActionsMenuOpen}
-            onClick={() => setIsMobileActionsMenuOpen((value) => !value)}
-          >
-            <Menu className="tool-icon" aria-hidden="true" />
-          </button>
-          {isMobileActionsMenuOpen ? (
-            <div className="mobile-actions-menu">
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  onNewDocument()
-                }}
-              >
-                <FilePlus2 className="header-action-icon" aria-hidden="true" />
-                <span>New</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  void onOpenDocument()
-                }}
-              >
-                <FolderOpen className="header-action-icon" aria-hidden="true" />
-                <span>Open...</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  onOpenRecentDialog()
-                }}
-                disabled={recentFiles.length === 0}
-              >
-                <FolderClock className="header-action-icon" aria-hidden="true" />
-                <span>Open recent...</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  void onSaveDocument()
-                }}
-              >
-                <Save className="header-action-icon" aria-hidden="true" />
-                <span>Save</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  void onSaveAsDocument()
-                }}
-              >
-                <SaveAll className="header-action-icon" aria-hidden="true" />
-                <span>Save As...</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  onDownloadFile(openFileName)
-                }}
-              >
-                <Download className="header-action-icon" aria-hidden="true" />
-                <span>Export .jbb</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  onPrintDocument()
-                }}
-                disabled={!hasAnyPaneVisible}
-              >
-                <Printer className="header-action-icon" aria-hidden="true" />
-                <span>Print...</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  onOpenPreferencesDialog()
-                }}
-              >
-                <Settings2 className="header-action-icon" aria-hidden="true" />
-                <span>Preferences...</span>
-              </button>
-              <button
-                className="action header-action"
-                onClick={() => {
-                  setIsMobileActionsMenuOpen(false)
-                  onOpenCreditsDialog()
-                }}
-              >
-                <Info className="header-action-icon" aria-hidden="true" />
-                <span>Credits...</span>
-              </button>
-              <div className="mobile-actions-file">
-                <strong>{openFileName}</strong>
-                {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
-                <button
-                  className="metadata-inline-action"
-                  onClick={() => {
-                    setIsMobileActionsMenuOpen(false)
-                    onOpenMetadataDialog()
-                  }}
-                  title="Edit metadata"
-                >
-                  {metadataLabel}
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
-        <div className="header-main">
-          <img className="app-logo" src={tsbeadLogoHorizontal} alt="TsBead" />
-        </div>
-        <p className="mobile-file-status">
-          <strong>{openFileName}</strong>
-          {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
-        </p>
-        <div className="header-controls">
-          <div className="header-actions">
-            <button className="action header-action" onClick={onNewDocument}>
-              <FilePlus2 className="header-action-icon" aria-hidden="true" />
-              <span>New</span>
-            </button>
-            <button className="action header-action" onClick={() => void onOpenDocument()}>
-              <FolderOpen className="header-action-icon" aria-hidden="true" />
-              <span>Open...</span>
-            </button>
-            <button className="action header-action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
-              <FolderClock className="header-action-icon" aria-hidden="true" />
-              <span>Open recent...</span>
-            </button>
-            <button className="action header-action" onClick={() => void onSaveDocument()}>
-              <Save className="header-action-icon" aria-hidden="true" />
-              <span>Save</span>
-            </button>
-            <button className="action header-action" onClick={() => void onSaveAsDocument()}>
-              <SaveAll className="header-action-icon" aria-hidden="true" />
-              <span>Save As...</span>
-            </button>
-            <button
-              className="action header-action"
-              onClick={() => {
-                onDownloadFile(openFileName)
-              }}
-            >
-              <Download className="header-action-icon" aria-hidden="true" />
-              <span>Export .jbb</span>
-            </button>
-            <button className="action header-action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
-              <Printer className="header-action-icon" aria-hidden="true" />
-              <span>Print...</span>
-            </button>
-            <button className="action header-action" onClick={onOpenPreferencesDialog}>
-              <Settings2 className="header-action-icon" aria-hidden="true" />
-              <span>Preferences...</span>
-            </button>
-            <button className="action header-action" onClick={onOpenCreditsDialog}>
-              <Info className="header-action-icon" aria-hidden="true" />
-              <span>Credits...</span>
-            </button>
-          </div>
-          <p className="file-status">
-            <strong>{openFileName}</strong>
-            {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
-            <button className="metadata-inline-action" onClick={onOpenMetadataDialog} title="Edit metadata">
-              {metadataLabel}
-            </button>
-          </p>
-        </div>
-        <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
-      </header>
+      <AppHeader
+        logoSrc={tsbeadLogoHorizontal}
+        openFileName={openFileName}
+        dirty={dirty}
+        metadataLabel={metadataLabel}
+        hasAnyPaneVisible={hasAnyPaneVisible}
+        recentFilesCount={recentFiles.length}
+        isMobileActionsMenuOpen={isMobileActionsMenuOpen}
+        mobileActivePane={mobileActivePane}
+        panes={VIEW_PANES}
+        mobileActionsMenuRef={mobileActionsMenuRef}
+        openFileInputRef={openFileInputRef}
+        onToggleMobileActionsMenu={() => setIsMobileActionsMenuOpen((value) => !value)}
+        onCloseMobileActionsMenu={() => setIsMobileActionsMenuOpen(false)}
+        onSelectMobileView={onSelectMobileView}
+        onNewDocument={onNewDocument}
+        onOpenDocument={onOpenDocument}
+        onOpenRecentDialog={onOpenRecentDialog}
+        onSaveDocument={onSaveDocument}
+        onSaveAsDocument={onSaveAsDocument}
+        onDownloadFile={onDownloadFile}
+        onPrintDocument={onPrintDocument}
+        onOpenPreferencesDialog={onOpenPreferencesDialog}
+        onOpenCreditsDialog={onOpenCreditsDialog}
+        onOpenMetadataDialog={onOpenMetadataDialog}
+        onFileInputChange={onFileInputChange}
+      />
 
-      <section className="mobile-view-tabs" aria-label="View tabs">
-        {VIEW_PANES.map((pane) => (
-          <button
-            key={`mobile-tab-${pane.id}`}
-            className={`action mobile-view-tab ${mobileActivePane === pane.id ? 'active' : ''}`}
-            onClick={() => onSelectMobileView(pane.id)}
-          >
-            {pane.label}
-          </button>
-        ))}
-      </section>
-
-      <section className="panel tools-panel">
-        <div className="toolbar-layout">
-          <div className="toolbar-side toolbar-edit">
-            <div className="button-strip toolbar-group">
-              <button
-                className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`}
-                onClick={() => setSelectedTool('pencil')}
-                title="Pencil (Ctrl/Cmd+1)"
-                aria-label="Pencil"
-              >
-                <Pencil className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`}
-                onClick={() => setSelectedTool('line')}
-                title="Line (Ctrl/Cmd+2)"
-                aria-label="Line"
-              >
-                <Slash className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`}
-                onClick={() => setSelectedTool('fill')}
-                title="Fill (Ctrl/Cmd+3)"
-                aria-label="Fill"
-              >
-                <PaintBucket className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
-                onClick={() => setSelectedTool('pipette')}
-                title="Pipette (Ctrl/Cmd+6)"
-                aria-label="Pipette"
-              >
-                <Pipette className="tool-icon" aria-hidden="true" />
-              </button>
-            </div>
-
-            <span className="toolbar-separator" aria-hidden="true" />
-
-            <div className="button-strip toolbar-group">
-              <div className="palette-menu-wrap" ref={backgroundMenuRef}>
-                <button
-                  className={`action color-toggle ${isBackgroundMenuOpen ? 'view-toggle active' : ''}`}
-                  onClick={() => {
-                    setIsBackgroundMenuOpen((value) => !value)
-                    setIsColorMenuOpen(false)
-                    setIsViewsMenuOpen(false)
-                  }}
-                  title="Background color"
-                  aria-label="Background color"
-                >
-                  <span className="color-toggle-label">BG</span>
-                  <span className="color-toggle-chip" style={{ backgroundColor: colorToCss(backgroundColorValue) }} />
-                </button>
-                {isBackgroundMenuOpen ? (
-                  <div className="palette-menu">
-                    <div className="palette-menu-grid">
-                      {document.colors.map((color, index) => (
-                        <button
-                          key={`background-color-${color.join('-')}-${index}`}
-                          className={`swatch palette-menu-swatch ${index === 0 ? 'selected' : ''}`}
-                          style={{ backgroundColor: colorToCss(color) }}
-                          onClick={() => {
-                            setColorAsBackground(index)
-                          }}
-                          onDoubleClick={() => onEditPaletteColor(index)}
-                          title={`Set background to color ${index}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="palette-menu-wrap" ref={colorMenuRef}>
-                <button
-                  className={`action color-toggle ${isColorMenuOpen ? 'view-toggle active' : ''}`}
-                  onClick={() => {
-                    setIsColorMenuOpen((value) => !value)
-                    setIsBackgroundMenuOpen(false)
-                    setIsViewsMenuOpen(false)
-                  }}
-                  title="Drawing color"
-                  aria-label="Drawing color"
-                >
-                  <span className="color-toggle-label">Color</span>
-                  <span className="color-toggle-chip" style={{ backgroundColor: colorToCss(selectedColorValue) }} />
-                </button>
-                {isColorMenuOpen ? (
-                  <div className="palette-menu">
-                    <div className="palette-menu-grid">
-                      {document.colors.map((color, index) => (
-                        <button
-                          key={`selected-color-${color.join('-')}-${index}`}
-                          className={`swatch palette-menu-swatch ${selectedColor === index ? 'selected' : ''}`}
-                          style={{ backgroundColor: colorToCss(color) }}
-                          onClick={() => {
-                            setSelectedColor(index)
-                          }}
-                          onDoubleClick={() => onEditPaletteColor(index)}
-                          title={`Color ${index}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            <span className="toolbar-separator" aria-hidden="true" />
-
-            <div className="button-strip toolbar-group">
-              <button
-                className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`}
-                onClick={() => setSelectedTool('select')}
-                title="Select (Ctrl/Cmd+4)"
-                aria-label="Select"
-              >
-                <SquareDashed className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className="action icon-action"
-                onClick={onDeleteSelection}
-                disabled={selection === null}
-                title="Delete selection (Ctrl/Cmd+5)"
-                aria-label="Delete selection"
-              >
-                <Eraser className="tool-icon" aria-hidden="true" />
-              </button>
-              <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={selection === null} title="Arrange... (F8)" aria-label="Arrange">
-                <Copy className="tool-icon" aria-hidden="true" />
-              </button>
-            </div>
-
-            <span className="toolbar-separator" aria-hidden="true" />
-
-            <div className="button-strip toolbar-group">
-              <button className="action icon-action" onClick={() => insertRow()} title="Insert row" aria-label="Insert row">
-                <Plus className="tool-icon" aria-hidden="true" />
-              </button>
-              <button className="action icon-action" onClick={() => deleteRow()} title="Delete row" aria-label="Delete row">
-                <Minus className="tool-icon" aria-hidden="true" />
-              </button>
-            </div>
-
-            <span className="toolbar-separator" aria-hidden="true" />
-
-            <div className="button-strip toolbar-group">
-              <button className="action icon-action" onClick={() => mirrorHorizontal()} title="Mirror horizontal" aria-label="Mirror horizontal">
-                <MoveHorizontal className="tool-icon" aria-hidden="true" />
-              </button>
-              <button className="action icon-action" onClick={() => mirrorVertical()} title="Mirror vertical" aria-label="Mirror vertical">
-                <MoveVertical className="tool-icon" aria-hidden="true" />
-              </button>
-              <button className="action icon-action" onClick={() => rotateClockwise()} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
-                <RotateCw className="tool-icon" aria-hidden="true" />
-              </button>
-            </div>
-
-            <span className="toolbar-separator" aria-hidden="true" />
-
-            <div className="button-strip toolbar-group">
-              <button className="action icon-action" onClick={() => undo()} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">
-                <Undo2 className="tool-icon" aria-hidden="true" />
-              </button>
-              <button className="action icon-action" onClick={() => redo()} disabled={!canRedo} title="Redo (Ctrl/Cmd+Y)" aria-label="Redo">
-                <Redo2 className="tool-icon" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-
-          <div className="toolbar-side toolbar-view">
-            <div className="button-strip toolbar-group">
-              <div className="views-menu-wrap" ref={viewsMenuRef}>
-                <button
-                  className={`action ${isViewsMenuOpen ? 'view-toggle active' : ''}`}
-                  aria-expanded={isViewsMenuOpen}
-                  onClick={() => {
-                    setIsViewsMenuOpen((value) => !value)
-                    setIsColorMenuOpen(false)
-                    setIsBackgroundMenuOpen(false)
-                  }}
-                >
-                  Views
-                </button>
-                {isViewsMenuOpen ? (
-                  <div className="views-menu">
-                    {VIEW_PANES.map((pane) => {
-                      const visible = paneVisibilityById[pane.id]
-                      return (
-                        <label key={pane.id} className="views-menu-item">
-                          <input
-                            type="checkbox"
-                            checked={visible}
-                            onChange={() => setViewVisibility(pane.id, !visible)}
-                          />
-                          <span>{pane.label}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                ) : null}
-              </div>
-              <button className="action icon-action" onClick={onOpenPatternSizeDialog} title="Pattern size..." aria-label="Pattern size">
-                <LayoutGrid className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className="action icon-action"
-                onClick={() => {
-                  setIsZoomFitMode(false)
-                  zoomOut()
-                }}
-                disabled={!canZoomOut}
-                title="Zoom out (Ctrl/Cmd+U)"
-                aria-label="Zoom out"
-              >
-                <ZoomOut className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className={`action icon-action ${isZoomFitMode ? 'view-toggle active' : ''}`}
-                onClick={() => {
-                  setIsZoomFitMode(true)
-                  applyZoomFit()
-                }}
-                disabled={!hasCanvasPaneVisible}
-                title="Zoom 100%"
-                aria-label="Zoom 100%"
-              >
-                <Scan className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className="action icon-action"
-                onClick={() => {
-                  setIsZoomFitMode(false)
-                  zoomIn()
-                }}
-                disabled={!canZoomIn}
-                title="Zoom in (Ctrl/Cmd+I)"
-                aria-label="Zoom in"
-              >
-                <ZoomIn className="tool-icon" aria-hidden="true" />
-              </button>
-              <button className="action icon-action" onClick={() => shiftLeft()} title="Shift left (ArrowLeft)" aria-label="Shift left">
-                <ArrowLeft className="tool-icon" aria-hidden="true" />
-              </button>
-              <button className="action icon-action" onClick={() => shiftRight()} title="Shift right (ArrowRight)" aria-label="Shift right">
-                <ArrowRight className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className={`action icon-action view-toggle ${drawColors ? 'active' : ''}`}
-                aria-pressed={drawColors}
-                onClick={() => setDrawColors(!drawColors)}
-                title="Draw colors"
-                aria-label="Draw colors"
-              >
-                <Palette className="tool-icon" aria-hidden="true" />
-              </button>
-              <button
-                className={`action icon-action view-toggle ${drawSymbols ? 'active' : ''}`}
-                aria-pressed={drawSymbols}
-                onClick={() => setDrawSymbols(!drawSymbols)}
-                title="Draw symbols"
-                aria-label="Draw symbols"
-              >
-                <Type className="tool-icon" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <DesktopToolbar
+        selectedTool={selectedTool}
+        selectionExists={selection !== null}
+        canRotate={canRotate}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        colors={document.colors}
+        selectedColor={selectedColor}
+        selectedColorValue={selectedColorValue}
+        backgroundColorValue={backgroundColorValue}
+        isBackgroundMenuOpen={isBackgroundMenuOpen}
+        isColorMenuOpen={isColorMenuOpen}
+        isViewsMenuOpen={isViewsMenuOpen}
+        paneVisibilityById={paneVisibilityById}
+        panes={VIEW_PANES}
+        drawColors={drawColors}
+        drawSymbols={drawSymbols}
+        canZoomOut={canZoomOut}
+        canZoomIn={canZoomIn}
+        isZoomFitMode={isZoomFitMode}
+        hasCanvasPaneVisible={hasCanvasPaneVisible}
+        backgroundMenuRef={backgroundMenuRef}
+        colorMenuRef={colorMenuRef}
+        viewsMenuRef={viewsMenuRef}
+        colorToCss={colorToCss}
+        onSetSelectedTool={setSelectedTool}
+        onToggleBackgroundMenu={() => {
+          setIsBackgroundMenuOpen((value) => !value)
+          setIsColorMenuOpen(false)
+          setIsViewsMenuOpen(false)
+        }}
+        onToggleColorMenu={() => {
+          setIsColorMenuOpen((value) => !value)
+          setIsBackgroundMenuOpen(false)
+          setIsViewsMenuOpen(false)
+        }}
+        onSetColorAsBackground={setColorAsBackground}
+        onSetSelectedColor={setSelectedColor}
+        onEditPaletteColor={onEditPaletteColor}
+        onDeleteSelection={onDeleteSelection}
+        onOpenArrangeDialog={onOpenArrangeDialog}
+        onInsertRow={() => insertRow()}
+        onDeleteRow={() => deleteRow()}
+        onMirrorHorizontal={() => mirrorHorizontal()}
+        onMirrorVertical={() => mirrorVertical()}
+        onRotateClockwise={() => rotateClockwise()}
+        onUndo={() => undo()}
+        onRedo={() => redo()}
+        onToggleViewsMenu={() => {
+          setIsViewsMenuOpen((value) => !value)
+          setIsColorMenuOpen(false)
+          setIsBackgroundMenuOpen(false)
+        }}
+        onSetViewVisibility={setViewVisibility}
+        onOpenPatternSizeDialog={onOpenPatternSizeDialog}
+        onZoomOut={() => {
+          setIsZoomFitMode(false)
+          zoomOut()
+        }}
+        onZoomFit={() => {
+          setIsZoomFitMode(true)
+          applyZoomFit()
+        }}
+        onZoomIn={() => {
+          setIsZoomFitMode(false)
+          zoomIn()
+        }}
+        onShiftLeft={() => shiftLeft()}
+        onShiftRight={() => shiftRight()}
+        onSetDrawColors={setDrawColors}
+        onSetDrawSymbols={setDrawSymbols}
+      />
 
       <main className="workspace">
-        <aside className="panel mobile-edit-rail" aria-label="Editing tools">
-          <div className="mobile-edit-group">
-            <button
-              className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`}
-              onClick={() => setSelectedTool('pencil')}
-              title="Pencil (Ctrl/Cmd+1)"
-              aria-label="Pencil"
-            >
-              <Pencil className="tool-icon" aria-hidden="true" />
-            </button>
-            <button
-              className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`}
-              onClick={() => setSelectedTool('line')}
-              title="Line (Ctrl/Cmd+2)"
-              aria-label="Line"
-            >
-              <Slash className="tool-icon" aria-hidden="true" />
-            </button>
-            <button
-              className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`}
-              onClick={() => setSelectedTool('fill')}
-              title="Fill (Ctrl/Cmd+3)"
-              aria-label="Fill"
-            >
-              <PaintBucket className="tool-icon" aria-hidden="true" />
-            </button>
-            <button
-              className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
-              onClick={() => setSelectedTool('pipette')}
-              title="Pipette (Ctrl/Cmd+6)"
-              aria-label="Pipette"
-            >
-              <Pipette className="tool-icon" aria-hidden="true" />
-            </button>
-            <button
-              className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`}
-              onClick={() => setSelectedTool('select')}
-              title="Select (Ctrl/Cmd+4)"
-              aria-label="Select"
-            >
-              <SquareDashed className="tool-icon" aria-hidden="true" />
-            </button>
-          </div>
+        <MobileEditRail
+          selectedTool={selectedTool}
+          selectionExists={selection !== null}
+          canRotate={canRotate}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          colors={document.colors}
+          selectedColor={selectedColor}
+          selectedColorValue={selectedColorValue}
+          backgroundColorValue={backgroundColorValue}
+          isBackgroundMenuOpen={isBackgroundMenuOpen}
+          isColorMenuOpen={isColorMenuOpen}
+          mobileBackgroundMenuRef={mobileBackgroundMenuRef}
+          mobileColorMenuRef={mobileColorMenuRef}
+          colorToCss={colorToCss}
+          onSetSelectedTool={setSelectedTool}
+          onToggleBackgroundMenu={() => {
+            setIsBackgroundMenuOpen((value) => !value)
+            setIsColorMenuOpen(false)
+            setIsViewsMenuOpen(false)
+          }}
+          onToggleColorMenu={() => {
+            setIsColorMenuOpen((value) => !value)
+            setIsBackgroundMenuOpen(false)
+            setIsViewsMenuOpen(false)
+          }}
+          onSetColorAsBackground={setColorAsBackground}
+          onSetSelectedColor={setSelectedColor}
+          onEditPaletteColor={onEditPaletteColor}
+          onDeleteSelection={onDeleteSelection}
+          onOpenArrangeDialog={onOpenArrangeDialog}
+          onInsertRow={() => insertRow()}
+          onDeleteRow={() => deleteRow()}
+          onMirrorHorizontal={() => mirrorHorizontal()}
+          onMirrorVertical={() => mirrorVertical()}
+          onRotateClockwise={() => rotateClockwise()}
+          onUndo={() => undo()}
+          onRedo={() => redo()}
+        />
 
-          <span className="mobile-edit-separator" aria-hidden="true" />
-
-          <div className="mobile-edit-group">
-            <div className="palette-menu-wrap compact-color-wrap" ref={mobileBackgroundMenuRef}>
-              <button
-                className={`action icon-action compact-color-toggle ${isBackgroundMenuOpen ? 'view-toggle active' : ''}`}
-                onClick={() => {
-                  setIsBackgroundMenuOpen((value) => !value)
-                  setIsColorMenuOpen(false)
-                  setIsViewsMenuOpen(false)
-                }}
-                title="Background color"
-                aria-label="Background color"
-              >
-                <span className="compact-color-label">BG</span>
-                <span className="compact-color-chip" style={{ backgroundColor: colorToCss(backgroundColorValue) }} />
-              </button>
-              {isBackgroundMenuOpen ? (
-                <div className="palette-menu compact-palette-menu">
-                  <div className="palette-menu-grid">
-                    {document.colors.map((color, index) => (
-                      <button
-                        key={`mobile-background-color-${color.join('-')}-${index}`}
-                        className={`swatch palette-menu-swatch ${index === 0 ? 'selected' : ''}`}
-                        style={{ backgroundColor: colorToCss(color) }}
-                        onClick={() => {
-                          setColorAsBackground(index)
-                        }}
-                        onDoubleClick={() => onEditPaletteColor(index)}
-                        title={`Set background to color ${index}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="palette-menu-wrap compact-color-wrap" ref={mobileColorMenuRef}>
-              <button
-                className={`action icon-action compact-color-toggle ${isColorMenuOpen ? 'view-toggle active' : ''}`}
-                onClick={() => {
-                  setIsColorMenuOpen((value) => !value)
-                  setIsBackgroundMenuOpen(false)
-                  setIsViewsMenuOpen(false)
-                }}
-                title="Drawing color"
-                aria-label="Drawing color"
-              >
-                <span className="compact-color-label">C</span>
-                <span className="compact-color-chip" style={{ backgroundColor: colorToCss(selectedColorValue) }} />
-              </button>
-              {isColorMenuOpen ? (
-                <div className="palette-menu compact-palette-menu">
-                  <div className="palette-menu-grid">
-                    {document.colors.map((color, index) => (
-                      <button
-                        key={`mobile-selected-color-${color.join('-')}-${index}`}
-                        className={`swatch palette-menu-swatch ${selectedColor === index ? 'selected' : ''}`}
-                        style={{ backgroundColor: colorToCss(color) }}
-                        onClick={() => {
-                          setSelectedColor(index)
-                        }}
-                        onDoubleClick={() => onEditPaletteColor(index)}
-                        title={`Color ${index}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <span className="mobile-edit-separator" aria-hidden="true" />
-
-          <div className="mobile-edit-group">
-            <button className="action icon-action" onClick={onDeleteSelection} disabled={selection === null} title="Delete selection (Ctrl/Cmd+5)" aria-label="Delete selection">
-              <Eraser className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={selection === null} title="Arrange... (F8)" aria-label="Arrange">
-              <Copy className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={() => insertRow()} title="Insert row" aria-label="Insert row">
-              <Plus className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={() => deleteRow()} title="Delete row" aria-label="Delete row">
-              <Minus className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={() => mirrorHorizontal()} title="Mirror horizontal" aria-label="Mirror horizontal">
-              <MoveHorizontal className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={() => mirrorVertical()} title="Mirror vertical" aria-label="Mirror vertical">
-              <MoveVertical className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={() => rotateClockwise()} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
-              <RotateCw className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={() => undo()} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">
-              <Undo2 className="tool-icon" aria-hidden="true" />
-            </button>
-            <button className="action icon-action" onClick={() => redo()} disabled={!canRedo} title="Redo (Ctrl/Cmd+Y)" aria-label="Redo">
-              <Redo2 className="tool-icon" aria-hidden="true" />
-            </button>
-          </div>
-        </aside>
-
-        <section
-          className={`preview-with-scrollbar ${hasCanvasPaneVisible ? 'has-canvas' : 'no-canvas'} ${isReportVisible ? 'has-report' : 'no-report'}`}
-        >
-          {hasCanvasPaneVisible || !isReportVisible ? (
-            <section className="preview-grid">
-              {isDraftVisible ? (
-                <section className="panel canvas-panel draft-panel">
-                  <div className="panel-title">
-                    <h2>Draft</h2>
-                    <span>
-                      {width} x {height}
-                    </span>
-                  </div>
-                  <div
-                    ref={draftScrollRef}
-                    className="canvas-scroll"
-                    onScroll={(event) => onPaneScroll(event.currentTarget)}
-                  >
-                    <BeadCanvas
-                      document={document}
-                      selectionOverlay={selectionOverlay}
-                      linePreview={linePreview}
-                      onPointerDown={onDraftPointerDown}
-                      onPointerMove={onPointerMove}
-                      onPointerUp={onPointerUp}
-                      onPointerCancel={onPointerCancel}
-                    />
-                  </div>
-                </section>
-              ) : null}
-
-              {isCorrectedVisible ? (
-                <section className="panel canvas-panel">
-                  <div className="panel-title">
-                    <h2>Corrected</h2>
-                  </div>
-                  <div
-                    ref={correctedScrollRef}
-                    className="canvas-scroll"
-                    onScroll={(event) => onPaneScroll(event.currentTarget)}
-                  >
-                    <BeadPreviewCanvas
-                      document={document}
-                      variant="corrected"
-                      onPointerDown={onPreviewPointerDown}
-                      onPointerMove={onPointerMove}
-                      onPointerUp={onPointerUp}
-                      onPointerCancel={onPointerCancel}
-                    />
-                  </div>
-                </section>
-              ) : null}
-
-              {isSimulationVisible ? (
-                <section className="panel canvas-panel">
-                  <div className="panel-title">
-                    <h2>Simulation</h2>
-                  </div>
-                  <div
-                    ref={simulationScrollRef}
-                    className="canvas-scroll"
-                    onScroll={(event) => onPaneScroll(event.currentTarget)}
-                  >
-                    <BeadPreviewCanvas
-                      document={document}
-                      variant="simulation"
-                      onPointerDown={onPreviewPointerDown}
-                      onPointerMove={onPointerMove}
-                      onPointerUp={onPointerUp}
-                      onPointerCancel={onPointerCancel}
-                    />
-                  </div>
-                </section>
-              ) : null}
-
-              {!hasAnyPaneVisible ? (
-                <section className="panel empty-pane">
-                  <p>Select at least one view to display a pane.</p>
-                </section>
-              ) : null}
-            </section>
-          ) : null}
-
-          {hasCanvasPaneVisible ? (
-            <div className="shared-scrollbar-panel" aria-label="Shared pattern scroll">
-              <input
-                className="shared-scrollbar"
-                type="range"
-                min={0}
-                max={sharedMaxScrollRow}
-                step={1}
-                value={Math.min(sharedScrollRow, sharedMaxScrollRow)}
-                onChange={(event) => setViewScroll(Number(event.currentTarget.value))}
-              />
-            </div>
-          ) : null}
-
-          {isReportVisible ? (
-            <section className="panel canvas-panel report-panel report-split-panel">
-              <div className="panel-title">
-                <h2>Report</h2>
-              </div>
-              <div className="report-content">
-                <dl className="report-info-list">
-                  {reportSummary.entries.map((entry) => (
-                    <div key={entry.label} className="report-info-row">
-                      <dt>{entry.label}:</dt>
-                      <dd>{entry.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-                {reportSummary.repeat > 0 ? (
-                  <section className="report-color-usage">
-                    <div className="report-color-grid">
-                      {visibleColorCounts.map((item) => {
-                        const color = document.colors[item.colorIndex]
-                        const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
-                        return (
-                          <div key={item.colorIndex} className="report-color-row">
-                            <span className="report-color-count">{item.count} x</span>
-                            <span className="report-color-swatch" style={swatchStyle} />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </section>
-                ) : null}
-                {reportSummary.beadRuns.length > 0 ? (
-                  <section className="report-bead-list">
-                    <h3>List of beads</h3>
-                    <div className="report-bead-grid">
-                      {reportSummary.beadRuns.map((item, index) => {
-                        const color = document.colors[item.colorIndex]
-                        const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
-                        return (
-                          <div key={`${item.colorIndex}-${item.count}-${index}`} className="report-bead-row">
-                            <span className="report-color-swatch" style={swatchStyle} />
-                            <span className="report-bead-count">{item.count}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </section>
-                ) : null}
-              </div>
-            </section>
-          ) : null}
-        </section>
+        <WorkspacePanels
+          hasCanvasPaneVisible={hasCanvasPaneVisible}
+          hasAnyPaneVisible={hasAnyPaneVisible}
+          isReportVisible={isReportVisible}
+          isDraftVisible={isDraftVisible}
+          isCorrectedVisible={isCorrectedVisible}
+          isSimulationVisible={isSimulationVisible}
+          width={width}
+          height={height}
+          document={document}
+          selectionOverlay={selectionOverlay}
+          linePreview={linePreview}
+          draftScrollRef={draftScrollRef}
+          correctedScrollRef={correctedScrollRef}
+          simulationScrollRef={simulationScrollRef}
+          sharedMaxScrollRow={sharedMaxScrollRow}
+          sharedScrollRow={sharedScrollRow}
+          reportSummary={reportSummary}
+          visibleColorCounts={visibleColorCounts}
+          colorToCss={colorToCss}
+          onPaneScroll={onPaneScroll}
+          onSharedScrollChange={setViewScroll}
+          onDraftPointerDown={onDraftPointerDown}
+          onPreviewPointerDown={onPreviewPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+        />
       </main>
 
       <input
@@ -2102,403 +1482,84 @@ function App() {
         onBlur={() => setEditingPaletteColorIndex(null)}
       />
 
-      <section className={`print-workspace ${isReportVisible ? 'has-report' : 'no-report'}`} aria-hidden="true">
-        {isReportVisible ? (
-          <section className="panel canvas-panel report-panel print-report-panel">
-            <div className="panel-title">
-              <h2>Report</h2>
-            </div>
-            <div className="report-content">
-              <dl className="report-info-list">
-                {reportSummary.entries.map((entry) => (
-                  <div key={`print-${entry.label}`} className="report-info-row">
-                    <dt>{entry.label}:</dt>
-                    <dd>{entry.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {reportSummary.repeat > 0 ? (
-                <section className="report-color-usage">
-                  <div className="report-color-grid">
-                    {visibleColorCounts.map((item) => {
-                      const color = document.colors[item.colorIndex]
-                      const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
-                      return (
-                        <div key={`print-${item.colorIndex}`} className="report-color-row">
-                          <span className="report-color-count">{item.count} x</span>
-                          <span className="report-color-swatch" style={swatchStyle} />
-                        </div>
-                      )
-                    })}
-                  </div>
-                </section>
-              ) : null}
-              {reportSummary.beadRuns.length > 0 ? (
-                <section className="report-bead-list">
-                  <h3>List of beads</h3>
-                  <div className="report-bead-grid">
-                    {reportSummary.beadRuns.map((item, index) => {
-                      const color = document.colors[item.colorIndex]
-                      const swatchStyle = color ? { backgroundColor: colorToCss(color) } : undefined
-                      return (
-                        <div key={`print-${item.colorIndex}-${item.count}-${index}`} className="report-bead-row">
-                          <span className="report-color-swatch" style={swatchStyle} />
-                          <span className="report-bead-count">{item.count}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </section>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
+      <PrintWorkspace
+        isReportVisible={isReportVisible}
+        isDraftVisible={isDraftVisible}
+        isCorrectedVisible={isCorrectedVisible}
+        isSimulationVisible={isSimulationVisible}
+        height={height}
+        printChunks={printChunks}
+        document={document}
+        reportSummary={reportSummary}
+        visibleColorCounts={visibleColorCounts}
+        colorToCss={colorToCss}
+        formatChunkLabel={formatLegacyChunkLabel}
+      />
 
-        {isDraftVisible
-          ? printChunks.map((chunk) => {
-              const chunkLabel = formatLegacyChunkLabel(height, chunk.start, chunk.end)
-              return (
-                <section key={`print-draft-${chunk.start}-${chunk.end}`} className="panel canvas-panel draft-panel print-panel">
-                  <div className="panel-title">
-                    <h2>Draft</h2>
-                    <span>Rows {chunkLabel}</span>
-                  </div>
-                  <div className="canvas-scroll">
-                    <BeadCanvas
-                      document={document}
-                      selectionOverlay={null}
-                      linePreview={null}
-                      rowStart={chunk.start}
-                      rowEndExclusive={chunk.end}
-                    />
-                  </div>
-                </section>
-              )
-            })
-          : null}
+      <MetadataDialog
+        isOpen={isMetadataDialogOpen}
+        author={metadataAuthorInput}
+        organization={metadataOrganizationInput}
+        notes={metadataNotesInput}
+        onAuthorChange={setMetadataAuthorInput}
+        onOrganizationChange={setMetadataOrganizationInput}
+        onNotesChange={setMetadataNotesInput}
+        onApply={onApplyMetadata}
+        onClose={() => setIsMetadataDialogOpen(false)}
+      />
 
-        {isCorrectedVisible
-          ? printChunks.map((chunk) => {
-              const chunkLabel = formatLegacyChunkLabel(height, chunk.start, chunk.end)
-              return (
-                <section key={`print-corrected-${chunk.start}-${chunk.end}`} className="panel canvas-panel print-panel">
-                  <div className="panel-title">
-                    <h2>Corrected</h2>
-                    <span>Rows {chunkLabel}</span>
-                  </div>
-                  <div className="canvas-scroll">
-                    <BeadPreviewCanvas document={document} variant="corrected" rowStart={chunk.start} rowEndExclusive={chunk.end} />
-                  </div>
-                </section>
-              )
-            })
-          : null}
+      <PreferencesDialog
+        isOpen={isPreferencesDialogOpen}
+        defaultAuthor={preferencesAuthorInput}
+        defaultOrganization={preferencesOrganizationInput}
+        symbols={preferencesSymbolsInput}
+        pageSize={pageSetupSizeInput}
+        orientation={pageSetupOrientationInput}
+        onDefaultAuthorChange={setPreferencesAuthorInput}
+        onDefaultOrganizationChange={setPreferencesOrganizationInput}
+        onSymbolsChange={setPreferencesSymbolsInput}
+        onPageSizeChange={setPageSetupSizeInput}
+        onOrientationChange={setPageSetupOrientationInput}
+        onApply={() => void onApplyPreferences()}
+        onClose={() => setIsPreferencesDialogOpen(false)}
+      />
 
-        {isSimulationVisible
-          ? printChunks.map((chunk) => {
-              const chunkLabel = formatLegacyChunkLabel(height, chunk.start, chunk.end)
-              return (
-                <section key={`print-simulation-${chunk.start}-${chunk.end}`} className="panel canvas-panel print-panel">
-                  <div className="panel-title">
-                    <h2>Simulation</h2>
-                    <span>Rows {chunkLabel}</span>
-                  </div>
-                  <div className="canvas-scroll">
-                    <BeadPreviewCanvas document={document} variant="simulation" rowStart={chunk.start} rowEndExclusive={chunk.end} />
-                  </div>
-                </section>
-              )
-            })
-          : null}
-      </section>
+      <CreditsDialog isOpen={isCreditsDialogOpen} onClose={() => setIsCreditsDialogOpen(false)} />
 
-      {isMetadataDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Metadata">
-            <div className="panel-title">
-              <h2>Metadata</h2>
-            </div>
-            <div className="arrange-form">
-              <label className="arrange-field">
-                Author
-                <input
-                  className="arrange-input"
-                  type="text"
-                  value={metadataAuthorInput}
-                  onChange={(event) => setMetadataAuthorInput(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Organization
-                <input
-                  className="arrange-input"
-                  type="text"
-                  value={metadataOrganizationInput}
-                  onChange={(event) => setMetadataOrganizationInput(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Notes
-                <textarea
-                  className="arrange-input metadata-notes-input"
-                  value={metadataNotesInput}
-                  onChange={(event) => setMetadataNotesInput(event.currentTarget.value)}
-                />
-              </label>
-            </div>
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsMetadataDialogOpen(false)}>
-                Cancel
-              </button>
-              <button className="action tool-action active" onClick={onApplyMetadata}>
-                Apply
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <RecentFilesDialog
+        isOpen={isRecentDialogOpen}
+        recentFiles={recentFiles}
+        formatTimestamp={formatRecentTimestamp}
+        onOpenRecentFile={onOpenRecentFile}
+        onDeleteRecentEntry={onDeleteRecentEntry}
+        onClose={() => setIsRecentDialogOpen(false)}
+      />
 
-      {isPreferencesDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Preferences">
-            <div className="panel-title">
-              <h2>Preferences</h2>
-            </div>
-            <div className="arrange-form">
-              <label className="arrange-field">
-                Default author
-                <input
-                  className="arrange-input"
-                  type="text"
-                  value={preferencesAuthorInput}
-                  onChange={(event) => setPreferencesAuthorInput(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Default organization
-                <input
-                  className="arrange-input"
-                  type="text"
-                  value={preferencesOrganizationInput}
-                  onChange={(event) => setPreferencesOrganizationInput(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Symbols
-                <input
-                  className="arrange-input"
-                  type="text"
-                  value={preferencesSymbolsInput}
-                  onChange={(event) => setPreferencesSymbolsInput(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Paper
-                <select
-                  className="arrange-input"
-                  value={pageSetupSizeInput}
-                  onChange={(event) => setPageSetupSizeInput(event.currentTarget.value as AppSettings['printPageSize'])}
-                >
-                  <option value="a4">A4</option>
-                  <option value="letter">Letter</option>
-                </select>
-              </label>
-              <label className="arrange-field">
-                Orientation
-                <select
-                  className="arrange-input"
-                  value={pageSetupOrientationInput}
-                  onChange={(event) => setPageSetupOrientationInput(event.currentTarget.value as AppSettings['printOrientation'])}
-                >
-                  <option value="portrait">Portrait</option>
-                  <option value="landscape">Landscape</option>
-                </select>
-              </label>
-            </div>
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsPreferencesDialogOpen(false)}>
-                Cancel
-              </button>
-              <button className="action tool-action active" onClick={() => void onApplyPreferences()}>
-                Apply
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <PatternSizeDialog
+        isOpen={isPatternSizeDialogOpen}
+        widthInput={patternWidthInput}
+        heightInput={patternHeightInput}
+        minWidth={MIN_PATTERN_WIDTH}
+        maxWidth={MAX_PATTERN_WIDTH}
+        minHeight={MIN_PATTERN_HEIGHT}
+        maxHeight={MAX_PATTERN_HEIGHT}
+        onWidthChange={setPatternWidthInput}
+        onHeightChange={setPatternHeightInput}
+        onApply={onApplyPatternSize}
+        onClose={() => setIsPatternSizeDialogOpen(false)}
+      />
 
-      {isCreditsDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog credits-dialog panel" role="dialog" aria-modal="true" aria-label="Credits">
-            <div className="panel-title">
-              <h2>Credits</h2>
-            </div>
-            <div className="credits-content">
-              <p>
-                TsBead is a TypeScript port of the excellent original work done by Damian Brunold on JBead.
-              </p>
-              <ul>
-                <li>
-                  Original author: Damian Brunold
-                </li>
-                <li>
-                  Website:{' '}
-                  <a href="https://www.jbead.ch/" target="_blank" rel="noreferrer">
-                    https://www.jbead.ch/
-                  </a>
-                </li>
-                <li>
-                  GitHub:{' '}
-                  <a href="https://github.com/damianbrunold/jbead" target="_blank" rel="noreferrer">
-                    https://github.com/damianbrunold/jbead
-                  </a>
-                </li>
-              </ul>
-              <p>
-                File format support in TsBead: <strong>.jbb only</strong>. The legacy <strong>.dbb</strong> format is not supported.
-              </p>
-            </div>
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsCreditsDialogOpen(false)}>
-                Close
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {isRecentDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog recent-dialog panel" role="dialog" aria-modal="true" aria-label="Open recent">
-            <div className="panel-title">
-              <h2>Open Recent</h2>
-              <span>{recentFiles.length} files</span>
-            </div>
-            {recentFiles.length === 0 ? (
-              <p className="recent-empty">No recent files yet.</p>
-            ) : (
-              <div className="recent-list">
-                {recentFiles.map((entry) => (
-                  <div key={entry.id} className="recent-item">
-                    <button className="action recent-open" onClick={() => void onOpenRecentFile(entry)}>
-                      <span className="recent-name">{entry.name}</span>
-                      <span className="recent-date">{formatRecentTimestamp(entry.updatedAt)}</span>
-                    </button>
-                    <button className="action recent-remove" onClick={() => void onDeleteRecentEntry(entry.id)}>
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsRecentDialogOpen(false)}>
-                Close
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {isPatternSizeDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Pattern size">
-            <div className="panel-title">
-              <h2>Pattern Size</h2>
-            </div>
-            <div className="arrange-form">
-              <label className="arrange-field">
-                Width (beads)
-                <input
-                  className="arrange-input"
-                  type="number"
-                  min={MIN_PATTERN_WIDTH}
-                  max={MAX_PATTERN_WIDTH}
-                  step={1}
-                  value={patternWidthInput}
-                  onChange={(event) => setPatternWidthInput(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Height (rows)
-                <input
-                  className="arrange-input"
-                  type="number"
-                  min={MIN_PATTERN_HEIGHT}
-                  max={MAX_PATTERN_HEIGHT}
-                  step={1}
-                  value={patternHeightInput}
-                  onChange={(event) => setPatternHeightInput(event.currentTarget.value)}
-                />
-              </label>
-            </div>
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsPatternSizeDialogOpen(false)}>
-                Cancel
-              </button>
-              <button className="action tool-action active" onClick={onApplyPatternSize}>
-                Apply
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {isArrangeDialogOpen ? (
-        <div className="dialog-backdrop">
-          <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Arrange selection">
-            <div className="panel-title">
-              <h2>Arrange Selection</h2>
-            </div>
-            <div className="arrange-form">
-              <label className="arrange-field">
-                Horizontal offset
-                <input
-                  className="arrange-input"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={arrangeHorizontalOffset}
-                  onChange={(event) => setArrangeHorizontalOffset(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Vertical offset
-                <input
-                  className="arrange-input"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={arrangeVerticalOffset}
-                  onChange={(event) => setArrangeVerticalOffset(event.currentTarget.value)}
-                />
-              </label>
-              <label className="arrange-field">
-                Copies
-                <input
-                  className="arrange-input"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={arrangeCopies}
-                  onChange={(event) => setArrangeCopies(event.currentTarget.value)}
-                />
-              </label>
-            </div>
-            <div className="arrange-actions">
-              <button className="action" onClick={() => setIsArrangeDialogOpen(false)}>
-                Cancel
-              </button>
-              <button className="action tool-action active" onClick={onApplyArrange}>
-                Apply
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <ArrangeDialog
+        isOpen={isArrangeDialogOpen}
+        horizontalOffset={arrangeHorizontalOffset}
+        verticalOffset={arrangeVerticalOffset}
+        copies={arrangeCopies}
+        onHorizontalOffsetChange={setArrangeHorizontalOffset}
+        onVerticalOffsetChange={setArrangeVerticalOffset}
+        onCopiesChange={setArrangeCopies}
+        onApply={onApplyArrange}
+        onClose={() => setIsArrangeDialogOpen(false)}
+      />
     </div>
   )
 }
