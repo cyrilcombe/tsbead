@@ -368,6 +368,7 @@ h1 {
   font-size: 0.86rem;
   display: grid;
   gap: 0.48rem;
+  align-content: start;
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -824,6 +825,11 @@ h1 {
   .preview-with-scrollbar {
     grid-template-columns: 1fr;
     height: auto;
+  }
+
+  .preview-with-scrollbar.has-canvas.no-report,
+  .preview-with-scrollbar.has-canvas.has-report {
+    grid-template-columns: 1fr;
   }
 
   .shared-scrollbar-panel {
