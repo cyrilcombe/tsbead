@@ -322,7 +322,9 @@ export function BeadPreviewCanvas({
         }
         isPointerDownRef.current = true
         lastPointRef.current = point
-        event.currentTarget.setPointerCapture(event.pointerId)
+        if (event.pointerType !== 'touch') {
+          event.currentTarget.setPointerCapture(event.pointerId)
+        }
         handlePointerDown(point)
       }}
       onPointerMove={(event) => {

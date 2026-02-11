@@ -238,7 +238,9 @@ export function BeadCanvas({
           return
         }
         isPointerDownRef.current = true
-        event.currentTarget.setPointerCapture(event.pointerId)
+        if (event.pointerType !== 'touch') {
+          event.currentTarget.setPointerCapture(event.pointerId)
+        }
         handlePointerDown(point)
       }}
       onPointerMove={(event) => {
@@ -263,11 +265,14 @@ export function BeadCanvas({
           event.currentTarget.releasePointerCapture(event.pointerId)
         }
       }}
-      onPointerCancel={() => {
+      onPointerCancel={(event) => {
         if (!isInteractive) {
           return
         }
         isPointerDownRef.current = false
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId)
+        }
         handlePointerCancel()
       }}
       role="img"

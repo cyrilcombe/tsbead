@@ -289,11 +289,19 @@
 .bead-canvas {
   display: block;
   cursor: crosshair;
-  touch-action: none;
+  touch-action: pan-x pan-y;
 }
 
 .bead-preview-canvas {
   display: block;
+  touch-action: pan-x pan-y;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bead-canvas,
+  .bead-preview-canvas {
+    touch-action: none;
+  }
 }
 
 .palette-grid {

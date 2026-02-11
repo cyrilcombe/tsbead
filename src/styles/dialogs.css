@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   padding: 1rem;
-  z-index: 10;
+  z-index: 120;
 }
 
 .arrange-dialog {
