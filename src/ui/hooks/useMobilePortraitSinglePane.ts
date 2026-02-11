@@ -1,5 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { ViewPaneId } from '../../domain/types'
+
+const COMPACT_TABS_QUERY = '(max-width: 1200px)'
 
 interface UseMobilePortraitSinglePaneOptions {
   isDraftVisible: boolean
@@ -16,9 +18,22 @@ export function useMobilePortraitSinglePane({
   isReportVisible,
   onSelectMobileView,
 }: UseMobilePortraitSinglePaneOptions) {
+  const [isCompactTabsMode, setIsCompactTabsMode] = useState(() => window.matchMedia(COMPACT_TABS_QUERY).matches)
+
   useEffect(() => {
-    const mobilePortraitQuery = window.matchMedia('(max-width: 980px) and (orientation: portrait)')
-    if (!mobilePortraitQuery.matches) {
+    const compactQuery = window.matchMedia(COMPACT_TABS_QUERY)
+    const onChange = (event: MediaQueryListEvent) => {
+      setIsCompactTabsMode(event.matches)
+    }
+    setIsCompactTabsMode(compactQuery.matches)
+    compactQuery.addEventListener('change', onChange)
+    return () => {
+      compactQuery.removeEventListener('change', onChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isCompactTabsMode) {
       return
     }
     const visibleCount = Number(isDraftVisible) + Number(isCorrectedVisible) + Number(isSimulationVisible) + Number(isReportVisible)
@@ -33,5 +48,5 @@ export function useMobilePortraitSinglePane({
           ? 'simulation'
           : 'report'
     onSelectMobileView(nextPane)
-  }, [isCorrectedVisible, isDraftVisible, isReportVisible, isSimulationVisible, onSelectMobileView])
+  }, [isCompactTabsMode, isCorrectedVisible, isDraftVisible, isReportVisible, isSimulationVisible, onSelectMobileView])
 }

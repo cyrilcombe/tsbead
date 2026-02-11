@@ -28,11 +28,17 @@ vi.mock('./ui/canvas/BeadPreviewCanvas', () => ({
   BeadPreviewCanvas: () => <div data-testid="bead-preview-canvas" />,
 }))
 
-function setMatchMedia(isMobilePortrait: boolean): void {
+function setMatchMedia(isCompactTabsMode: boolean): void {
   vi.stubGlobal(
     'matchMedia',
     vi.fn((query: string) => ({
-      matches: isMobilePortrait && query === '(max-width: 980px) and (orientation: portrait)',
+      matches:
+        isCompactTabsMode &&
+        (
+          query === '(max-width: 1200px)' ||
+          query === '(max-width: 980px)' ||
+          query === '(max-width: 980px) and (orientation: portrait)'
+        ),
       media: query,
       onchange: null,
       addListener: () => {},
