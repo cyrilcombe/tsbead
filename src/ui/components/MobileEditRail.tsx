@@ -155,7 +155,13 @@ export function MobileEditRail({
 
       <span className="mobile-edit-separator" aria-hidden="true" />
 
-      <div className="mobile-edit-group">
+      <div className="mobile-edit-group mobile-edit-group-scroll">
+        <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label="Undo">
+          <Undo2 className="tool-icon" aria-hidden="true" />
+        </button>
+        <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label="Redo">
+          <Redo2 className="tool-icon" aria-hidden="true" />
+        </button>
         <button className="action icon-action" onClick={onDeleteSelection} disabled={!selectionExists} title={shortcuts.deleteSelection} aria-label="Delete selection">
           <Eraser className="tool-icon" aria-hidden="true" />
         </button>
@@ -176,12 +182,6 @@ export function MobileEditRail({
         </button>
         <button className="action icon-action" onClick={onRotateClockwise} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
           <RotateCw className="tool-icon" aria-hidden="true" />
-        </button>
-        <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label="Undo">
-          <Undo2 className="tool-icon" aria-hidden="true" />
-        </button>
-        <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label="Redo">
-          <Redo2 className="tool-icon" aria-hidden="true" />
         </button>
       </div>
     </aside>
