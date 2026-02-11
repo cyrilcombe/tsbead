@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { getLinePoints, normalizeRect, snapLineEnd } from '../../domain/gridMath'
 import type { CellPoint, JBeadDocument, RgbaColor, SelectionRect } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 import { getBeadSymbol, getContrastingSymbolColor } from './beadStyle'
 
 interface BeadCanvasProps {
@@ -44,6 +45,7 @@ export function BeadCanvas({
   rowStart,
   rowEndExclusive,
 }: BeadCanvasProps) {
+  const { t } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const isPointerDownRef = useRef(false)
   const cellSize = getCellSize(document.view.zoom)
@@ -276,7 +278,7 @@ export function BeadCanvas({
         handlePointerCancel()
       }}
       role="img"
-      aria-label="Bead pattern grid"
+      aria-label={t('view.draft')}
     />
   )
 }

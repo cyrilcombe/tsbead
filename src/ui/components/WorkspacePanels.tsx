@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 import type { ColorCount, ReportSummary } from '../../domain/report'
 import type { CellPoint, JBeadDocument, RgbaColor, SelectionRect } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 import { BeadCanvas } from '../canvas/BeadCanvas'
 import { BeadPreviewCanvas } from '../canvas/BeadPreviewCanvas'
 import { ReportPanel } from './ReportPanel'
@@ -62,6 +63,8 @@ export function WorkspacePanels({
   onPointerUp,
   onPointerCancel,
 }: WorkspacePanelsProps) {
+  const { t } = useI18n()
+
   return (
     <section className={`preview-with-scrollbar ${hasCanvasPaneVisible ? 'has-canvas' : 'no-canvas'} ${isReportVisible ? 'has-report' : 'no-report'}`}>
       {hasCanvasPaneVisible || !isReportVisible ? (
@@ -69,7 +72,7 @@ export function WorkspacePanels({
           {isDraftVisible ? (
             <section className="panel canvas-panel draft-panel">
               <div className="panel-title">
-                <h2>Draft</h2>
+                <h2>{t('view.draft')}</h2>
                 <span>
                   {width} x {height}
                 </span>
@@ -95,7 +98,7 @@ export function WorkspacePanels({
           {isCorrectedVisible ? (
             <section className="panel canvas-panel">
               <div className="panel-title">
-                <h2>Corrected</h2>
+                <h2>{t('view.corrected')}</h2>
               </div>
               <div
                 ref={correctedScrollRef}
@@ -117,7 +120,7 @@ export function WorkspacePanels({
           {isSimulationVisible ? (
             <section className="panel canvas-panel">
               <div className="panel-title">
-                <h2>Simulation</h2>
+                <h2>{t('view.simulation')}</h2>
               </div>
               <div
                 ref={simulationScrollRef}
@@ -138,14 +141,14 @@ export function WorkspacePanels({
 
           {!hasAnyPaneVisible ? (
             <section className="panel empty-pane">
-              <p>Select at least one view to display a pane.</p>
+              <p>{t('view.selectAtLeastOne')}</p>
             </section>
           ) : null}
         </section>
       ) : null}
 
       {hasCanvasPaneVisible ? (
-        <div className="shared-scrollbar-panel" aria-label="Shared pattern scroll">
+        <div className="shared-scrollbar-panel" aria-label={t('view.sharedPatternScroll')}>
           <input
             className="shared-scrollbar"
             type="range"

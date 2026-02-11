@@ -1,3 +1,5 @@
+import { useI18n } from '../../../i18n/I18nProvider'
+
 interface PatternSizeDialogProps {
   isOpen: boolean
   widthInput: string
@@ -25,19 +27,21 @@ export function PatternSizeDialog({
   onApply,
   onClose,
 }: PatternSizeDialogProps) {
+  const { t } = useI18n()
+
   if (!isOpen) {
     return null
   }
 
   return (
     <div className="dialog-backdrop">
-      <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Pattern size">
+      <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label={t('dialog.patternSize.aria')}>
         <div className="panel-title">
-          <h2>Pattern Size</h2>
+          <h2>{t('dialog.patternSize.title')}</h2>
         </div>
         <div className="arrange-form">
           <label className="arrange-field">
-            Width (beads)
+            {t('dialog.patternSize.width')}
             <input
               className="arrange-input"
               type="number"
@@ -49,7 +53,7 @@ export function PatternSizeDialog({
             />
           </label>
           <label className="arrange-field">
-            Height (rows)
+            {t('dialog.patternSize.height')}
             <input
               className="arrange-input"
               type="number"
@@ -63,10 +67,10 @@ export function PatternSizeDialog({
         </div>
         <div className="arrange-actions">
           <button className="action" onClick={onClose}>
-            Cancel
+            {t('dialog.cancel')}
           </button>
           <button className="action tool-action active" onClick={onApply}>
-            Apply
+            {t('dialog.apply')}
           </button>
         </div>
       </section>

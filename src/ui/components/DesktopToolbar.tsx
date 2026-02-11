@@ -24,6 +24,7 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import type { JBeadDocument, RgbaColor, ToolId, ViewPaneId } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
 
 interface ViewPaneEntry {
@@ -134,6 +135,7 @@ export function DesktopToolbar({
   onSetDrawColors,
   onSetDrawSymbols,
 }: DesktopToolbarProps) {
+  const { t } = useI18n()
   const shortcuts = usePlatformShortcuts()
 
   return (
@@ -145,7 +147,7 @@ export function DesktopToolbar({
               className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('pencil')}
               title={shortcuts.pencil}
-              aria-label="Pencil"
+              aria-label={t('tool.pencil')}
             >
               <Pencil className="tool-icon" aria-hidden="true" />
             </button>
@@ -153,7 +155,7 @@ export function DesktopToolbar({
               className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('line')}
               title={shortcuts.line}
-              aria-label="Line"
+              aria-label={t('tool.line')}
             >
               <Slash className="tool-icon" aria-hidden="true" />
             </button>
@@ -161,7 +163,7 @@ export function DesktopToolbar({
               className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('fill')}
               title={shortcuts.fill}
-              aria-label="Fill"
+              aria-label={t('tool.fill')}
             >
               <PaintBucket className="tool-icon" aria-hidden="true" />
             </button>
@@ -169,7 +171,7 @@ export function DesktopToolbar({
               className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('pipette')}
               title={shortcuts.pipette}
-              aria-label="Pipette"
+              aria-label={t('tool.pipette')}
             >
               <Pipette className="tool-icon" aria-hidden="true" />
             </button>
@@ -182,10 +184,10 @@ export function DesktopToolbar({
               <button
                 className={`action color-toggle ${isBackgroundMenuOpen ? 'view-toggle active' : ''}`}
                 onClick={onToggleBackgroundMenu}
-                title="Background color"
-                aria-label="Background color"
+                title={t('palette.backgroundColor')}
+                aria-label={t('palette.backgroundColor')}
               >
-                <span className="color-toggle-label">BG</span>
+                <span className="color-toggle-label">{t('palette.bgLabel')}</span>
                 <span className="color-toggle-chip" style={{ backgroundColor: colorToCss(backgroundColorValue) }} />
               </button>
               {isBackgroundMenuOpen ? (
@@ -198,7 +200,7 @@ export function DesktopToolbar({
                         style={{ backgroundColor: colorToCss(color) }}
                         onClick={() => onSetColorAsBackground(index)}
                         onDoubleClick={() => onEditPaletteColor(index)}
-                        title={`Set background to color ${index}`}
+                        title={t('palette.setBackgroundToColor', { index })}
                       />
                     ))}
                   </div>
@@ -210,10 +212,10 @@ export function DesktopToolbar({
               <button
                 className={`action color-toggle ${isColorMenuOpen ? 'view-toggle active' : ''}`}
                 onClick={onToggleColorMenu}
-                title="Drawing color"
-                aria-label="Drawing color"
+                title={t('palette.drawingColor')}
+                aria-label={t('palette.drawingColor')}
               >
-                <span className="color-toggle-label">Color</span>
+                <span className="color-toggle-label">{t('palette.colorLabel')}</span>
                 <span className="color-toggle-chip" style={{ backgroundColor: colorToCss(selectedColorValue) }} />
               </button>
               {isColorMenuOpen ? (
@@ -226,7 +228,7 @@ export function DesktopToolbar({
                         style={{ backgroundColor: colorToCss(color) }}
                         onClick={() => onSetSelectedColor(index)}
                         onDoubleClick={() => onEditPaletteColor(index)}
-                        title={`Color ${index}`}
+                        title={t('palette.colorIndex', { index })}
                       />
                     ))}
                   </div>
@@ -242,7 +244,7 @@ export function DesktopToolbar({
               className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`}
               onClick={() => onSetSelectedTool('select')}
               title={shortcuts.select}
-              aria-label="Select"
+              aria-label={t('tool.select')}
             >
               <SquareDashed className="tool-icon" aria-hidden="true" />
             </button>
@@ -251,11 +253,11 @@ export function DesktopToolbar({
               onClick={onDeleteSelection}
               disabled={!selectionExists}
               title={shortcuts.deleteSelection}
-              aria-label="Delete selection"
+              aria-label={t('tool.deleteSelection')}
             >
               <Eraser className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title={shortcuts.arrange} aria-label="Arrange">
+            <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title={shortcuts.arrange} aria-label={t('tool.arrange')}>
               <Copy className="tool-icon" aria-hidden="true" />
             </button>
           </div>
@@ -263,10 +265,10 @@ export function DesktopToolbar({
           <span className="toolbar-separator" aria-hidden="true" />
 
           <div className="button-strip toolbar-group">
-            <button className="action icon-action" onClick={onInsertRow} title="Insert row" aria-label="Insert row">
+            <button className="action icon-action" onClick={onInsertRow} title={t('tool.insertRow')} aria-label={t('tool.insertRow')}>
               <Plus className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onDeleteRow} title="Delete row" aria-label="Delete row">
+            <button className="action icon-action" onClick={onDeleteRow} title={t('tool.deleteRow')} aria-label={t('tool.deleteRow')}>
               <Minus className="tool-icon" aria-hidden="true" />
             </button>
           </div>
@@ -274,13 +276,13 @@ export function DesktopToolbar({
           <span className="toolbar-separator" aria-hidden="true" />
 
           <div className="button-strip toolbar-group">
-            <button className="action icon-action" onClick={onMirrorHorizontal} title="Mirror horizontal" aria-label="Mirror horizontal">
+            <button className="action icon-action" onClick={onMirrorHorizontal} title={t('tool.mirrorHorizontal')} aria-label={t('tool.mirrorHorizontal')}>
               <MoveHorizontal className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onMirrorVertical} title="Mirror vertical" aria-label="Mirror vertical">
+            <button className="action icon-action" onClick={onMirrorVertical} title={t('tool.mirrorVertical')} aria-label={t('tool.mirrorVertical')}>
               <MoveVertical className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onRotateClockwise} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
+            <button className="action icon-action" onClick={onRotateClockwise} disabled={!canRotate} title={t('tool.rotate90')} aria-label={t('tool.rotate90')}>
               <RotateCw className="tool-icon" aria-hidden="true" />
             </button>
           </div>
@@ -288,10 +290,10 @@ export function DesktopToolbar({
           <span className="toolbar-separator" aria-hidden="true" />
 
           <div className="button-strip toolbar-group">
-            <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label="Undo">
+            <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label={t('tool.undo')}>
               <Undo2 className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label="Redo">
+            <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label={t('tool.redo')}>
               <Redo2 className="tool-icon" aria-hidden="true" />
             </button>
           </div>
@@ -305,7 +307,7 @@ export function DesktopToolbar({
                 aria-expanded={isViewsMenuOpen}
                 onClick={onToggleViewsMenu}
               >
-                Views
+                {t('view.views')}
               </button>
               {isViewsMenuOpen ? (
                 <div className="views-menu">
@@ -321,36 +323,36 @@ export function DesktopToolbar({
                 </div>
               ) : null}
             </div>
-            <button className="action icon-action" onClick={onOpenPatternSizeDialog} title="Pattern size..." aria-label="Pattern size">
+            <button className="action icon-action" onClick={onOpenPatternSizeDialog} title={`${t('tool.patternSize')}...`} aria-label={t('tool.patternSize')}>
               <LayoutGrid className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onZoomOut} disabled={!canZoomOut} title={shortcuts.zoomOut} aria-label="Zoom out">
+            <button className="action icon-action" onClick={onZoomOut} disabled={!canZoomOut} title={shortcuts.zoomOut} aria-label={t('tool.zoomOut')}>
               <ZoomOut className="tool-icon" aria-hidden="true" />
             </button>
             <button
               className={`action icon-action ${isZoomFitMode ? 'view-toggle active' : ''}`}
               onClick={onZoomFit}
               disabled={!hasCanvasPaneVisible}
-              title="Zoom 100%"
-              aria-label="Zoom 100%"
+              title={t('tool.zoom100')}
+              aria-label={t('tool.zoom100')}
             >
               <Scan className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onZoomIn} disabled={!canZoomIn} title={shortcuts.zoomIn} aria-label="Zoom in">
+            <button className="action icon-action" onClick={onZoomIn} disabled={!canZoomIn} title={shortcuts.zoomIn} aria-label={t('tool.zoomIn')}>
               <ZoomIn className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onShiftLeft} title={shortcuts.shiftLeft} aria-label="Shift left">
+            <button className="action icon-action" onClick={onShiftLeft} title={shortcuts.shiftLeft} aria-label={t('tool.shiftLeft')}>
               <ArrowLeft className="tool-icon" aria-hidden="true" />
             </button>
-            <button className="action icon-action" onClick={onShiftRight} title={shortcuts.shiftRight} aria-label="Shift right">
+            <button className="action icon-action" onClick={onShiftRight} title={shortcuts.shiftRight} aria-label={t('tool.shiftRight')}>
               <ArrowRight className="tool-icon" aria-hidden="true" />
             </button>
             <button
               className={`action icon-action view-toggle ${drawColors ? 'active' : ''}`}
               aria-pressed={drawColors}
               onClick={() => onSetDrawColors(!drawColors)}
-              title="Draw colors"
-              aria-label="Draw colors"
+              title={t('tool.drawColors')}
+              aria-label={t('tool.drawColors')}
             >
               <Palette className="tool-icon" aria-hidden="true" />
             </button>
@@ -358,8 +360,8 @@ export function DesktopToolbar({
               className={`action icon-action view-toggle ${drawSymbols ? 'active' : ''}`}
               aria-pressed={drawSymbols}
               onClick={() => onSetDrawSymbols(!drawSymbols)}
-              title="Draw symbols"
-              aria-label="Draw symbols"
+              title={t('tool.drawSymbols')}
+              aria-label={t('tool.drawSymbols')}
             >
               <Type className="tool-icon" aria-hidden="true" />
             </button>

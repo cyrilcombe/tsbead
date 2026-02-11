@@ -1,5 +1,6 @@
 import type { ColorCount, ReportSummary } from '../../domain/report'
 import type { JBeadDocument, RgbaColor } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 
 interface ReportPanelProps {
   panelClassName: string
@@ -18,10 +19,12 @@ export function ReportPanel({
   colorToCss,
   keyPrefix = '',
 }: ReportPanelProps) {
+  const { t } = useI18n()
+
   return (
     <section className={panelClassName}>
       <div className="panel-title">
-        <h2>Report</h2>
+        <h2>{t('report.title')}</h2>
       </div>
       <div className="report-content">
         <dl className="report-info-list">
@@ -50,7 +53,7 @@ export function ReportPanel({
         ) : null}
         {reportSummary.beadRuns.length > 0 ? (
           <section className="report-bead-list">
-            <h3>List of beads</h3>
+            <h3>{t('report.listOfBeads')}</h3>
             <div className="report-bead-grid">
               {reportSummary.beadRuns.map((item, index) => {
                 const color = colors[item.colorIndex]

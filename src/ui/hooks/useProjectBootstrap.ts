@@ -12,6 +12,7 @@ const DEFAULT_APP_SETTINGS: AppSettings = {
   symbols: DEFAULT_BEAD_SYMBOLS,
   printPageSize: 'a4',
   printOrientation: 'portrait',
+  language: 'en',
 }
 
 interface UseProjectBootstrapOptions {

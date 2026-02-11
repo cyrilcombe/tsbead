@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CellPoint, JBeadDocument, RgbaColor } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 import { getBeadSymbol, getContrastingSymbolColor } from './beadStyle'
 
 interface PreviewCell {
@@ -223,6 +224,7 @@ export function BeadPreviewCanvas({
   onPointerUp,
   onPointerCancel,
 }: BeadPreviewCanvasProps) {
+  const { t } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const isPointerDownRef = useRef(false)
   const lastPointRef = useRef<CellPoint | null>(null)
@@ -363,7 +365,7 @@ export function BeadPreviewCanvas({
         handlePointerCancel()
       }}
       role="img"
-      aria-label={variant === 'corrected' ? 'Corrected preview' : 'Simulation preview'}
+      aria-label={variant === 'corrected' ? t('view.corrected') : t('view.simulation')}
     />
   )
 }

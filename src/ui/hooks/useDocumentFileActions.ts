@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { createEmptyDocument } from '../../domain/defaults'
 import { parseJbb, serializeJbb } from '../../io/jbb/format'
+import type { TranslateFn } from '../../i18n/I18nProvider'
 import {
   deleteRecentFile,
   listRecentFiles,
@@ -44,6 +45,7 @@ interface UseDocumentFileActionsOptions {
   dirty: boolean
   setDocument: (document: JBeadDocument) => void
   markSaved: () => void
+  t: TranslateFn
 }
 
 function ensureJbbFileName(fileName: string): string {
@@ -59,11 +61,11 @@ function createJbbBlob(document: JBeadDocument): Blob {
   return new Blob([content], { type: 'text/plain;charset=utf-8' })
 }
 
-function getErrorMessage(error: unknown): string {
+function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) {
     return error.message
   }
-  return 'Unexpected error'
+  return fallback
 }
 
 export function useDocumentFileActions({
@@ -72,6 +74,7 @@ export function useDocumentFileActions({
   dirty,
   setDocument,
   markSaved,
+  t,
 }: UseDocumentFileActionsOptions) {
   const openFileInputRef = useRef<HTMLInputElement | null>(null)
   const [openFileName, setOpenFileName] = useState(DEFAULT_FILE_NAME)
@@ -117,18 +120,18 @@ export function useDocumentFileActions({
         await saveRecentFile(normalizedName, content)
         await refreshRecentFiles()
       } catch (error) {
-        window.alert(`Could not open file: ${getErrorMessage(error)}`)
+        window.alert(t('error.openFile', { error: getErrorMessage(error, t('error.unexpected')) }))
       }
     },
-    [refreshRecentFiles, setDocument],
+    [refreshRecentFiles, setDocument, t],
   )
 
   const onDiscardUnsavedChanges = useCallback((): boolean => {
     if (!dirty) {
       return true
     }
-    return window.confirm('There are unsaved changes. Continue and discard them?')
-  }, [dirty])
+    return window.confirm(t('confirm.discardUnsaved'))
+  }, [dirty, t])
 
   const onNewDocument = useCallback((): boolean => {
     if (!onDiscardUnsavedChanges()) {
@@ -156,7 +159,7 @@ export function useDocumentFileActions({
       try {
         const handles = await pickerWindow.showOpenFilePicker({
           multiple: false,
-          types: [{ description: 'JBead files', accept: JBB_FILE_PICKER_ACCEPT }],
+          types: [{ description: t('picker.jbeadFiles'), accept: JBB_FILE_PICKER_ACCEPT }],
           excludeAcceptAllOption: false,
         })
         const handle = handles[0]
@@ -169,13 +172,13 @@ export function useDocumentFileActions({
         if (error instanceof DOMException && error.name === 'AbortError') {
           return
         }
-        window.alert(`Could not open file: ${getErrorMessage(error)}`)
+        window.alert(t('error.openFile', { error: getErrorMessage(error, t('error.unexpected')) }))
       }
       return
     }
 
     openFileInputRef.current?.click()
-  }, [onDiscardUnsavedChanges, onLoadFile])
+  }, [onDiscardUnsavedChanges, onLoadFile, t])
 
   const onSaveAsDocument = useCallback(async (): Promise<boolean> => {
     const targetFileName = ensureJbbFileName(openFileName)
@@ -185,7 +188,7 @@ export function useDocumentFileActions({
       try {
         const handle = await pickerWindow.showSaveFilePicker({
           suggestedName: targetFileName,
-          types: [{ description: 'JBead files', accept: JBB_FILE_PICKER_ACCEPT }],
+          types: [{ description: t('picker.jbeadFiles'), accept: JBB_FILE_PICKER_ACCEPT }],
           excludeAcceptAllOption: false,
         })
         const writable = await handle.createWritable()
@@ -202,7 +205,7 @@ export function useDocumentFileActions({
         if (error instanceof DOMException && error.name === 'AbortError') {
           return false
         }
-        window.alert(`Could not save file: ${getErrorMessage(error)}`)
+        window.alert(t('error.saveFile', { error: getErrorMessage(error, t('error.unexpected')) }))
         return false
       }
     }
@@ -214,7 +217,7 @@ export function useDocumentFileActions({
     await refreshRecentFiles()
     markSaved()
     return true
-  }, [document, markSaved, onDownloadFile, openFileName, refreshRecentFiles])
+  }, [document, markSaved, onDownloadFile, openFileName, refreshRecentFiles, t])
 
   const onSaveDocument = useCallback(async (): Promise<boolean> => {
     if (!openFileHandle) {
@@ -231,10 +234,10 @@ export function useDocumentFileActions({
       markSaved()
       return true
     } catch (error) {
-      window.alert(`Could not save file: ${getErrorMessage(error)}`)
+      window.alert(t('error.saveFile', { error: getErrorMessage(error, t('error.unexpected')) }))
       return false
     }
-  }, [document, markSaved, onSaveAsDocument, openFileHandle, openFileName, refreshRecentFiles])
+  }, [document, markSaved, onSaveAsDocument, openFileHandle, openFileName, refreshRecentFiles, t])
 
   const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0]
@@ -261,11 +264,11 @@ export function useDocumentFileActions({
       } catch (error) {
         await deleteRecentFile(entry.id)
         await refreshRecentFiles()
-        window.alert(`Could not open recent file: ${getErrorMessage(error)}`)
+        window.alert(t('error.openRecentFile', { error: getErrorMessage(error, t('error.unexpected')) }))
         return false
       }
     },
-    [onDiscardUnsavedChanges, refreshRecentFiles, setDocument],
+    [onDiscardUnsavedChanges, refreshRecentFiles, setDocument, t],
   )
 
   const onDeleteRecentEntry = useCallback(

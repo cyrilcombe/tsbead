@@ -24,12 +24,23 @@ export interface ReportSummary {
   repeat: number
 }
 
-function rowLabel(count: number): string {
-  return count === 1 ? 'row' : 'rows'
+export interface ReportWords {
+  rowOne: string
+  rowOther: string
+  beadOne: string
+  beadOther: string
 }
 
-function beadLabel(count: number): string {
-  return count === 1 ? 'bead' : 'beads'
+export interface ReportLabels {
+  pattern: string
+  author: string
+  organization: string
+  circumference: string
+  repeatOfColors: string
+  rowsPerRepeat: string
+  numberOfRows: string
+  numberOfBeads: string
+  words: ReportWords
 }
 
 export function getUsedHeight(rows: number[][]): number {
@@ -80,7 +91,15 @@ export function calculateColorRepeatBeads(sequence: number[]): number {
   return length
 }
 
-export function formatRowsPerRepeat(repeat: number, width: number): string {
+function rowLabel(count: number, words: ReportWords): string {
+  return count === 1 ? words.rowOne : words.rowOther
+}
+
+function beadLabel(count: number, words: ReportWords): string {
+  return count === 1 ? words.beadOne : words.beadOther
+}
+
+export function formatRowsPerRepeat(repeat: number, width: number, words: ReportWords = { rowOne: 'row', rowOther: 'rows', beadOne: 'bead', beadOther: 'beads' }): string {
   if (width <= 0) {
     return '0'
   }
@@ -90,7 +109,7 @@ export function formatRowsPerRepeat(repeat: number, width: number): string {
 
   const rows = Math.floor(repeat / width)
   const beads = repeat % width
-  return `${rows} ${rowLabel(rows)} ${beads} ${beadLabel(beads)}`
+  return `${rows} ${rowLabel(rows, words)} ${beads} ${beadLabel(beads, words)}`
 }
 
 export function buildBeadRuns(repeatSequence: number[]): BeadRun[] {
@@ -115,7 +134,24 @@ export function buildBeadRuns(repeatSequence: number[]): BeadRun[] {
   return runs
 }
 
-export function buildReportSummary(document: JBeadDocument, patternName: string): ReportSummary {
+const DEFAULT_REPORT_LABELS: ReportLabels = {
+  pattern: 'Pattern',
+  author: 'Author',
+  organization: 'Organization',
+  circumference: 'Circumference',
+  repeatOfColors: 'Repeat of colors',
+  rowsPerRepeat: 'Rows per repeat',
+  numberOfRows: 'Number of rows',
+  numberOfBeads: 'Number of beads',
+  words: {
+    rowOne: 'row',
+    rowOther: 'rows',
+    beadOne: 'bead',
+    beadOther: 'beads',
+  },
+}
+
+export function buildReportSummary(document: JBeadDocument, patternName: string, labels: ReportLabels = DEFAULT_REPORT_LABELS): ReportSummary {
   const rows = document.model.rows
   const width = rows[0]?.length ?? 0
   const usedHeight = getUsedHeight(rows)
@@ -131,22 +167,22 @@ export function buildReportSummary(document: JBeadDocument, patternName: string)
   }
 
   const entries: ReportEntry[] = [
-    { label: 'Pattern', value: patternName },
+    { label: labels.pattern, value: patternName },
   ]
 
   if (document.author.trim().length > 0) {
-    entries.push({ label: 'Author', value: document.author.trim() })
+    entries.push({ label: labels.author, value: document.author.trim() })
   }
   if (document.organization.trim().length > 0) {
-    entries.push({ label: 'Organization', value: document.organization.trim() })
+    entries.push({ label: labels.organization, value: document.organization.trim() })
   }
 
   entries.push(
-    { label: 'Circumference', value: String(width) },
-    { label: 'Repeat of colors', value: `${repeat} beads` },
-    { label: 'Rows per repeat', value: formatRowsPerRepeat(repeat, width) },
-    { label: 'Number of rows', value: String(usedHeight) },
-    { label: 'Number of beads', value: `${usedHeight * width} beads` },
+    { label: labels.circumference, value: String(width) },
+    { label: labels.repeatOfColors, value: `${repeat} ${beadLabel(repeat, labels.words)}` },
+    { label: labels.rowsPerRepeat, value: formatRowsPerRepeat(repeat, width, labels.words) },
+    { label: labels.numberOfRows, value: String(usedHeight) },
+    { label: labels.numberOfBeads, value: `${usedHeight * width} ${beadLabel(usedHeight * width, labels.words)}` },
   )
 
   return {

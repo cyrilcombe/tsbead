@@ -1,5 +1,6 @@
 import type { ColorCount, ReportSummary } from '../../domain/report'
 import type { JBeadDocument, RgbaColor } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 import { BeadCanvas } from '../canvas/BeadCanvas'
 import { BeadPreviewCanvas } from '../canvas/BeadPreviewCanvas'
 import { ReportPanel } from './ReportPanel'
@@ -36,6 +37,8 @@ export function PrintWorkspace({
   colorToCss,
   formatChunkLabel,
 }: PrintWorkspaceProps) {
+  const { t } = useI18n()
+
   return (
     <section className={`print-workspace ${isReportVisible ? 'has-report' : 'no-report'}`} aria-hidden="true">
       {isReportVisible ? (
@@ -55,8 +58,8 @@ export function PrintWorkspace({
             return (
               <section key={`print-draft-${chunk.start}-${chunk.end}`} className="panel canvas-panel draft-panel print-panel">
                 <div className="panel-title">
-                  <h2>Draft</h2>
-                  <span>Rows {chunkLabel}</span>
+                  <h2>{t('view.draft')}</h2>
+                  <span>{t('report.rows', { value: chunkLabel })}</span>
                 </div>
                 <div className="canvas-scroll">
                   <BeadCanvas
@@ -78,8 +81,8 @@ export function PrintWorkspace({
             return (
               <section key={`print-corrected-${chunk.start}-${chunk.end}`} className="panel canvas-panel print-panel">
                 <div className="panel-title">
-                  <h2>Corrected</h2>
-                  <span>Rows {chunkLabel}</span>
+                  <h2>{t('view.corrected')}</h2>
+                  <span>{t('report.rows', { value: chunkLabel })}</span>
                 </div>
                 <div className="canvas-scroll">
                   <BeadPreviewCanvas document={document} variant="corrected" rowStart={chunk.start} rowEndExclusive={chunk.end} />
@@ -95,8 +98,8 @@ export function PrintWorkspace({
             return (
               <section key={`print-simulation-${chunk.start}-${chunk.end}`} className="panel canvas-panel print-panel">
                 <div className="panel-title">
-                  <h2>Simulation</h2>
-                  <span>Rows {chunkLabel}</span>
+                  <h2>{t('view.simulation')}</h2>
+                  <span>{t('report.rows', { value: chunkLabel })}</span>
                 </div>
                 <div className="canvas-scroll">
                   <BeadPreviewCanvas document={document} variant="simulation" rowStart={chunk.start} rowEndExclusive={chunk.end} />

@@ -12,6 +12,7 @@ import {
   Settings2,
 } from 'lucide-react'
 import type { ViewPaneId } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
 
 interface ViewPaneEntry {
@@ -74,13 +75,14 @@ export function AppHeader({
   onOpenMetadataDialog,
   onFileInputChange,
 }: AppHeaderProps) {
+  const { t } = useI18n()
   const shortcuts = usePlatformShortcuts()
 
   return (
     <>
       <header className="app-header">
         <div className="mobile-header-left" ref={mobileActionsMenuRef}>
-          <button className="action icon-action mobile-menu-toggle" aria-label="Open actions menu" aria-expanded={isMobileActionsMenuOpen} onClick={onToggleMobileActionsMenu}>
+          <button className="action icon-action mobile-menu-toggle" aria-label={t('actionsMenu.open')} aria-expanded={isMobileActionsMenuOpen} onClick={onToggleMobileActionsMenu}>
             <Menu className="tool-icon" aria-hidden="true" />
           </button>
           {isMobileActionsMenuOpen ? (
@@ -94,7 +96,7 @@ export function AppHeader({
                 title={shortcuts.newDocument}
               >
                 <FilePlus2 className="header-action-icon" aria-hidden="true" />
-                <span>New</span>
+                <span>{t('action.new')}</span>
               </button>
               <button
                 className="action header-action"
@@ -105,7 +107,7 @@ export function AppHeader({
                 title={shortcuts.openDocument}
               >
                 <FolderOpen className="header-action-icon" aria-hidden="true" />
-                <span>Open...</span>
+                <span>{t('action.open')}</span>
               </button>
               <button
                 className="action header-action"
@@ -117,7 +119,7 @@ export function AppHeader({
                 title={shortcuts.openRecent}
               >
                 <FolderClock className="header-action-icon" aria-hidden="true" />
-                <span>Open recent...</span>
+                <span>{t('action.openRecent')}</span>
               </button>
               <button
                 className="action header-action"
@@ -128,7 +130,7 @@ export function AppHeader({
                 title={shortcuts.save}
               >
                 <Save className="header-action-icon" aria-hidden="true" />
-                <span>Save</span>
+                <span>{t('action.save')}</span>
               </button>
               <button
                 className="action header-action"
@@ -139,7 +141,7 @@ export function AppHeader({
                 title={shortcuts.saveAs}
               >
                 <SaveAll className="header-action-icon" aria-hidden="true" />
-                <span>Save As...</span>
+                <span>{t('action.saveAs')}</span>
               </button>
               <button
                 className="action header-action"
@@ -149,7 +151,7 @@ export function AppHeader({
                 }}
               >
                 <Download className="header-action-icon" aria-hidden="true" />
-                <span>Export .jbb</span>
+                <span>{t('action.exportJbb')}</span>
               </button>
               <button
                 className="action header-action"
@@ -161,7 +163,7 @@ export function AppHeader({
                 title={shortcuts.print}
               >
                 <Printer className="header-action-icon" aria-hidden="true" />
-                <span>Print...</span>
+                <span>{t('action.print')}</span>
               </button>
               <button
                 className="action header-action"
@@ -172,7 +174,7 @@ export function AppHeader({
                 title={shortcuts.preferences}
               >
                 <Settings2 className="header-action-icon" aria-hidden="true" />
-                <span>Preferences...</span>
+                <span>{t('action.preferences')}</span>
               </button>
               <button
                 className="action header-action"
@@ -182,18 +184,18 @@ export function AppHeader({
                 }}
               >
                 <Info className="header-action-icon" aria-hidden="true" />
-                <span>Help...</span>
+                <span>{t('action.help')}</span>
               </button>
               <div className="mobile-actions-file">
                 <strong>{openFileName}</strong>
-                {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
+                {dirty ? <span className="file-status-dirty">{t('status.unsaved')}</span> : null}
                 <button
                   className="metadata-inline-action"
                   onClick={() => {
                     onCloseMobileActionsMenu()
                     onOpenMetadataDialog()
                   }}
-                  title="Edit metadata"
+                  title={t('metadata.edit')}
                 >
                   {metadataLabel}
                 </button>
@@ -202,55 +204,55 @@ export function AppHeader({
           ) : null}
         </div>
         <div className="header-main">
-          <img className="app-logo" src={logoSrc} alt="TsBead" />
+          <img className="app-logo" src={logoSrc} alt={t('app.logoAlt')} />
         </div>
         <p className="mobile-file-status">
           <strong>{openFileName}</strong>
-          {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
+          {dirty ? <span className="file-status-dirty">{t('status.unsaved')}</span> : null}
         </p>
         <div className="header-controls">
           <div className="header-actions">
             <button className="action header-action" onClick={onNewDocument} title={shortcuts.newDocument}>
               <FilePlus2 className="header-action-icon" aria-hidden="true" />
-              <span>New</span>
+              <span>{t('action.new')}</span>
             </button>
             <button className="action header-action" onClick={() => void onOpenDocument()} title={shortcuts.openDocument}>
               <FolderOpen className="header-action-icon" aria-hidden="true" />
-              <span>Open...</span>
+              <span>{t('action.open')}</span>
             </button>
             <button className="action header-action" onClick={onOpenRecentDialog} disabled={recentFilesCount === 0} title={shortcuts.openRecent}>
               <FolderClock className="header-action-icon" aria-hidden="true" />
-              <span>Open recent...</span>
+              <span>{t('action.openRecent')}</span>
             </button>
             <button className="action header-action" onClick={() => void onSaveDocument()} title={shortcuts.save}>
               <Save className="header-action-icon" aria-hidden="true" />
-              <span>Save</span>
+              <span>{t('action.save')}</span>
             </button>
             <button className="action header-action" onClick={() => void onSaveAsDocument()} title={shortcuts.saveAs}>
               <SaveAll className="header-action-icon" aria-hidden="true" />
-              <span>Save As...</span>
+              <span>{t('action.saveAs')}</span>
             </button>
             <button className="action header-action" onClick={() => onDownloadFile(openFileName)}>
               <Download className="header-action-icon" aria-hidden="true" />
-              <span>Export .jbb</span>
+              <span>{t('action.exportJbb')}</span>
             </button>
             <button className="action header-action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible} title={shortcuts.print}>
               <Printer className="header-action-icon" aria-hidden="true" />
-              <span>Print...</span>
+              <span>{t('action.print')}</span>
             </button>
             <button className="action header-action" onClick={onOpenPreferencesDialog} title={shortcuts.preferences}>
               <Settings2 className="header-action-icon" aria-hidden="true" />
-              <span>Preferences...</span>
+              <span>{t('action.preferences')}</span>
             </button>
             <button className="action header-action" onClick={onOpenHelpDialog}>
               <Info className="header-action-icon" aria-hidden="true" />
-              <span>Help...</span>
+              <span>{t('action.help')}</span>
             </button>
           </div>
           <p className="file-status">
             <strong>{openFileName}</strong>
-            {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
-            <button className="metadata-inline-action" onClick={onOpenMetadataDialog} title="Edit metadata">
+            {dirty ? <span className="file-status-dirty">{t('status.unsaved')}</span> : null}
+            <button className="metadata-inline-action" onClick={onOpenMetadataDialog} title={t('metadata.edit')}>
               {metadataLabel}
             </button>
           </p>
@@ -258,7 +260,7 @@ export function AppHeader({
         <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
       </header>
 
-      <section className="mobile-view-tabs" aria-label="View tabs">
+      <section className="mobile-view-tabs" aria-label={t('view.tabsAria')}>
         {panes.map((pane) => (
           <button key={`mobile-tab-${pane.id}`} className={`action mobile-view-tab ${mobileActivePane === pane.id ? 'active' : ''}`} onClick={() => onSelectMobileView(pane.id)}>
             {pane.label}

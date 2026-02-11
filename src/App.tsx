@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
+import { useI18n } from './i18n/I18nProvider'
+import type { AppLocale } from './i18n/translations'
 import {
   type AppSettings,
   type RecentFileRecord,
@@ -33,12 +35,7 @@ import './index.css'
 const PRINT_CHUNK_SIZE_A4_PORTRAIT = 100
 const PRINT_CHUNK_SIZE_LETTER_PORTRAIT = 90
 const PRINT_CHUNK_SIZE_LANDSCAPE = 60
-const VIEW_PANES: Array<{ id: ViewPaneId; label: string }> = [
-  { id: 'draft', label: 'Draft' },
-  { id: 'corrected', label: 'Corrected' },
-  { id: 'simulation', label: 'Simulation' },
-  { id: 'report', label: 'Report' },
-]
+const VIEW_PANES: ViewPaneId[] = ['draft', 'corrected', 'simulation', 'report']
 const MIN_PATTERN_WIDTH = 5
 const MAX_PATTERN_WIDTH = 500
 const MIN_PATTERN_HEIGHT = 5
@@ -67,15 +64,15 @@ function hexToRgb(value: string): [number, number, number] | null {
   ]
 }
 
-function getErrorMessage(error: unknown): string {
+function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) {
     return error.message
   }
-  return 'Unexpected error'
+  return fallback
 }
 
-function formatRecentTimestamp(timestamp: number): string {
-  return new Intl.DateTimeFormat(undefined, {
+function formatRecentTimestamp(timestamp: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -90,7 +87,7 @@ function formatLegacyChunkLabel(totalRows: number, rowStart: number, rowEndExclu
   return `${low}-${high}`
 }
 
-function metadataInlineLabel(author: string, organization: string): string {
+function metadataInlineLabel(author: string, organization: string, fallback: string): string {
   const trimmedAuthor = author.trim()
   const trimmedOrganization = organization.trim()
   if (trimmedAuthor.length > 0 && trimmedOrganization.length > 0) {
@@ -102,10 +99,11 @@ function metadataInlineLabel(author: string, organization: string): string {
   if (trimmedOrganization.length > 0) {
     return `(${trimmedOrganization})`
   }
-  return 'Metadata...'
+  return fallback
 }
 
 function App() {
+  const { locale, setLocale, t } = useI18n()
   const document = useEditorStore((state) => state.document)
   const selection = useEditorStore((state) => state.selection)
   const toggleCell = useEditorStore((state) => state.toggleCell)
@@ -183,6 +181,7 @@ function App() {
   const [preferencesAuthorInput, setPreferencesAuthorInput] = useState('')
   const [preferencesOrganizationInput, setPreferencesOrganizationInput] = useState('')
   const [preferencesSymbolsInput, setPreferencesSymbolsInput] = useState(DEFAULT_BEAD_SYMBOLS)
+  const [preferencesLanguageInput, setPreferencesLanguageInput] = useState<AppLocale>('en')
   const [metadataAuthorInput, setMetadataAuthorInput] = useState('')
   const [metadataOrganizationInput, setMetadataOrganizationInput] = useState('')
   const [metadataNotesInput, setMetadataNotesInput] = useState('')
@@ -209,6 +208,7 @@ function App() {
     dirty,
     setDocument,
     markSaved,
+    t,
   })
 
   const onCloseMenus = useCallback(() => {
@@ -243,8 +243,8 @@ function App() {
   const selectedColorValue = document.colors[selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255]
   const backgroundColorValue = document.colors[0] ?? [0, 0, 0, 255]
   const metadataLabel = useMemo(
-    () => metadataInlineLabel(document.author, document.organization),
-    [document.author, document.organization],
+    () => metadataInlineLabel(document.author, document.organization, t('metadata.fallback')),
+    [document.author, document.organization, t],
   )
   const canRotate =
     selection !== null &&
@@ -286,7 +286,26 @@ function App() {
     setZoom,
   })
 
-  const reportSummary = useMemo(() => buildReportSummary(document, openFileName), [document, openFileName])
+  const reportSummary = useMemo(
+    () =>
+      buildReportSummary(document, openFileName, {
+        pattern: t('report.entry.pattern'),
+        author: t('report.entry.author'),
+        organization: t('report.entry.organization'),
+        circumference: t('report.entry.circumference'),
+        repeatOfColors: t('report.entry.repeatColors'),
+        rowsPerRepeat: t('report.entry.rowsPerRepeat'),
+        numberOfRows: t('report.entry.numberRows'),
+        numberOfBeads: t('report.entry.numberBeads'),
+        words: {
+          rowOne: t('report.word.row.one'),
+          rowOther: t('report.word.row.other'),
+          beadOne: t('report.word.bead.one'),
+          beadOther: t('report.word.bead.other'),
+        },
+      }),
+    [document, openFileName, t],
+  )
   const visibleColorCounts = useMemo(
     () => reportSummary.colorCounts.filter((item) => item.count > 0),
     [reportSummary.colorCounts],
@@ -413,6 +432,7 @@ function App() {
     setPreferencesSymbolsInput(appSettings.symbols)
     setPageSetupSizeInput(appSettings.printPageSize)
     setPageSetupOrientationInput(appSettings.printOrientation)
+    setPreferencesLanguageInput(appSettings.language)
     setIsPreferencesDialogOpen(true)
   }, [appSettings])
 
@@ -453,11 +473,13 @@ function App() {
       symbols: preferencesSymbolsInput.length > 0 ? preferencesSymbolsInput : DEFAULT_BEAD_SYMBOLS,
       printPageSize: pageSetupSizeInput,
       printOrientation: pageSetupOrientationInput,
+      language: preferencesLanguageInput,
     }
 
     try {
       await saveAppSettings(nextSettings)
       setAppSettings(nextSettings)
+      setLocale(nextSettings.language)
 
       if (document.author !== nextSettings.defaultAuthor || document.organization !== nextSettings.defaultOrganization) {
         setMetadata({
@@ -471,7 +493,7 @@ function App() {
 
       setIsPreferencesDialogOpen(false)
     } catch (error) {
-      window.alert(`Could not save preferences: ${getErrorMessage(error)}`)
+      window.alert(t('error.savePreferences', { error: getErrorMessage(error, t('error.unexpected')) }))
     }
   }, [
     appSettings,
@@ -483,8 +505,11 @@ function App() {
     preferencesSymbolsInput,
     pageSetupOrientationInput,
     pageSetupSizeInput,
+    preferencesLanguageInput,
+    setLocale,
     setMetadata,
     setSymbols,
+    t,
   ])
 
   const onApplyMetadata = useCallback(() => {
@@ -524,6 +549,32 @@ function App() {
       : isSimulationVisible
         ? 'simulation'
         : 'report'
+
+  const paneLabels = useMemo(
+    () => ({
+      draft: t('view.draft'),
+      corrected: t('view.corrected'),
+      simulation: t('view.simulation'),
+      report: t('view.report'),
+    }),
+    [t],
+  )
+
+  const panes = useMemo(
+    () => VIEW_PANES.map((id) => ({ id, label: paneLabels[id] })),
+    [paneLabels],
+  )
+
+  const formatTimestamp = useCallback(
+    (value: number) => formatRecentTimestamp(value, locale),
+    [locale],
+  )
+
+  useEffect(() => {
+    if (locale !== appSettings.language) {
+      setLocale(appSettings.language)
+    }
+  }, [appSettings.language, locale, setLocale])
 
   const onCloseBlockingDialogs = useCallback(() => {
     setIsPreferencesDialogOpen(false)
@@ -584,7 +635,7 @@ function App() {
         recentFilesCount={recentFiles.length}
         isMobileActionsMenuOpen={isMobileActionsMenuOpen}
         mobileActivePane={mobileActivePane}
-        panes={VIEW_PANES}
+        panes={panes}
         mobileActionsMenuRef={mobileActionsMenuRef}
         openFileInputRef={openFileInputRef}
         onToggleMobileActionsMenu={() => setIsMobileActionsMenuOpen((value) => !value)}
@@ -617,7 +668,7 @@ function App() {
         isColorMenuOpen={isColorMenuOpen}
         isViewsMenuOpen={isViewsMenuOpen}
         paneVisibilityById={paneVisibilityById}
-        panes={VIEW_PANES}
+        panes={panes}
         drawColors={drawColors}
         drawSymbols={drawSymbols}
         canZoomOut={canZoomOut}
@@ -794,6 +845,8 @@ function App() {
         onSymbolsChange={setPreferencesSymbolsInput}
         onPageSizeChange={setPageSetupSizeInput}
         onOrientationChange={setPageSetupOrientationInput}
+        language={preferencesLanguageInput}
+        onLanguageChange={setPreferencesLanguageInput}
         onApply={() => void onApplyPreferences()}
         onClose={() => setIsPreferencesDialogOpen(false)}
       />
@@ -803,7 +856,7 @@ function App() {
       <RecentFilesDialog
         isOpen={isRecentDialogOpen}
         recentFiles={recentFiles}
-        formatTimestamp={formatRecentTimestamp}
+        formatTimestamp={formatTimestamp}
         onOpenRecentFile={onOpenRecentFile}
         onDeleteRecentEntry={onDeleteRecentEntry}
         onClose={() => setIsRecentDialogOpen(false)}

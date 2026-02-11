@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
+import { I18nProvider } from './i18n/I18nProvider'
 import App from './App'
 
 vi.mock('./storage/db', () => ({
@@ -13,6 +14,7 @@ vi.mock('./storage/db', () => ({
     symbols: DEFAULT_BEAD_SYMBOLS,
     printPageSize: 'a4',
     printOrientation: 'portrait',
+    language: 'en',
   })),
   loadProject: vi.fn(async () => undefined),
   saveAppSettings: vi.fn(async () => {}),
@@ -58,7 +60,11 @@ describe('App smoke', () => {
   })
 
   it('renders and opens help dialog', async () => {
-    render(<App />)
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    )
 
     fireEvent.click(await screen.findByRole('button', { name: 'Help...' }))
     expect(await screen.findByRole('heading', { name: 'Help' })).toBeTruthy()
@@ -66,7 +72,11 @@ describe('App smoke', () => {
 
   it('keeps a single visible pane on initial mobile portrait render', async () => {
     setMatchMedia(true)
-    render(<App />)
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    )
 
     await waitFor(() => {
       const view = useEditorStore.getState().document.view

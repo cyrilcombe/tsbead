@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import { DEFAULT_BEAD_SYMBOLS } from '../domain/defaults'
 import type { JBeadDocument } from '../domain/types'
+import { isAppLocale, type AppLocale } from '../i18n/translations'
 
 export interface ProjectRecord {
   id: string
@@ -25,6 +26,7 @@ export interface AppSettings {
   symbols: string
   printPageSize: 'a4' | 'letter'
   printOrientation: 'portrait' | 'landscape'
+  language: AppLocale
 }
 
 interface AppSettingsRecord extends AppSettings {
@@ -107,12 +109,14 @@ export async function loadAppSettings(): Promise<AppSettings> {
   const record = await db.appSettings.get(APP_SETTINGS_ID)
   const printPageSize = record?.printPageSize === 'letter' ? 'letter' : 'a4'
   const printOrientation = record?.printOrientation === 'landscape' ? 'landscape' : 'portrait'
+  const language = record?.language && isAppLocale(record.language) ? record.language : 'en'
   return {
     defaultAuthor: record?.defaultAuthor ?? '',
     defaultOrganization: record?.defaultOrganization ?? '',
     symbols: record?.symbols && record.symbols.length > 0 ? record.symbols : DEFAULT_BEAD_SYMBOLS,
     printPageSize,
     printOrientation,
+    language,
   }
 }
 
@@ -125,5 +129,6 @@ export async function saveAppSettings(settings: AppSettings): Promise<void> {
     symbols: normalizedSymbols,
     printPageSize: settings.printPageSize === 'letter' ? 'letter' : 'a4',
     printOrientation: settings.printOrientation === 'landscape' ? 'landscape' : 'portrait',
+    language: isAppLocale(settings.language) ? settings.language : 'en',
   })
 }

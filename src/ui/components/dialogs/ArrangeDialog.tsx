@@ -1,3 +1,5 @@
+import { useI18n } from '../../../i18n/I18nProvider'
+
 interface ArrangeDialogProps {
   isOpen: boolean
   horizontalOffset: string
@@ -21,19 +23,21 @@ export function ArrangeDialog({
   onApply,
   onClose,
 }: ArrangeDialogProps) {
+  const { t } = useI18n()
+
   if (!isOpen) {
     return null
   }
 
   return (
     <div className="dialog-backdrop">
-      <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label="Arrange selection">
+      <section className="arrange-dialog panel" role="dialog" aria-modal="true" aria-label={t('dialog.arrange.aria')}>
         <div className="panel-title">
-          <h2>Arrange Selection</h2>
+          <h2>{t('dialog.arrange.title')}</h2>
         </div>
         <div className="arrange-form">
           <label className="arrange-field">
-            Horizontal offset
+            {t('dialog.arrange.horizontalOffset')}
             <input
               className="arrange-input"
               type="number"
@@ -45,7 +49,7 @@ export function ArrangeDialog({
             />
           </label>
           <label className="arrange-field">
-            Vertical offset
+            {t('dialog.arrange.verticalOffset')}
             <input
               className="arrange-input"
               type="number"
@@ -57,7 +61,7 @@ export function ArrangeDialog({
             />
           </label>
           <label className="arrange-field">
-            Copies
+            {t('dialog.arrange.copies')}
             <input
               className="arrange-input"
               type="number"
@@ -71,10 +75,10 @@ export function ArrangeDialog({
         </div>
         <div className="arrange-actions">
           <button className="action" onClick={onClose}>
-            Cancel
+            {t('dialog.cancel')}
           </button>
           <button className="action tool-action active" onClick={onApply}>
-            Apply
+            {t('dialog.apply')}
           </button>
         </div>
       </section>

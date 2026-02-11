@@ -16,6 +16,7 @@ import {
   Undo2,
 } from 'lucide-react'
 import type { JBeadDocument, ToolId } from '../../domain/types'
+import { useI18n } from '../../i18n/I18nProvider'
 import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
 
 interface MobileEditRailProps {
@@ -81,24 +82,25 @@ export function MobileEditRail({
   onUndo,
   onRedo,
 }: MobileEditRailProps) {
+  const { t } = useI18n()
   const shortcuts = usePlatformShortcuts()
 
   return (
-    <aside className="panel mobile-edit-rail" aria-label="Editing tools">
+    <aside className="panel mobile-edit-rail" aria-label={t('tool.editingTools')}>
       <div className="mobile-edit-group">
-        <button className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pencil')} title={shortcuts.pencil} aria-label="Pencil">
+        <button className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pencil')} title={shortcuts.pencil} aria-label={t('tool.pencil')}>
           <Pencil className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`} onClick={() => onSetSelectedTool('line')} title={shortcuts.line} aria-label="Line">
+        <button className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`} onClick={() => onSetSelectedTool('line')} title={shortcuts.line} aria-label={t('tool.line')}>
           <Slash className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`} onClick={() => onSetSelectedTool('fill')} title={shortcuts.fill} aria-label="Fill">
+        <button className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`} onClick={() => onSetSelectedTool('fill')} title={shortcuts.fill} aria-label={t('tool.fill')}>
           <PaintBucket className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pipette')} title={shortcuts.pipette} aria-label="Pipette">
+        <button className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`} onClick={() => onSetSelectedTool('pipette')} title={shortcuts.pipette} aria-label={t('tool.pipette')}>
           <Pipette className="tool-icon" aria-hidden="true" />
         </button>
-        <button className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`} onClick={() => onSetSelectedTool('select')} title={shortcuts.select} aria-label="Select">
+        <button className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`} onClick={() => onSetSelectedTool('select')} title={shortcuts.select} aria-label={t('tool.select')}>
           <SquareDashed className="tool-icon" aria-hidden="true" />
         </button>
       </div>
@@ -107,8 +109,8 @@ export function MobileEditRail({
 
       <div className="mobile-edit-group">
         <div className="palette-menu-wrap compact-color-wrap" ref={mobileBackgroundMenuRef}>
-          <button className={`action icon-action compact-color-toggle ${isBackgroundMenuOpen ? 'view-toggle active' : ''}`} onClick={onToggleBackgroundMenu} title="Background color" aria-label="Background color">
-            <span className="compact-color-label">BG</span>
+          <button className={`action icon-action compact-color-toggle ${isBackgroundMenuOpen ? 'view-toggle active' : ''}`} onClick={onToggleBackgroundMenu} title={t('palette.backgroundColor')} aria-label={t('palette.backgroundColor')}>
+            <span className="compact-color-label">{t('palette.bgLabel')}</span>
             <span className="compact-color-chip" style={{ backgroundColor: colorToCss(backgroundColorValue) }} />
           </button>
           {isBackgroundMenuOpen ? (
@@ -121,7 +123,7 @@ export function MobileEditRail({
                     style={{ backgroundColor: colorToCss(color) }}
                     onClick={() => onSetColorAsBackground(index)}
                     onDoubleClick={() => onEditPaletteColor(index)}
-                    title={`Set background to color ${index}`}
+                    title={t('palette.setBackgroundToColor', { index })}
                   />
                 ))}
               </div>
@@ -130,8 +132,8 @@ export function MobileEditRail({
         </div>
 
         <div className="palette-menu-wrap compact-color-wrap" ref={mobileColorMenuRef}>
-          <button className={`action icon-action compact-color-toggle ${isColorMenuOpen ? 'view-toggle active' : ''}`} onClick={onToggleColorMenu} title="Drawing color" aria-label="Drawing color">
-            <span className="compact-color-label">C</span>
+          <button className={`action icon-action compact-color-toggle ${isColorMenuOpen ? 'view-toggle active' : ''}`} onClick={onToggleColorMenu} title={t('palette.drawingColor')} aria-label={t('palette.drawingColor')}>
+            <span className="compact-color-label">{t('palette.colorCompactLabel')}</span>
             <span className="compact-color-chip" style={{ backgroundColor: colorToCss(selectedColorValue) }} />
           </button>
           {isColorMenuOpen ? (
@@ -144,7 +146,7 @@ export function MobileEditRail({
                     style={{ backgroundColor: colorToCss(color) }}
                     onClick={() => onSetSelectedColor(index)}
                     onDoubleClick={() => onEditPaletteColor(index)}
-                    title={`Color ${index}`}
+                    title={t('palette.colorIndex', { index })}
                   />
                 ))}
               </div>
@@ -156,31 +158,31 @@ export function MobileEditRail({
       <span className="mobile-edit-separator" aria-hidden="true" />
 
       <div className="mobile-edit-group mobile-edit-group-scroll">
-        <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label="Undo">
+        <button className="action icon-action" onClick={onUndo} disabled={!canUndo} title={shortcuts.undo} aria-label={t('tool.undo')}>
           <Undo2 className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label="Redo">
+        <button className="action icon-action" onClick={onRedo} disabled={!canRedo} title={shortcuts.redo} aria-label={t('tool.redo')}>
           <Redo2 className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onDeleteSelection} disabled={!selectionExists} title={shortcuts.deleteSelection} aria-label="Delete selection">
+        <button className="action icon-action" onClick={onDeleteSelection} disabled={!selectionExists} title={shortcuts.deleteSelection} aria-label={t('tool.deleteSelection')}>
           <Eraser className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title={shortcuts.arrange} aria-label="Arrange">
+        <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={!selectionExists} title={shortcuts.arrange} aria-label={t('tool.arrange')}>
           <Copy className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onInsertRow} title="Insert row" aria-label="Insert row">
+        <button className="action icon-action" onClick={onInsertRow} title={t('tool.insertRow')} aria-label={t('tool.insertRow')}>
           <Plus className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onDeleteRow} title="Delete row" aria-label="Delete row">
+        <button className="action icon-action" onClick={onDeleteRow} title={t('tool.deleteRow')} aria-label={t('tool.deleteRow')}>
           <Minus className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onMirrorHorizontal} title="Mirror horizontal" aria-label="Mirror horizontal">
+        <button className="action icon-action" onClick={onMirrorHorizontal} title={t('tool.mirrorHorizontal')} aria-label={t('tool.mirrorHorizontal')}>
           <MoveHorizontal className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onMirrorVertical} title="Mirror vertical" aria-label="Mirror vertical">
+        <button className="action icon-action" onClick={onMirrorVertical} title={t('tool.mirrorVertical')} aria-label={t('tool.mirrorVertical')}>
           <MoveVertical className="tool-icon" aria-hidden="true" />
         </button>
-        <button className="action icon-action" onClick={onRotateClockwise} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
+        <button className="action icon-action" onClick={onRotateClockwise} disabled={!canRotate} title={t('tool.rotate90')} aria-label={t('tool.rotate90')}>
           <RotateCw className="tool-icon" aria-hidden="true" />
         </button>
       </div>
