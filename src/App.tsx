@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
@@ -22,9 +22,11 @@ import { useBeforeUnloadGuard } from './ui/hooks/useBeforeUnloadGuard'
 import { useDocumentFileActions } from './ui/hooks/useDocumentFileActions'
 import { useEditorShortcuts } from './ui/hooks/useEditorShortcuts'
 import { useMobilePortraitSinglePane } from './ui/hooks/useMobilePortraitSinglePane'
+import { usePaneSync } from './ui/hooks/usePaneSync'
+import { usePointerEditing } from './ui/hooks/usePointerEditing'
 import { usePointerDismiss } from './ui/hooks/usePointerDismiss'
 import { useProjectBootstrap } from './ui/hooks/useProjectBootstrap'
-import type { CellPoint, SelectionRect, ViewPaneId } from './domain/types'
+import type { ViewPaneId } from './domain/types'
 import tsbeadLogoHorizontal from './assets/tsbead-logo-horizontal.png'
 import './index.css'
 
@@ -41,7 +43,6 @@ const MIN_PATTERN_WIDTH = 5
 const MAX_PATTERN_WIDTH = 500
 const MIN_PATTERN_HEIGHT = 5
 const MAX_PATTERN_HEIGHT = 10000
-const ZOOM_TABLE = [6, 8, 10, 12, 14, 16, 18, 20]
 
 function colorToCss(color: [number, number, number, number?]): string {
   const [red, green, blue, alpha = 255] = color
@@ -64,10 +65,6 @@ function hexToRgb(value: string): [number, number, number] | null {
     Number.parseInt(hex.slice(2, 4), 16),
     Number.parseInt(hex.slice(4, 6), 16),
   ]
-}
-
-function getCellSize(zoomIndex: number): number {
-  return ZOOM_TABLE[Math.max(0, Math.min(zoomIndex, ZOOM_TABLE.length - 1))]
 }
 
 function getErrorMessage(error: unknown): string {
@@ -155,11 +152,6 @@ function App() {
   const mobileActionsMenuRef = useRef<HTMLDivElement | null>(null)
   const mobileColorMenuRef = useRef<HTMLDivElement | null>(null)
   const mobileBackgroundMenuRef = useRef<HTMLDivElement | null>(null)
-  const dragStartRef = useRef<CellPoint | null>(null)
-  const draftScrollRef = useRef<HTMLDivElement | null>(null)
-  const correctedScrollRef = useRef<HTMLDivElement | null>(null)
-  const simulationScrollRef = useRef<HTMLDivElement | null>(null)
-  const syncingScrollRef = useRef(false)
   const dismissibleMenuRefs = useMemo(
     () => [
       viewsMenuRef,
@@ -171,9 +163,6 @@ function App() {
     ],
     [],
   )
-  const [sharedMaxScrollRow, setSharedMaxScrollRow] = useState(0)
-  const [viewportTick, setViewportTick] = useState(0)
-  const [dragPreview, setDragPreview] = useState<SelectionRect | null>(null)
   const [isArrangeDialogOpen, setIsArrangeDialogOpen] = useState(false)
   const [arrangeCopies, setArrangeCopies] = useState('1')
   const [arrangeHorizontalOffset, setArrangeHorizontalOffset] = useState('0')
@@ -237,7 +226,6 @@ function App() {
 
   const width = document.model.rows[0]?.length ?? 0
   const height = document.model.rows.length
-  const cellSize = getCellSize(document.view.zoom)
   const selectedTool = document.view.selectedTool
   const selectedColor = document.view.selectedColor
   const sharedScrollRow = document.view.scroll
@@ -262,19 +250,41 @@ function App() {
     selection !== null &&
     Math.abs(selection.end.x - selection.start.x) === Math.abs(selection.end.y - selection.start.y)
 
-  const selectionOverlay = useMemo(() => {
-    if (selectedTool === 'select' && dragPreview) {
-      return dragPreview
-    }
-    return selection
-  }, [dragPreview, selectedTool, selection])
+  const {
+    selectionOverlay,
+    linePreview,
+    onDraftPointerDown,
+    onPreviewPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    resetPointerPreview,
+  } = usePointerEditing({
+    selectedTool,
+    selectedColor,
+    selection,
+    drawLine,
+    fillLine,
+    pickColorAt,
+    toggleCell,
+    setSelection,
+    clearSelection,
+  })
 
-  const linePreview = useMemo(() => {
-    if (selectedTool === 'line' || selectedTool === 'pencil') {
-      return dragPreview
-    }
-    return null
-  }, [dragPreview, selectedTool])
+  const { draftScrollRef, correctedScrollRef, simulationScrollRef, sharedMaxScrollRow, onPaneScroll, applyZoomFit } = usePaneSync({
+    rows: document.model.rows,
+    height,
+    zoomIndex,
+    sharedScrollRow,
+    isDraftVisible,
+    isCorrectedVisible,
+    isSimulationVisible,
+    isReportVisible,
+    isZoomFitMode,
+    shift: document.view.shift,
+    setViewScroll,
+    setZoom,
+  })
 
   const reportSummary = useMemo(() => buildReportSummary(document, openFileName), [document, openFileName])
   const visibleColorCounts = useMemo(
@@ -295,80 +305,10 @@ function App() {
     return chunks
   }, [appSettings.printOrientation, appSettings.printPageSize, height])
 
-  const onPointerDown = (point: CellPoint, allowShapeTools: boolean) => {
-    if ((selectedTool === 'line' || selectedTool === 'select') && !allowShapeTools) {
-      dragStartRef.current = null
-      setDragPreview(null)
-      return
-    }
-
-    dragStartRef.current = point
-    if (selectedTool === 'line' || selectedTool === 'select' || selectedTool === 'pencil') {
-      setDragPreview({ start: point, end: point })
-    } else {
-      setDragPreview(null)
-    }
-
-    if (selectedTool === 'fill') {
-      fillLine(point, selectedColor)
-    } else if (selectedTool === 'pipette') {
-      pickColorAt(point)
-    }
-  }
-
-  const onPointerMove = (point: CellPoint) => {
-    const start = dragStartRef.current
-    if (!start) {
-      return
-    }
-
-    if (selectedTool === 'line' || selectedTool === 'select' || selectedTool === 'pencil') {
-      setDragPreview({ start, end: point })
-    }
-  }
-
-  const onPointerUp = (point: CellPoint) => {
-    const start = dragStartRef.current
-    dragStartRef.current = null
-
-    if (!start) {
-      setDragPreview(null)
-      return
-    }
-
-    if (selectedTool === 'line') {
-      drawLine(start, point, selectedColor)
-    } else if (selectedTool === 'pencil') {
-      if (start.x === point.x && start.y === point.y) {
-        toggleCell(start.x, start.y, selectedColor)
-      } else {
-        drawLine(start, point, selectedColor)
-      }
-    } else if (selectedTool === 'select') {
-      if (start.x === point.x && start.y === point.y) {
-        clearSelection()
-        toggleCell(start.x, start.y, selectedColor)
-      } else {
-        setSelection({ start, end: point })
-      }
-    }
-
-    setDragPreview(null)
-  }
-
-  const onPointerCancel = () => {
-    dragStartRef.current = null
-    setDragPreview(null)
-  }
-
-  const onDraftPointerDown = (point: CellPoint) => onPointerDown(point, true)
-  const onPreviewPointerDown = (point: CellPoint) => onPointerDown(point, false)
-
   const onDeleteSelection = useCallback(() => {
-    dragStartRef.current = null
-    setDragPreview(null)
+    resetPointerPreview()
     deleteSelection()
-  }, [deleteSelection])
+  }, [deleteSelection, resetPointerPreview])
 
   const parseArrangeValue = (rawValue: string, fallback: number): number => {
     const parsed = Number(rawValue)
@@ -585,135 +525,6 @@ function App() {
         ? 'simulation'
         : 'report'
 
-  const getPaneMaxScrollTop = useCallback((pane: HTMLDivElement | null): number => {
-    if (!pane) {
-      return 0
-    }
-    return Math.max(0, pane.scrollHeight - pane.clientHeight)
-  }, [])
-
-  const getPaneMaxScrollRow = useCallback(
-    (pane: HTMLDivElement | null): number => {
-      const maxScrollTop = getPaneMaxScrollTop(pane)
-      return Math.max(0, Math.ceil(maxScrollTop / cellSize))
-    },
-    [cellSize, getPaneMaxScrollTop],
-  )
-
-  const getSharedMaxRow = useCallback((): number => {
-    const referencePane =
-      (isDraftVisible ? draftScrollRef.current : null) ??
-      (isCorrectedVisible ? correctedScrollRef.current : null) ??
-      (isSimulationVisible ? simulationScrollRef.current : null)
-    if (!referencePane) {
-      return Math.max(0, height - 1)
-    }
-    return getPaneMaxScrollRow(referencePane)
-  }, [getPaneMaxScrollRow, height, isCorrectedVisible, isDraftVisible, isSimulationVisible])
-
-  const onPaneScroll = (source: HTMLDivElement) => {
-    if (syncingScrollRef.current) {
-      return
-    }
-    const maxScrollTop = getPaneMaxScrollTop(source)
-    const sourceMaxRow = getPaneMaxScrollRow(source)
-    const sourceScrollRow = source.scrollTop >= maxScrollTop - 1 ? sourceMaxRow : Math.round(source.scrollTop / cellSize)
-    const nextScrollRow = Math.max(0, Math.min(sourceMaxRow, sourceScrollRow))
-    setViewScroll(nextScrollRow)
-  }
-
-  const getPaneCanvasViewportWidth = (pane: HTMLDivElement): number => {
-    const style = window.getComputedStyle(pane)
-    const paddingLeft = Number.parseFloat(style.paddingLeft) || 0
-    const paddingRight = Number.parseFloat(style.paddingRight) || 0
-    return Math.max(0, pane.clientWidth - paddingLeft - paddingRight)
-  }
-
-  const getFittedZoomIndex = useCallback((): number => {
-    const visiblePanes: HTMLDivElement[] = []
-    if (isDraftVisible && draftScrollRef.current) {
-      visiblePanes.push(draftScrollRef.current)
-    }
-    if (isCorrectedVisible && correctedScrollRef.current) {
-      visiblePanes.push(correctedScrollRef.current)
-    }
-    if (isSimulationVisible && simulationScrollRef.current) {
-      visiblePanes.push(simulationScrollRef.current)
-    }
-    if (visiblePanes.length === 0) {
-      return zoomIndex
-    }
-
-    const currentCellSize = getCellSize(zoomIndex)
-    const paneContentUnits = visiblePanes.map((pane) => {
-      const canvas = pane.querySelector('canvas')
-      if (!canvas) {
-        return null
-      }
-      const isDraftCanvas = canvas.classList.contains('bead-canvas')
-      const fixedPixels = isDraftCanvas ? 37 : 2
-      const dynamicWidth = Math.max(0, canvas.width - fixedPixels)
-      const units = dynamicWidth / currentCellSize
-      return {
-        pane,
-        fixedPixels,
-        units,
-      }
-    })
-
-    for (let candidate = ZOOM_TABLE.length - 1; candidate >= 0; candidate -= 1) {
-      const candidateCellSize = getCellSize(candidate)
-      const fits = paneContentUnits.every((item) => {
-        if (!item) {
-          return true
-        }
-        const requiredCanvasWidth = Math.ceil(item.units * candidateCellSize) + item.fixedPixels
-        return requiredCanvasWidth <= getPaneCanvasViewportWidth(item.pane) + 1
-      })
-      if (fits) {
-        return candidate
-      }
-    }
-
-    return 0
-  }, [isCorrectedVisible, isDraftVisible, isSimulationVisible, zoomIndex])
-
-  const applyZoomFit = useCallback(() => {
-    setZoom(getFittedZoomIndex())
-  }, [getFittedZoomIndex, setZoom])
-
-  useEffect(() => {
-    const onResize = () => {
-      setViewportTick((value) => value + 1)
-    }
-    window.addEventListener('resize', onResize)
-    return () => {
-      window.removeEventListener('resize', onResize)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!isZoomFitMode) {
-      return
-    }
-    const frame = requestAnimationFrame(() => {
-      applyZoomFit()
-    })
-    return () => {
-      cancelAnimationFrame(frame)
-    }
-  }, [
-    applyZoomFit,
-    document.model.rows,
-    document.view.shift,
-    isCorrectedVisible,
-    isDraftVisible,
-    isReportVisible,
-    isSimulationVisible,
-    isZoomFitMode,
-    viewportTick,
-  ])
-
   const onCloseBlockingDialogs = useCallback(() => {
     setIsPreferencesDialogOpen(false)
     setIsCreditsDialogOpen(false)
@@ -761,51 +572,6 @@ function App() {
     onShiftLeft: shiftLeft,
     onShiftRight: shiftRight,
   })
-
-  useEffect(() => {
-    const nextSharedMaxRow = getSharedMaxRow()
-    const frame = requestAnimationFrame(() => {
-      setSharedMaxScrollRow((current) => (current === nextSharedMaxRow ? current : nextSharedMaxRow))
-    })
-
-    const targetScrollRow = Math.max(0, Math.min(nextSharedMaxRow, sharedScrollRow))
-    if (targetScrollRow !== sharedScrollRow) {
-      setViewScroll(targetScrollRow)
-      return () => {
-        cancelAnimationFrame(frame)
-      }
-    }
-
-    syncingScrollRef.current = true
-    const paneRefs = [draftScrollRef.current, correctedScrollRef.current, simulationScrollRef.current]
-    for (const pane of paneRefs) {
-      if (!pane) {
-        continue
-      }
-      const paneMaxRow = getPaneMaxScrollRow(pane)
-      const paneMaxScrollTop = getPaneMaxScrollTop(pane)
-      const paneTargetRow = Math.min(targetScrollRow, paneMaxRow)
-      pane.scrollTop = paneTargetRow >= paneMaxRow ? paneMaxScrollTop : paneTargetRow * cellSize
-    }
-    requestAnimationFrame(() => {
-      syncingScrollRef.current = false
-    })
-    return () => {
-      cancelAnimationFrame(frame)
-    }
-  }, [
-    cellSize,
-    document.model.rows,
-    getPaneMaxScrollRow,
-    getPaneMaxScrollTop,
-    getSharedMaxRow,
-    isCorrectedVisible,
-    isDraftVisible,
-    isSimulationVisible,
-    sharedScrollRow,
-    viewportTick,
-    setViewScroll,
-  ])
 
   return (
     <div className="app-shell">
