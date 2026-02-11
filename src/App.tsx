@@ -1,18 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
-import { parseJbb, serializeJbb } from './io/jbb/format'
 import {
   type AppSettings,
-  deleteRecentFile,
-  listRecentFiles,
-  loadAppSettings,
-  loadProject,
   type RecentFileRecord,
   saveAppSettings,
-  saveProject,
-  saveRecentFile,
 } from './storage/db'
 import { AppHeader } from './ui/components/AppHeader'
 import { DesktopToolbar } from './ui/components/DesktopToolbar'
@@ -26,28 +19,18 @@ import { PatternSizeDialog } from './ui/components/dialogs/PatternSizeDialog'
 import { PreferencesDialog } from './ui/components/dialogs/PreferencesDialog'
 import { RecentFilesDialog } from './ui/components/dialogs/RecentFilesDialog'
 import { useBeforeUnloadGuard } from './ui/hooks/useBeforeUnloadGuard'
+import { useDocumentFileActions } from './ui/hooks/useDocumentFileActions'
 import { useEditorShortcuts } from './ui/hooks/useEditorShortcuts'
 import { useMobilePortraitSinglePane } from './ui/hooks/useMobilePortraitSinglePane'
 import { usePointerDismiss } from './ui/hooks/usePointerDismiss'
-import type { CellPoint, JBeadDocument, SelectionRect, ViewPaneId } from './domain/types'
+import { useProjectBootstrap } from './ui/hooks/useProjectBootstrap'
+import type { CellPoint, SelectionRect, ViewPaneId } from './domain/types'
 import tsbeadLogoHorizontal from './assets/tsbead-logo-horizontal.png'
 import './index.css'
 
-const LOCAL_PROJECT_ID = 'local-default'
-const LOCAL_PROJECT_NAME = 'Local Draft'
-const DEFAULT_FILE_NAME = 'design.jbb'
-const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
-const RECENT_FILES_LIMIT = 8
 const PRINT_CHUNK_SIZE_A4_PORTRAIT = 100
 const PRINT_CHUNK_SIZE_LETTER_PORTRAIT = 90
 const PRINT_CHUNK_SIZE_LANDSCAPE = 60
-const DEFAULT_APP_SETTINGS: AppSettings = {
-  defaultAuthor: '',
-  defaultOrganization: '',
-  symbols: DEFAULT_BEAD_SYMBOLS,
-  printPageSize: 'a4',
-  printOrientation: 'portrait',
-}
 const VIEW_PANES: Array<{ id: ViewPaneId; label: string }> = [
   { id: 'draft', label: 'Draft' },
   { id: 'corrected', label: 'Corrected' },
@@ -59,30 +42,6 @@ const MAX_PATTERN_WIDTH = 500
 const MIN_PATTERN_HEIGHT = 5
 const MAX_PATTERN_HEIGHT = 10000
 const ZOOM_TABLE = [6, 8, 10, 12, 14, 16, 18, 20]
-
-interface FileSystemWritableStreamLike {
-  write: (data: string | Blob) => Promise<void>
-  close: () => Promise<void>
-}
-
-interface FileSystemFileHandleLike {
-  name: string
-  getFile: () => Promise<File>
-  createWritable: () => Promise<FileSystemWritableStreamLike>
-}
-
-interface WindowWithFilePicker extends Window {
-  showOpenFilePicker?: (options?: {
-    multiple?: boolean
-    types?: Array<{ description?: string; accept: Record<string, string[]> }>
-    excludeAcceptAllOption?: boolean
-  }) => Promise<FileSystemFileHandleLike[]>
-  showSaveFilePicker?: (options?: {
-    suggestedName?: string
-    types?: Array<{ description?: string; accept: Record<string, string[]> }>
-    excludeAcceptAllOption?: boolean
-  }) => Promise<FileSystemFileHandleLike>
-}
 
 function colorToCss(color: [number, number, number, number?]): string {
   const [red, green, blue, alpha = 255] = color
@@ -109,19 +68,6 @@ function hexToRgb(value: string): [number, number, number] | null {
 
 function getCellSize(zoomIndex: number): number {
   return ZOOM_TABLE[Math.max(0, Math.min(zoomIndex, ZOOM_TABLE.length - 1))]
-}
-
-function ensureJbbFileName(fileName: string): string {
-  const trimmed = fileName.trim()
-  if (trimmed.length === 0) {
-    return DEFAULT_FILE_NAME
-  }
-  return trimmed.toLowerCase().endsWith('.jbb') ? trimmed : `${trimmed}.jbb`
-}
-
-function createJbbBlob(document: JBeadDocument): Blob {
-  const content = serializeJbb(document)
-  return new Blob([content], { type: 'text/plain;charset=utf-8' })
 }
 
 function getErrorMessage(error: unknown): string {
@@ -203,7 +149,6 @@ function App() {
   const markSaved = useEditorStore((state) => state.markSaved)
   const setDocument = useEditorStore((state) => state.setDocument)
   const paletteColorPickerRef = useRef<HTMLInputElement | null>(null)
-  const openFileInputRef = useRef<HTMLInputElement | null>(null)
   const viewsMenuRef = useRef<HTMLDivElement | null>(null)
   const colorMenuRef = useRef<HTMLDivElement | null>(null)
   const backgroundMenuRef = useRef<HTMLDivElement | null>(null)
@@ -238,11 +183,7 @@ function App() {
   const [patternHeightInput, setPatternHeightInput] = useState('120')
   const [isZoomFitMode, setIsZoomFitMode] = useState(false)
   const [editingPaletteColorIndex, setEditingPaletteColorIndex] = useState<number | null>(null)
-  const [openFileName, setOpenFileName] = useState(DEFAULT_FILE_NAME)
-  const [openFileHandle, setOpenFileHandle] = useState<FileSystemFileHandleLike | null>(null)
-  const [recentFiles, setRecentFiles] = useState<RecentFileRecord[]>([])
   const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
-  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
   const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false)
   const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false)
@@ -258,75 +199,28 @@ function App() {
   const [metadataNotesInput, setMetadataNotesInput] = useState('')
   const [pageSetupSizeInput, setPageSetupSizeInput] = useState<AppSettings['printPageSize']>('a4')
   const [pageSetupOrientationInput, setPageSetupOrientationInput] = useState<AppSettings['printOrientation']>('portrait')
+  const { appSettings, setAppSettings } = useProjectBootstrap({ document, setDocument })
 
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      try {
-        const loadedSettings = await loadAppSettings()
-        if (cancelled) {
-          return
-        }
-        setAppSettings(loadedSettings)
-
-        const project = await loadProject(LOCAL_PROJECT_ID)
-        if (cancelled) {
-          return
-        }
-        if (project) {
-          setDocument(project.document)
-        } else {
-          setDocument(
-            createEmptyDocument(15, 120, {
-              author: loadedSettings.defaultAuthor,
-              organization: loadedSettings.defaultOrganization,
-              symbols: loadedSettings.symbols,
-            }),
-          )
-        }
-      } catch {
-        if (cancelled) {
-          return
-        }
-        setAppSettings(DEFAULT_APP_SETTINGS)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [setDocument])
-
-  useEffect(() => {
-    const bodyClassList = window.document.body.classList
-    bodyClassList.remove('print-page-a4', 'print-page-letter', 'print-orientation-portrait', 'print-orientation-landscape')
-    bodyClassList.add(`print-page-${appSettings.printPageSize}`, `print-orientation-${appSettings.printOrientation}`)
-    return () => {
-      bodyClassList.remove(`print-page-${appSettings.printPageSize}`, `print-orientation-${appSettings.printOrientation}`)
-    }
-  }, [appSettings.printOrientation, appSettings.printPageSize])
-
-  useEffect(() => {
-    void saveProject({
-      id: LOCAL_PROJECT_ID,
-      name: LOCAL_PROJECT_NAME,
-      updatedAt: Date.now(),
-      document,
-    })
-  }, [document])
-
-  const refreshRecentFiles = useCallback(async () => {
-    const files = await listRecentFiles(RECENT_FILES_LIMIT)
-    setRecentFiles(files)
-  }, [])
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      void refreshRecentFiles()
-    })
-    return () => {
-      cancelAnimationFrame(frame)
-    }
-  }, [refreshRecentFiles])
+  const {
+    openFileName,
+    openFileInputRef,
+    recentFiles,
+    refreshRecentFiles,
+    onDownloadFile,
+    onNewDocument,
+    onOpenDocument,
+    onSaveAsDocument,
+    onSaveDocument,
+    onFileInputChange,
+    onOpenRecentFile: onOpenRecentFileEntry,
+    onDeleteRecentEntry,
+  } = useDocumentFileActions({
+    document,
+    appSettings,
+    dirty,
+    setDocument,
+    markSaved,
+  })
 
   const onCloseMenus = useCallback(() => {
     setIsViewsMenuOpen(false)
@@ -569,166 +463,9 @@ function App() {
     setPaletteColor(editingPaletteColorIndex, [rgb[0], rgb[1], rgb[2], 255])
   }
 
-  const onDownloadFile = useCallback(
-    (fileName: string) => {
-      const blob = createJbbBlob(document)
-      const url = URL.createObjectURL(blob)
-      const link = window.document.createElement('a')
-      link.href = url
-      link.download = ensureJbbFileName(fileName)
-      link.click()
-      URL.revokeObjectURL(url)
-    },
-    [document],
-  )
-
-  const onLoadFile = useCallback(
-    async (file: File, handle: FileSystemFileHandleLike | null) => {
-      try {
-        const content = await file.text()
-        const importedDocument = parseJbb(content)
-        const normalizedName = ensureJbbFileName(file.name)
-        setDocument(importedDocument)
-        setOpenFileHandle(handle)
-        setOpenFileName(normalizedName)
-        await saveRecentFile(normalizedName, content)
-        await refreshRecentFiles()
-      } catch (error) {
-        window.alert(`Could not open file: ${getErrorMessage(error)}`)
-      }
-    },
-    [refreshRecentFiles, setDocument],
-  )
-
-  const onDiscardUnsavedChanges = useCallback((): boolean => {
-    if (!dirty) {
-      return true
-    }
-    return window.confirm('There are unsaved changes. Continue and discard them?')
-  }, [dirty])
-
-  const createDocumentFromPreferences = useCallback(
-    (settings: AppSettings): JBeadDocument =>
-      createEmptyDocument(15, 120, {
-        author: settings.defaultAuthor,
-        organization: settings.defaultOrganization,
-        symbols: settings.symbols,
-      }),
-    [],
-  )
-
-  const onNewDocument = useCallback((): boolean => {
-    if (!onDiscardUnsavedChanges()) {
-      return false
-    }
-    setDocument(createDocumentFromPreferences(appSettings))
-    setOpenFileHandle(null)
-    setOpenFileName(DEFAULT_FILE_NAME)
-    return true
-  }, [appSettings, createDocumentFromPreferences, onDiscardUnsavedChanges, setDocument])
-
-  const onOpenDocument = useCallback(async (): Promise<void> => {
-    if (!onDiscardUnsavedChanges()) {
-      return
-    }
-
-    const pickerWindow = window as WindowWithFilePicker
-    if (pickerWindow.showOpenFilePicker) {
-      try {
-        const handles = await pickerWindow.showOpenFilePicker({
-          multiple: false,
-          types: [{ description: 'JBead files', accept: JBB_FILE_PICKER_ACCEPT }],
-          excludeAcceptAllOption: false,
-        })
-        const handle = handles[0]
-        if (!handle) {
-          return
-        }
-        const file = await handle.getFile()
-        await onLoadFile(file, handle)
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return
-        }
-        window.alert(`Could not open file: ${getErrorMessage(error)}`)
-      }
-      return
-    }
-
-    openFileInputRef.current?.click()
-  }, [onDiscardUnsavedChanges, onLoadFile])
-
-  const onSaveAsDocument = useCallback(async (): Promise<boolean> => {
-    const targetFileName = ensureJbbFileName(openFileName)
-    const serializedContent = serializeJbb(document)
-    const pickerWindow = window as WindowWithFilePicker
-    if (pickerWindow.showSaveFilePicker) {
-      try {
-        const handle = await pickerWindow.showSaveFilePicker({
-          suggestedName: targetFileName,
-          types: [{ description: 'JBead files', accept: JBB_FILE_PICKER_ACCEPT }],
-          excludeAcceptAllOption: false,
-        })
-        const writable = await handle.createWritable()
-        await writable.write(serializedContent)
-        await writable.close()
-        const normalizedName = ensureJbbFileName(handle.name)
-        setOpenFileHandle(handle)
-        setOpenFileName(normalizedName)
-        await saveRecentFile(normalizedName, serializedContent)
-        await refreshRecentFiles()
-        markSaved()
-        return true
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return false
-        }
-        window.alert(`Could not save file: ${getErrorMessage(error)}`)
-        return false
-      }
-    }
-
-    onDownloadFile(targetFileName)
-    setOpenFileHandle(null)
-    setOpenFileName(targetFileName)
-    await saveRecentFile(targetFileName, serializedContent)
-    await refreshRecentFiles()
-    markSaved()
-    return true
-  }, [document, markSaved, onDownloadFile, openFileName, refreshRecentFiles])
-
-  const onSaveDocument = useCallback(async (): Promise<boolean> => {
-    if (!openFileHandle) {
-      return onSaveAsDocument()
-    }
-
-    try {
-      const serializedContent = serializeJbb(document)
-      const writable = await openFileHandle.createWritable()
-      await writable.write(serializedContent)
-      await writable.close()
-      await saveRecentFile(openFileName, serializedContent)
-      await refreshRecentFiles()
-      markSaved()
-      return true
-    } catch (error) {
-      window.alert(`Could not save file: ${getErrorMessage(error)}`)
-      return false
-    }
-  }, [document, markSaved, onSaveAsDocument, openFileHandle, openFileName, refreshRecentFiles])
-
   const onPrintDocument = useCallback(() => {
     window.print()
   }, [])
-
-  const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.currentTarget.files?.[0]
-    event.currentTarget.value = ''
-    if (!file) {
-      return
-    }
-    void onLoadFile(file, null)
-  }
 
   const onOpenPreferencesDialog = useCallback(() => {
     setPreferencesAuthorInput(appSettings.defaultAuthor)
@@ -826,30 +563,13 @@ function App() {
 
   const onOpenRecentFile = useCallback(
     async (entry: RecentFileRecord) => {
-      if (!onDiscardUnsavedChanges()) {
-        return
-      }
-      try {
-        const importedDocument = parseJbb(entry.content)
-        setDocument(importedDocument)
-        setOpenFileHandle(null)
-        setOpenFileName(entry.name)
-        await saveRecentFile(entry.name, entry.content)
-        await refreshRecentFiles()
+      const opened = await onOpenRecentFileEntry(entry)
+      if (opened) {
         setIsRecentDialogOpen(false)
-      } catch (error) {
-        await deleteRecentFile(entry.id)
-        await refreshRecentFiles()
-        window.alert(`Could not open recent file: ${getErrorMessage(error)}`)
       }
     },
-    [onDiscardUnsavedChanges, refreshRecentFiles, setDocument],
+    [onOpenRecentFileEntry],
   )
-
-  const onDeleteRecentEntry = useCallback(async (entryId: string) => {
-    await deleteRecentFile(entryId)
-    await refreshRecentFiles()
-  }, [refreshRecentFiles])
 
   const paneVisibilityById: Record<ViewPaneId, boolean> = {
     draft: isDraftVisible,
