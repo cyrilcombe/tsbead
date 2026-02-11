@@ -26,7 +26,6 @@ import {
 import type { JBeadDocument, RgbaColor, ToolId, ViewPaneId } from '../../domain/types'
 import { useI18n } from '../../i18n/I18nProvider'
 import { usePlatformShortcuts } from '../hooks/usePlatformShortcuts'
-import { useTouchDoubleTap } from '../hooks/useTouchDoubleTap'
 
 interface ViewPaneEntry {
   id: ViewPaneId
@@ -138,7 +137,6 @@ export function DesktopToolbar({
 }: DesktopToolbarProps) {
   const { t } = useI18n()
   const shortcuts = usePlatformShortcuts()
-  const onTouchDoubleTapSwatch = useTouchDoubleTap<number>(onEditPaletteColor)
 
   return (
     <section className="panel tools-panel">
@@ -200,15 +198,14 @@ export function DesktopToolbar({
                         key={`background-color-${color.join('-')}-${index}`}
                         className={`swatch palette-menu-swatch ${index === 0 ? 'selected' : ''}`}
                         style={{ backgroundColor: colorToCss(color) }}
-                        onClick={() => {
-                          onSetColorAsBackground(index)
-                          onTouchDoubleTapSwatch(index)
-                        }}
+                        onClick={() => onSetColorAsBackground(index)}
                         title={t('palette.setBackgroundToColor', { index })}
                       />
                     ))}
                   </div>
-                  <p className="palette-menu-hint">{t('palette.editHint')}</p>
+                  <button className="action palette-edit-button" onClick={() => onEditPaletteColor(0)}>
+                    {t('palette.editButton')}
+                  </button>
                 </div>
               ) : null}
             </div>
@@ -231,15 +228,14 @@ export function DesktopToolbar({
                         key={`selected-color-${color.join('-')}-${index}`}
                         className={`swatch palette-menu-swatch ${selectedColor === index ? 'selected' : ''}`}
                         style={{ backgroundColor: colorToCss(color) }}
-                        onClick={() => {
-                          onSetSelectedColor(index)
-                          onTouchDoubleTapSwatch(index)
-                        }}
+                        onClick={() => onSetSelectedColor(index)}
                         title={t('palette.colorIndex', { index })}
                       />
                     ))}
                   </div>
-                  <p className="palette-menu-hint">{t('palette.editHint')}</p>
+                  <button className="action palette-edit-button" onClick={() => onEditPaletteColor(selectedColor)}>
+                    {t('palette.editButton')}
+                  </button>
                 </div>
               ) : null}
             </div>

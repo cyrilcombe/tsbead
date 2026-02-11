@@ -146,6 +146,7 @@ function App() {
   const markSaved = useEditorStore((state) => state.markSaved)
   const setDocument = useEditorStore((state) => state.setDocument)
   const paletteColorPickerRef = useRef<HTMLInputElement | null>(null)
+  const paletteEditTargetIndexRef = useRef<number | null>(null)
   const viewsMenuRef = useRef<HTMLDivElement | null>(null)
   const colorMenuRef = useRef<HTMLDivElement | null>(null)
   const backgroundMenuRef = useRef<HTMLDivElement | null>(null)
@@ -171,7 +172,6 @@ function App() {
   const [patternWidthInput, setPatternWidthInput] = useState('15')
   const [patternHeightInput, setPatternHeightInput] = useState('120')
   const [isZoomFitMode, setIsZoomFitMode] = useState(false)
-  const [editingPaletteColorIndex, setEditingPaletteColorIndex] = useState<number | null>(null)
   const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false)
@@ -427,19 +427,35 @@ function App() {
     if (index < 0 || index >= document.colors.length) {
       return
     }
-    setEditingPaletteColorIndex(index)
-    paletteColorPickerRef.current?.click()
+    paletteEditTargetIndexRef.current = index
+    const picker = paletteColorPickerRef.current
+    if (!picker) {
+      return
+    }
+    picker.value = colorToHex(document.colors[index] ?? document.colors[0] ?? [0, 0, 0, 255])
+    picker.focus({ preventScroll: true })
+    if (typeof picker.showPicker === 'function') {
+      try {
+        picker.showPicker()
+        return
+      } catch {
+        // Continue to click fallback.
+      }
+    }
+    picker.click()
   }
 
   const onPaletteColorPicked = (value: string) => {
-    if (editingPaletteColorIndex === null) {
+    const targetIndex = paletteEditTargetIndexRef.current
+    if (targetIndex === null || targetIndex < 0 || targetIndex >= document.colors.length) {
       return
     }
     const rgb = hexToRgb(value)
     if (!rgb) {
       return
     }
-    setPaletteColor(editingPaletteColorIndex, [rgb[0], rgb[1], rgb[2], 255])
+    setPaletteColor(targetIndex, [rgb[0], rgb[1], rgb[2], 255])
+    paletteEditTargetIndexRef.current = null
   }
 
   const onPrintDocument = useCallback(() => {
@@ -855,9 +871,11 @@ function App() {
         ref={paletteColorPickerRef}
         className="palette-color-picker"
         type="color"
-        value={colorToHex(document.colors[editingPaletteColorIndex ?? selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255])}
+        defaultValue={colorToHex(document.colors[selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255])}
         onChange={(event) => onPaletteColorPicked(event.currentTarget.value)}
-        onBlur={() => setEditingPaletteColorIndex(null)}
+        onBlur={() => {
+          paletteEditTargetIndexRef.current = null
+        }}
       />
 
       <PrintWorkspace

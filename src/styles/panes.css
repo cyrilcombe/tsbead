@@ -271,12 +271,10 @@
   border-radius: 5px;
 }
 
-.palette-menu-hint {
-  margin: 0.58rem 0 0;
-  font-size: 0.78rem;
-  line-height: 1.2;
-  text-align: center;
-  color: #5f6668;
+.palette-edit-button {
+  width: 100%;
+  margin-top: 0.62rem;
+  justify-content: center;
 }
 
 .shared-scrollbar {
@@ -338,11 +336,12 @@
 }
 
 .palette-color-picker {
-  position: absolute;
-  pointer-events: none;
-  opacity: 0;
-  width: 0;
-  height: 0;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0.01;
 }
 
 .metadata-section {
