@@ -45,27 +45,32 @@ npm run test
 npm run build
 ```
 
-## Print / PDF
+## Keyboard Shortcuts
 
-- Use `Print...` in the app header (or `Cmd/Ctrl+P`) to print visible panes.
-- Use your browser print dialog destination `Save as PDF` to export a PDF.
-
-## GitHub Pages
-
-Deployment workflow is in `.github/workflows/deploy.yml`.
-The Vite `base` path is computed from `GITHUB_REPOSITORY` during GitHub Actions builds.
-
-## Migration Roadmap
-
-1. Stabilize parser/serializer coverage for legacy `.jbb` samples.
-2. Port core editing behaviors (line, fill, selection, rotate, mirror).
-3. Add import/export UX and project browser in IndexedDB.
-4. Add report and simulation views.
-5. Add PWA caching and optional desktop packaging.
-
-## Legacy Parity Tracking
-
-See `docs/LEGACY_PARITY_TRACKER.md` for the exhaustive Java feature inventory and task breakdown.
+| Action | macOS | Windows / Linux |
+|---|---|---|
+| New file | `Cmd+N` | `Ctrl+N` |
+| Open file | `Cmd+O` | `Ctrl+O` |
+| Open recent | `Cmd+Shift+O` | `Ctrl+Shift+O` |
+| Save | `Cmd+S` | `Ctrl+S` |
+| Save as | `Cmd+Shift+S` | `Ctrl+Shift+S` |
+| Print | `Cmd+P` | `Ctrl+P` |
+| Preferences | `Cmd+,` or `Cmd+Shift+P` | `Ctrl+,` or `Ctrl+Shift+P` |
+| Undo | `Cmd+Z` | `Ctrl+Z` |
+| Redo | `Cmd+Shift+Z` | `Ctrl+Y` |
+| Pencil tool | `Cmd+1` | `Ctrl+1` |
+| Line tool | `Cmd+2` | `Ctrl+2` |
+| Fill tool | `Cmd+3` | `Ctrl+3` |
+| Select tool | `Cmd+4` | `Ctrl+4` |
+| Delete selection | `Cmd+5` | `Ctrl+5` |
+| Pipette tool | `Cmd+6` | `Ctrl+6` |
+| Zoom in | `Cmd+I` | `Ctrl+I` |
+| Zoom out | `Cmd+U` | `Ctrl+U` |
+| Arrange selection | `F8` | `F8` |
+| Select palette color | `0-9` | `0-9` |
+| Shift pattern left/right | `← / →` | `← / →` |
+| Clear selection / close dialogs | `Escape` | `Escape` |
+| Temporary pipette (hold) | `Space` | `Space` |
 
 ## License
 

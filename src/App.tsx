@@ -11,6 +11,7 @@ import {
   Info,
   Printer,
   LayoutGrid,
+  Menu,
   Minus,
   MoveHorizontal,
   MoveVertical,
@@ -259,6 +260,9 @@ function App() {
   const viewsMenuRef = useRef<HTMLDivElement | null>(null)
   const colorMenuRef = useRef<HTMLDivElement | null>(null)
   const backgroundMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileActionsMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileColorMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileBackgroundMenuRef = useRef<HTMLDivElement | null>(null)
   const dragStartRef = useRef<CellPoint | null>(null)
   const isSpaceToolActiveRef = useRef(false)
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
@@ -286,6 +290,7 @@ function App() {
   const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false)
   const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false)
   const [isViewsMenuOpen, setIsViewsMenuOpen] = useState(false)
+  const [isMobileActionsMenuOpen, setIsMobileActionsMenuOpen] = useState(false)
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false)
   const [isBackgroundMenuOpen, setIsBackgroundMenuOpen] = useState(false)
   const [preferencesAuthorInput, setPreferencesAuthorInput] = useState('')
@@ -367,7 +372,7 @@ function App() {
   }, [refreshRecentFiles])
 
   useEffect(() => {
-    if (!isViewsMenuOpen && !isColorMenuOpen && !isBackgroundMenuOpen) {
+    if (!isViewsMenuOpen && !isColorMenuOpen && !isBackgroundMenuOpen && !isMobileActionsMenuOpen) {
       return
     }
     const onPointerDown = (event: PointerEvent) => {
@@ -378,19 +383,23 @@ function App() {
       if (
         viewsMenuRef.current?.contains(target) ||
         colorMenuRef.current?.contains(target) ||
-        backgroundMenuRef.current?.contains(target)
+        backgroundMenuRef.current?.contains(target) ||
+        mobileActionsMenuRef.current?.contains(target) ||
+        mobileColorMenuRef.current?.contains(target) ||
+        mobileBackgroundMenuRef.current?.contains(target)
       ) {
         return
       }
       setIsViewsMenuOpen(false)
       setIsColorMenuOpen(false)
       setIsBackgroundMenuOpen(false)
+      setIsMobileActionsMenuOpen(false)
     }
     window.addEventListener('pointerdown', onPointerDown)
     return () => {
       window.removeEventListener('pointerdown', onPointerDown)
     }
-  }, [isBackgroundMenuOpen, isColorMenuOpen, isViewsMenuOpen])
+  }, [isBackgroundMenuOpen, isColorMenuOpen, isMobileActionsMenuOpen, isViewsMenuOpen])
 
   const width = document.model.rows[0]?.length ?? 0
   const height = document.model.rows.length
@@ -801,6 +810,35 @@ function App() {
     setIsMetadataDialogOpen(true)
   }, [document.author, document.notes, document.organization])
 
+  const onSelectMobileView = useCallback(
+    (pane: ViewPaneId) => {
+      setViewVisibility('draft', pane === 'draft')
+      setViewVisibility('corrected', pane === 'corrected')
+      setViewVisibility('simulation', pane === 'simulation')
+      setViewVisibility('report', pane === 'report')
+    },
+    [setViewVisibility],
+  )
+
+  useEffect(() => {
+    const mobilePortraitQuery = window.matchMedia('(max-width: 980px) and (orientation: portrait)')
+    if (!mobilePortraitQuery.matches) {
+      return
+    }
+    const visibleCount = Number(isDraftVisible) + Number(isCorrectedVisible) + Number(isSimulationVisible) + Number(isReportVisible)
+    if (visibleCount === 1) {
+      return
+    }
+    const nextPane: ViewPaneId = isDraftVisible
+      ? 'draft'
+      : isCorrectedVisible
+        ? 'corrected'
+        : isSimulationVisible
+          ? 'simulation'
+          : 'report'
+    onSelectMobileView(nextPane)
+  }, [isCorrectedVisible, isDraftVisible, isReportVisible, isSimulationVisible, onSelectMobileView])
+
   const onApplyPreferences = useCallback(async () => {
     const nextSettings: AppSettings = {
       ...appSettings,
@@ -890,6 +928,13 @@ function App() {
     simulation: isSimulationVisible,
     report: isReportVisible,
   }
+  const mobileActivePane: ViewPaneId = isDraftVisible
+    ? 'draft'
+    : isCorrectedVisible
+      ? 'corrected'
+      : isSimulationVisible
+        ? 'simulation'
+        : 'report'
 
   const getPaneMaxScrollTop = useCallback((pane: HTMLDivElement | null): number => {
     if (!pane) {
@@ -1036,10 +1081,11 @@ function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((isViewsMenuOpen || isColorMenuOpen || isBackgroundMenuOpen) && event.key === 'Escape') {
+      if ((isViewsMenuOpen || isColorMenuOpen || isBackgroundMenuOpen || isMobileActionsMenuOpen) && event.key === 'Escape') {
         setIsViewsMenuOpen(false)
         setIsColorMenuOpen(false)
         setIsBackgroundMenuOpen(false)
+        setIsMobileActionsMenuOpen(false)
         event.preventDefault()
         return
       }
@@ -1047,6 +1093,7 @@ function App() {
       if (
         isPreferencesDialogOpen ||
         isCreditsDialogOpen ||
+        isMobileActionsMenuOpen ||
         isMetadataDialogOpen ||
         isRecentDialogOpen ||
         isArrangeDialogOpen ||
@@ -1055,6 +1102,7 @@ function App() {
         if (event.key === 'Escape') {
           setIsPreferencesDialogOpen(false)
           setIsCreditsDialogOpen(false)
+          setIsMobileActionsMenuOpen(false)
           setIsMetadataDialogOpen(false)
           setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
@@ -1205,6 +1253,7 @@ function App() {
     isArrangeDialogOpen,
     isBackgroundMenuOpen,
     isCreditsDialogOpen,
+    isMobileActionsMenuOpen,
     isColorMenuOpen,
     isMetadataDialogOpen,
     isPreferencesDialogOpen,
@@ -1278,9 +1327,133 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
+        <div className="mobile-header-left" ref={mobileActionsMenuRef}>
+          <button
+            className="action icon-action mobile-menu-toggle"
+            aria-label="Open actions menu"
+            aria-expanded={isMobileActionsMenuOpen}
+            onClick={() => setIsMobileActionsMenuOpen((value) => !value)}
+          >
+            <Menu className="tool-icon" aria-hidden="true" />
+          </button>
+          {isMobileActionsMenuOpen ? (
+            <div className="mobile-actions-menu">
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  onNewDocument()
+                }}
+              >
+                <FilePlus2 className="header-action-icon" aria-hidden="true" />
+                <span>New</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  void onOpenDocument()
+                }}
+              >
+                <FolderOpen className="header-action-icon" aria-hidden="true" />
+                <span>Open...</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  onOpenRecentDialog()
+                }}
+                disabled={recentFiles.length === 0}
+              >
+                <FolderClock className="header-action-icon" aria-hidden="true" />
+                <span>Open recent...</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  void onSaveDocument()
+                }}
+              >
+                <Save className="header-action-icon" aria-hidden="true" />
+                <span>Save</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  void onSaveAsDocument()
+                }}
+              >
+                <SaveAll className="header-action-icon" aria-hidden="true" />
+                <span>Save As...</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  onDownloadFile(openFileName)
+                }}
+              >
+                <Download className="header-action-icon" aria-hidden="true" />
+                <span>Export .jbb</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  onPrintDocument()
+                }}
+                disabled={!hasAnyPaneVisible}
+              >
+                <Printer className="header-action-icon" aria-hidden="true" />
+                <span>Print...</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  onOpenPreferencesDialog()
+                }}
+              >
+                <Settings2 className="header-action-icon" aria-hidden="true" />
+                <span>Preferences...</span>
+              </button>
+              <button
+                className="action header-action"
+                onClick={() => {
+                  setIsMobileActionsMenuOpen(false)
+                  onOpenCreditsDialog()
+                }}
+              >
+                <Info className="header-action-icon" aria-hidden="true" />
+                <span>Credits...</span>
+              </button>
+              <div className="mobile-actions-file">
+                <strong>{openFileName}</strong>
+                {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
+                <button
+                  className="metadata-inline-action"
+                  onClick={() => {
+                    setIsMobileActionsMenuOpen(false)
+                    onOpenMetadataDialog()
+                  }}
+                  title="Edit metadata"
+                >
+                  {metadataLabel}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
         <div className="header-main">
           <img className="app-logo" src={tsbeadLogoHorizontal} alt="TsBead" />
         </div>
+        <p className="mobile-file-status">
+          <strong>{openFileName}</strong>
+          {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
+        </p>
         <div className="header-controls">
           <div className="header-actions">
             <button className="action header-action" onClick={onNewDocument}>
@@ -1324,7 +1497,6 @@ function App() {
               <Info className="header-action-icon" aria-hidden="true" />
               <span>Credits...</span>
             </button>
-            <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
           </div>
           <p className="file-status">
             <strong>{openFileName}</strong>
@@ -1334,7 +1506,20 @@ function App() {
             </button>
           </p>
         </div>
+        <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
       </header>
+
+      <section className="mobile-view-tabs" aria-label="View tabs">
+        {VIEW_PANES.map((pane) => (
+          <button
+            key={`mobile-tab-${pane.id}`}
+            className={`action mobile-view-tab ${mobileActivePane === pane.id ? 'active' : ''}`}
+            onClick={() => onSelectMobileView(pane.id)}
+          >
+            {pane.label}
+          </button>
+        ))}
+      </section>
 
       <section className="panel tools-panel">
         <div className="toolbar-layout">
@@ -1609,6 +1794,155 @@ function App() {
       </section>
 
       <main className="workspace">
+        <aside className="panel mobile-edit-rail" aria-label="Editing tools">
+          <div className="mobile-edit-group">
+            <button
+              className={`action icon-action tool-action ${selectedTool === 'pencil' ? 'active' : ''}`}
+              onClick={() => setSelectedTool('pencil')}
+              title="Pencil (Ctrl/Cmd+1)"
+              aria-label="Pencil"
+            >
+              <Pencil className="tool-icon" aria-hidden="true" />
+            </button>
+            <button
+              className={`action icon-action tool-action ${selectedTool === 'line' ? 'active' : ''}`}
+              onClick={() => setSelectedTool('line')}
+              title="Line (Ctrl/Cmd+2)"
+              aria-label="Line"
+            >
+              <Slash className="tool-icon" aria-hidden="true" />
+            </button>
+            <button
+              className={`action icon-action tool-action ${selectedTool === 'fill' ? 'active' : ''}`}
+              onClick={() => setSelectedTool('fill')}
+              title="Fill (Ctrl/Cmd+3)"
+              aria-label="Fill"
+            >
+              <PaintBucket className="tool-icon" aria-hidden="true" />
+            </button>
+            <button
+              className={`action icon-action tool-action ${selectedTool === 'pipette' ? 'active' : ''}`}
+              onClick={() => setSelectedTool('pipette')}
+              title="Pipette (Ctrl/Cmd+6)"
+              aria-label="Pipette"
+            >
+              <Pipette className="tool-icon" aria-hidden="true" />
+            </button>
+            <button
+              className={`action icon-action tool-action ${selectedTool === 'select' ? 'active' : ''}`}
+              onClick={() => setSelectedTool('select')}
+              title="Select (Ctrl/Cmd+4)"
+              aria-label="Select"
+            >
+              <SquareDashed className="tool-icon" aria-hidden="true" />
+            </button>
+          </div>
+
+          <span className="mobile-edit-separator" aria-hidden="true" />
+
+          <div className="mobile-edit-group">
+            <div className="palette-menu-wrap compact-color-wrap" ref={mobileBackgroundMenuRef}>
+              <button
+                className={`action icon-action compact-color-toggle ${isBackgroundMenuOpen ? 'view-toggle active' : ''}`}
+                onClick={() => {
+                  setIsBackgroundMenuOpen((value) => !value)
+                  setIsColorMenuOpen(false)
+                  setIsViewsMenuOpen(false)
+                }}
+                title="Background color"
+                aria-label="Background color"
+              >
+                <span className="compact-color-label">BG</span>
+                <span className="compact-color-chip" style={{ backgroundColor: colorToCss(backgroundColorValue) }} />
+              </button>
+              {isBackgroundMenuOpen ? (
+                <div className="palette-menu compact-palette-menu">
+                  <div className="palette-menu-grid">
+                    {document.colors.map((color, index) => (
+                      <button
+                        key={`mobile-background-color-${color.join('-')}-${index}`}
+                        className={`swatch palette-menu-swatch ${index === 0 ? 'selected' : ''}`}
+                        style={{ backgroundColor: colorToCss(color) }}
+                        onClick={() => {
+                          setColorAsBackground(index)
+                        }}
+                        onDoubleClick={() => onEditPaletteColor(index)}
+                        title={`Set background to color ${index}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="palette-menu-wrap compact-color-wrap" ref={mobileColorMenuRef}>
+              <button
+                className={`action icon-action compact-color-toggle ${isColorMenuOpen ? 'view-toggle active' : ''}`}
+                onClick={() => {
+                  setIsColorMenuOpen((value) => !value)
+                  setIsBackgroundMenuOpen(false)
+                  setIsViewsMenuOpen(false)
+                }}
+                title="Drawing color"
+                aria-label="Drawing color"
+              >
+                <span className="compact-color-label">C</span>
+                <span className="compact-color-chip" style={{ backgroundColor: colorToCss(selectedColorValue) }} />
+              </button>
+              {isColorMenuOpen ? (
+                <div className="palette-menu compact-palette-menu">
+                  <div className="palette-menu-grid">
+                    {document.colors.map((color, index) => (
+                      <button
+                        key={`mobile-selected-color-${color.join('-')}-${index}`}
+                        className={`swatch palette-menu-swatch ${selectedColor === index ? 'selected' : ''}`}
+                        style={{ backgroundColor: colorToCss(color) }}
+                        onClick={() => {
+                          setSelectedColor(index)
+                        }}
+                        onDoubleClick={() => onEditPaletteColor(index)}
+                        title={`Color ${index}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <span className="mobile-edit-separator" aria-hidden="true" />
+
+          <div className="mobile-edit-group">
+            <button className="action icon-action" onClick={onDeleteSelection} disabled={selection === null} title="Delete selection (Ctrl/Cmd+5)" aria-label="Delete selection">
+              <Eraser className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={onOpenArrangeDialog} disabled={selection === null} title="Arrange... (F8)" aria-label="Arrange">
+              <Copy className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={() => insertRow()} title="Insert row" aria-label="Insert row">
+              <Plus className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={() => deleteRow()} title="Delete row" aria-label="Delete row">
+              <Minus className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={() => mirrorHorizontal()} title="Mirror horizontal" aria-label="Mirror horizontal">
+              <MoveHorizontal className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={() => mirrorVertical()} title="Mirror vertical" aria-label="Mirror vertical">
+              <MoveVertical className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={() => rotateClockwise()} disabled={!canRotate} title="Rotate 90" aria-label="Rotate 90">
+              <RotateCw className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={() => undo()} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">
+              <Undo2 className="tool-icon" aria-hidden="true" />
+            </button>
+            <button className="action icon-action" onClick={() => redo()} disabled={!canRedo} title="Redo (Ctrl/Cmd+Y)" aria-label="Redo">
+              <Redo2 className="tool-icon" aria-hidden="true" />
+            </button>
+          </div>
+        </aside>
+
         <section
           className={`preview-with-scrollbar ${hasCanvasPaneVisible ? 'has-canvas' : 'no-canvas'} ${isReportVisible ? 'has-report' : 'no-report'}`}
         >
