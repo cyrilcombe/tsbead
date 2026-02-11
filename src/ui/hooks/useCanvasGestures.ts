@@ -22,9 +22,12 @@ interface GestureState {
 }
 
 const PINCH_ACTIVATION_PX = 10
-const SWIPE_ACTIVATION_PX = 22
+const SWIPE_ACTIVATION_PX = 14
 const PINCH_STEP_PX = 24
-const SWIPE_STEP_PX = 56
+const SWIPE_STEP_PX = 30
+const WHEEL_PINCH_STEP = 80
+const WHEEL_SWIPE_ACTIVATION = 10
+const WHEEL_SWIPE_STEP = 55
 
 function getDistance(touchA: Touch, touchB: Touch): number {
   const dx = touchA.clientX - touchB.clientX
@@ -53,6 +56,8 @@ export function useCanvasGestures({
     pinchRemainder: 0,
     swipeRemainder: 0,
   })
+  const wheelPinchRemainderRef = useRef(0)
+  const wheelSwipeRemainderRef = useRef(0)
 
   useEffect(() => {
     const elements = panes
@@ -157,14 +162,75 @@ export function useCanvasGestures({
       event.preventDefault()
     }
 
+    const onWheel = (event: WheelEvent) => {
+      // Trackpad pinch on Chromium emits wheel+ctrlKey.
+      if (event.ctrlKey) {
+        wheelPinchRemainderRef.current += -event.deltaY
+        while (wheelPinchRemainderRef.current >= WHEEL_PINCH_STEP) {
+          onZoomIn()
+          wheelPinchRemainderRef.current -= WHEEL_PINCH_STEP
+        }
+        while (wheelPinchRemainderRef.current <= -WHEEL_PINCH_STEP) {
+          onZoomOut()
+          wheelPinchRemainderRef.current += WHEEL_PINCH_STEP
+        }
+        event.preventDefault()
+        return
+      }
+
+      // Two-finger horizontal swipe on trackpad.
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY) && Math.abs(event.deltaX) >= WHEEL_SWIPE_ACTIVATION) {
+        wheelSwipeRemainderRef.current += event.deltaX
+        while (wheelSwipeRemainderRef.current >= WHEEL_SWIPE_STEP) {
+          onShiftRight()
+          wheelSwipeRemainderRef.current -= WHEEL_SWIPE_STEP
+        }
+        while (wheelSwipeRemainderRef.current <= -WHEEL_SWIPE_STEP) {
+          onShiftLeft()
+          wheelSwipeRemainderRef.current += WHEEL_SWIPE_STEP
+        }
+        event.preventDefault()
+      }
+    }
+
+    const onWindowWheel = (event: WheelEvent) => {
+      // Hard-disable browser/page zoom from trackpad pinch (ctrl+wheel).
+      if (event.ctrlKey) {
+        event.preventDefault()
+      }
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const hasZoomModifier = event.ctrlKey || event.metaKey
+      if (!hasZoomModifier) {
+        return
+      }
+      const key = event.key
+      const isZoomKey =
+        key === '+' ||
+        key === '-' ||
+        key === '=' ||
+        key === '0' ||
+        event.code === 'NumpadAdd' ||
+        event.code === 'NumpadSubtract'
+      if (isZoomKey) {
+        event.preventDefault()
+      }
+    }
+
     elements.forEach((element) => {
       element.addEventListener('touchstart', onTouchStart, { passive: false })
       element.addEventListener('touchmove', onTouchMove, { passive: false })
       element.addEventListener('touchend', onTouchEnd, { passive: false })
       element.addEventListener('touchcancel', onTouchCancel, { passive: false })
+      element.addEventListener('wheel', onWheel, { passive: false })
       element.addEventListener('gesturestart', preventGestureDefault, { passive: false } as AddEventListenerOptions)
       element.addEventListener('gesturechange', preventGestureDefault, { passive: false } as AddEventListenerOptions)
     })
+    window.addEventListener('wheel', onWindowWheel, { passive: false })
+    window.addEventListener('gesturestart', preventGestureDefault, { passive: false } as AddEventListenerOptions)
+    window.addEventListener('gesturechange', preventGestureDefault, { passive: false } as AddEventListenerOptions)
+    window.addEventListener('keydown', onKeyDown)
 
     return () => {
       elements.forEach((element) => {
@@ -172,9 +238,14 @@ export function useCanvasGestures({
         element.removeEventListener('touchmove', onTouchMove)
         element.removeEventListener('touchend', onTouchEnd)
         element.removeEventListener('touchcancel', onTouchCancel)
+        element.removeEventListener('wheel', onWheel)
         element.removeEventListener('gesturestart', preventGestureDefault)
         element.removeEventListener('gesturechange', preventGestureDefault)
       })
+      window.removeEventListener('wheel', onWindowWheel)
+      window.removeEventListener('gesturestart', preventGestureDefault)
+      window.removeEventListener('gesturechange', preventGestureDefault)
+      window.removeEventListener('keydown', onKeyDown)
     }
   }, [onShiftLeft, onShiftRight, onZoomIn, onZoomOut, panes])
 }

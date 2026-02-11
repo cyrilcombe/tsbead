@@ -131,6 +131,10 @@
     height: 100%;
   }
 
+  .preview-grid.single-canvas {
+    grid-template-columns: 1fr;
+  }
+
   .shared-scrollbar-panel {
     display: none;
   }

@@ -12,7 +12,10 @@ import {
 import type { JBeadDocument } from '../../domain/types'
 
 const DEFAULT_FILE_NAME = 'design.jbb'
-const JBB_FILE_PICKER_ACCEPT = { 'text/plain': ['.jbb'] }
+const JBB_FILE_PICKER_ACCEPT = {
+  'application/x-jbb': ['.jbb'],
+  'text/plain': ['.jbb'],
+}
 const RECENT_FILES_LIMIT = 8
 
 interface FileSystemWritableStreamLike {
@@ -58,7 +61,7 @@ function ensureJbbFileName(fileName: string): string {
 
 function createJbbBlob(document: JBeadDocument): Blob {
   const content = serializeJbb(document)
-  return new Blob([content], { type: 'application/octet-stream' })
+  return new Blob([content], { type: 'application/x-jbb' })
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {

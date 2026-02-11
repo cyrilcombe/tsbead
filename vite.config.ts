@@ -38,6 +38,15 @@ export default defineConfig({
             purpose: 'any maskable',
           },
         ],
+        file_handlers: [
+          {
+            action: '.',
+            accept: {
+              'application/x-jbb': ['.jbb'],
+              'text/plain': ['.jbb'],
+            },
+          },
+        ],
       },
       workbox: {
         navigateFallback: `${base}index.html`,

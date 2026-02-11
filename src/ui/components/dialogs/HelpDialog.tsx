@@ -98,6 +98,15 @@ export function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
           </section>
 
           <section className="help-section">
+            <h3>{t('help.gestures.title')}</h3>
+            <ul>
+              <li>{t('help.gestures.pinch')}</li>
+              <li>{t('help.gestures.swipe')}</li>
+              <li>{t('help.gestures.editing')}</li>
+            </ul>
+          </section>
+
+          <section className="help-section">
             <h3>{t('help.pwa.title')}</h3>
             <ul>
               <li>{t('help.pwa.desktop')}</li>

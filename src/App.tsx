@@ -241,6 +241,7 @@ function App() {
   const canZoomIn = zoomIndex < MAX_ZOOM_INDEX
   const canZoomOut = zoomIndex > 0
   const hasCanvasPaneVisible = isDraftVisible || isCorrectedVisible || isSimulationVisible
+  const visibleCanvasPaneCount = Number(isDraftVisible) + Number(isCorrectedVisible) + Number(isSimulationVisible)
   const hasAnyPaneVisible = hasCanvasPaneVisible || isReportVisible
   const selectedColorValue = document.colors[selectedColor] ?? document.colors[0] ?? [0, 0, 0, 255]
   const backgroundColorValue = document.colors[0] ?? [0, 0, 0, 255]
@@ -823,6 +824,7 @@ function App() {
 
         <WorkspacePanels
           hasCanvasPaneVisible={hasCanvasPaneVisible}
+          visibleCanvasPaneCount={visibleCanvasPaneCount}
           hasAnyPaneVisible={hasAnyPaneVisible}
           isReportVisible={isReportVisible}
           isDraftVisible={isDraftVisible}

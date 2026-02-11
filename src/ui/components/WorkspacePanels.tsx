@@ -8,6 +8,7 @@ import { ReportPanel } from './ReportPanel'
 
 interface WorkspacePanelsProps {
   hasCanvasPaneVisible: boolean
+  visibleCanvasPaneCount: number
   hasAnyPaneVisible: boolean
   isReportVisible: boolean
   isDraftVisible: boolean
@@ -37,6 +38,7 @@ interface WorkspacePanelsProps {
 
 export function WorkspacePanels({
   hasCanvasPaneVisible,
+  visibleCanvasPaneCount,
   hasAnyPaneVisible,
   isReportVisible,
   isDraftVisible,
@@ -68,7 +70,7 @@ export function WorkspacePanels({
   return (
     <section className={`preview-with-scrollbar ${hasCanvasPaneVisible ? 'has-canvas' : 'no-canvas'} ${isReportVisible ? 'has-report' : 'no-report'}`}>
       {hasCanvasPaneVisible || !isReportVisible ? (
-        <section className="preview-grid">
+        <section className={`preview-grid ${visibleCanvasPaneCount <= 1 ? 'single-canvas' : ''}`}>
           {isDraftVisible ? (
             <section className="panel canvas-panel draft-panel">
               <div className="panel-title">
