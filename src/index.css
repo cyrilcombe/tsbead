@@ -51,18 +51,37 @@ body {
 
 .app-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.45rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-bottom: 0;
 }
 
 .header-main {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.55rem;
-  min-width: min(100%, 320px);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.header-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.app-logo {
+  display: block;
+  width: auto;
+  height: clamp(2.1rem, 5.8vw, 3.4rem);
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  flex: none;
 }
 
 .eyebrow {
@@ -82,7 +101,8 @@ h1 {
   margin: 0;
   font-size: 0.8rem;
   color: #4f5a5e;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: right;
 }
 
 .file-status-dirty {
@@ -93,7 +113,9 @@ h1 {
 .header-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.38rem;
+  margin-left: 0;
 }
 
 .header-action {
@@ -765,6 +787,23 @@ h1 {
 }
 
 @media (max-width: 980px) {
+  .app-header {
+    flex-wrap: wrap;
+  }
+
+  .header-controls {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .file-status {
+    text-align: left;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
     height: auto;

@@ -49,6 +49,7 @@ import {
 import { BeadCanvas } from './ui/canvas/BeadCanvas'
 import { BeadPreviewCanvas } from './ui/canvas/BeadPreviewCanvas'
 import type { CellPoint, JBeadDocument, SelectionRect, ViewPaneId } from './domain/types'
+import tsbeadLogoHorizontal from './assets/tsbead-logo-horizontal.png'
 import './index.css'
 
 const LOCAL_PROJECT_ID = 'local-default'
@@ -1269,54 +1270,56 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="header-main">
-          <h1>TsBead</h1>
+          <img className="app-logo" src={tsbeadLogoHorizontal} alt="TsBead" />
+        </div>
+        <div className="header-controls">
+          <div className="header-actions">
+            <button className="action header-action" onClick={onNewDocument}>
+              <FilePlus2 className="header-action-icon" aria-hidden="true" />
+              <span>New</span>
+            </button>
+            <button className="action header-action" onClick={() => void onOpenDocument()}>
+              <FolderOpen className="header-action-icon" aria-hidden="true" />
+              <span>Open...</span>
+            </button>
+            <button className="action header-action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
+              <FolderClock className="header-action-icon" aria-hidden="true" />
+              <span>Open recent...</span>
+            </button>
+            <button className="action header-action" onClick={() => void onSaveDocument()}>
+              <Save className="header-action-icon" aria-hidden="true" />
+              <span>Save</span>
+            </button>
+            <button className="action header-action" onClick={() => void onSaveAsDocument()}>
+              <SaveAll className="header-action-icon" aria-hidden="true" />
+              <span>Save As...</span>
+            </button>
+            <button
+              className="action header-action"
+              onClick={() => {
+                onDownloadFile(openFileName)
+              }}
+            >
+              <Download className="header-action-icon" aria-hidden="true" />
+              <span>Export .jbb</span>
+            </button>
+            <button className="action header-action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
+              <Printer className="header-action-icon" aria-hidden="true" />
+              <span>Print...</span>
+            </button>
+            <button className="action header-action" onClick={onOpenPreferencesDialog}>
+              <Settings2 className="header-action-icon" aria-hidden="true" />
+              <span>Preferences...</span>
+            </button>
+            <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
+          </div>
           <p className="file-status">
-            File: <strong>{openFileName}</strong>
+            <strong>{openFileName}</strong>
             {dirty ? <span className="file-status-dirty"> (unsaved)</span> : null}
             <button className="metadata-inline-action" onClick={onOpenMetadataDialog} title="Edit metadata">
               {metadataLabel}
             </button>
           </p>
-        </div>
-        <div className="header-actions">
-          <button className="action header-action" onClick={onNewDocument}>
-            <FilePlus2 className="header-action-icon" aria-hidden="true" />
-            <span>New</span>
-          </button>
-          <button className="action header-action" onClick={() => void onOpenDocument()}>
-            <FolderOpen className="header-action-icon" aria-hidden="true" />
-            <span>Open...</span>
-          </button>
-          <button className="action header-action" onClick={onOpenRecentDialog} disabled={recentFiles.length === 0}>
-            <FolderClock className="header-action-icon" aria-hidden="true" />
-            <span>Open recent...</span>
-          </button>
-          <button className="action header-action" onClick={() => void onSaveDocument()}>
-            <Save className="header-action-icon" aria-hidden="true" />
-            <span>Save</span>
-          </button>
-          <button className="action header-action" onClick={() => void onSaveAsDocument()}>
-            <SaveAll className="header-action-icon" aria-hidden="true" />
-            <span>Save As...</span>
-          </button>
-          <button
-            className="action header-action"
-            onClick={() => {
-              onDownloadFile(openFileName)
-            }}
-          >
-            <Download className="header-action-icon" aria-hidden="true" />
-            <span>Export .jbb</span>
-          </button>
-          <button className="action header-action" onClick={onPrintDocument} disabled={!hasAnyPaneVisible}>
-            <Printer className="header-action-icon" aria-hidden="true" />
-            <span>Print...</span>
-          </button>
-          <button className="action header-action" onClick={onOpenPreferencesDialog}>
-            <Settings2 className="header-action-icon" aria-hidden="true" />
-            <span>Preferences...</span>
-          </button>
-          <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
         </div>
       </header>
 
