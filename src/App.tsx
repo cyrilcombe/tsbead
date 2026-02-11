@@ -25,6 +25,10 @@ import { MetadataDialog } from './ui/components/dialogs/MetadataDialog'
 import { PatternSizeDialog } from './ui/components/dialogs/PatternSizeDialog'
 import { PreferencesDialog } from './ui/components/dialogs/PreferencesDialog'
 import { RecentFilesDialog } from './ui/components/dialogs/RecentFilesDialog'
+import { useBeforeUnloadGuard } from './ui/hooks/useBeforeUnloadGuard'
+import { useEditorShortcuts } from './ui/hooks/useEditorShortcuts'
+import { useMobilePortraitSinglePane } from './ui/hooks/useMobilePortraitSinglePane'
+import { usePointerDismiss } from './ui/hooks/usePointerDismiss'
 import type { CellPoint, JBeadDocument, SelectionRect, ViewPaneId } from './domain/types'
 import tsbeadLogoHorizontal from './assets/tsbead-logo-horizontal.png'
 import './index.css'
@@ -105,38 +109,6 @@ function hexToRgb(value: string): [number, number, number] | null {
 
 function getCellSize(zoomIndex: number): number {
   return ZOOM_TABLE[Math.max(0, Math.min(zoomIndex, ZOOM_TABLE.length - 1))]
-}
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false
-  }
-  const tagName = target.tagName
-  return target.isContentEditable || tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT'
-}
-
-function colorFromKeyboardCode(code: string): number | null {
-  if (code.startsWith('Digit')) {
-    const value = Number(code.slice('Digit'.length))
-    return Number.isInteger(value) && value >= 0 && value <= 9 ? value : null
-  }
-  if (code.startsWith('Numpad')) {
-    const value = Number(code.slice('Numpad'.length))
-    return Number.isInteger(value) && value >= 0 && value <= 9 ? value : null
-  }
-  return null
-}
-
-function shortcutFromKeyboardCode(code: string): number | null {
-  if (code.startsWith('Digit')) {
-    const value = Number(code.slice('Digit'.length))
-    return Number.isInteger(value) && value >= 1 && value <= 9 ? value : null
-  }
-  if (code.startsWith('Numpad')) {
-    const value = Number(code.slice('Numpad'.length))
-    return Number.isInteger(value) && value >= 1 && value <= 9 ? value : null
-  }
-  return null
 }
 
 function ensureJbbFileName(fileName: string): string {
@@ -239,11 +211,21 @@ function App() {
   const mobileColorMenuRef = useRef<HTMLDivElement | null>(null)
   const mobileBackgroundMenuRef = useRef<HTMLDivElement | null>(null)
   const dragStartRef = useRef<CellPoint | null>(null)
-  const isSpaceToolActiveRef = useRef(false)
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
   const correctedScrollRef = useRef<HTMLDivElement | null>(null)
   const simulationScrollRef = useRef<HTMLDivElement | null>(null)
   const syncingScrollRef = useRef(false)
+  const dismissibleMenuRefs = useMemo(
+    () => [
+      viewsMenuRef,
+      colorMenuRef,
+      backgroundMenuRef,
+      mobileActionsMenuRef,
+      mobileColorMenuRef,
+      mobileBackgroundMenuRef,
+    ],
+    [],
+  )
   const [sharedMaxScrollRow, setSharedMaxScrollRow] = useState(0)
   const [viewportTick, setViewportTick] = useState(0)
   const [dragPreview, setDragPreview] = useState<SelectionRect | null>(null)
@@ -346,35 +328,18 @@ function App() {
     }
   }, [refreshRecentFiles])
 
-  useEffect(() => {
-    if (!isViewsMenuOpen && !isColorMenuOpen && !isBackgroundMenuOpen && !isMobileActionsMenuOpen) {
-      return
-    }
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target
-      if (!(target instanceof Node)) {
-        return
-      }
-      if (
-        viewsMenuRef.current?.contains(target) ||
-        colorMenuRef.current?.contains(target) ||
-        backgroundMenuRef.current?.contains(target) ||
-        mobileActionsMenuRef.current?.contains(target) ||
-        mobileColorMenuRef.current?.contains(target) ||
-        mobileBackgroundMenuRef.current?.contains(target)
-      ) {
-        return
-      }
-      setIsViewsMenuOpen(false)
-      setIsColorMenuOpen(false)
-      setIsBackgroundMenuOpen(false)
-      setIsMobileActionsMenuOpen(false)
-    }
-    window.addEventListener('pointerdown', onPointerDown)
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown)
-    }
-  }, [isBackgroundMenuOpen, isColorMenuOpen, isMobileActionsMenuOpen, isViewsMenuOpen])
+  const onCloseMenus = useCallback(() => {
+    setIsViewsMenuOpen(false)
+    setIsColorMenuOpen(false)
+    setIsBackgroundMenuOpen(false)
+    setIsMobileActionsMenuOpen(false)
+  }, [])
+
+  usePointerDismiss({
+    enabled: isViewsMenuOpen || isColorMenuOpen || isBackgroundMenuOpen || isMobileActionsMenuOpen,
+    refs: dismissibleMenuRefs,
+    onDismiss: onCloseMenus,
+  })
 
   const width = document.model.rows[0]?.length ?? 0
   const height = document.model.rows.length
@@ -795,24 +760,13 @@ function App() {
     [setViewVisibility],
   )
 
-  useEffect(() => {
-    const mobilePortraitQuery = window.matchMedia('(max-width: 980px) and (orientation: portrait)')
-    if (!mobilePortraitQuery.matches) {
-      return
-    }
-    const visibleCount = Number(isDraftVisible) + Number(isCorrectedVisible) + Number(isSimulationVisible) + Number(isReportVisible)
-    if (visibleCount === 1) {
-      return
-    }
-    const nextPane: ViewPaneId = isDraftVisible
-      ? 'draft'
-      : isCorrectedVisible
-        ? 'corrected'
-        : isSimulationVisible
-          ? 'simulation'
-          : 'report'
-    onSelectMobileView(nextPane)
-  }, [isCorrectedVisible, isDraftVisible, isReportVisible, isSimulationVisible, onSelectMobileView])
+  useMobilePortraitSinglePane({
+    isDraftVisible,
+    isCorrectedVisible,
+    isSimulationVisible,
+    isReportVisible,
+    onSelectMobileView,
+  })
 
   const onApplyPreferences = useCallback(async () => {
     const nextSettings: AppSettings = {
@@ -1040,219 +994,53 @@ function App() {
     viewportTick,
   ])
 
-  useEffect(() => {
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!dirty) {
-        return
-      }
-      event.preventDefault()
-      event.returnValue = ''
-    }
-    window.addEventListener('beforeunload', onBeforeUnload)
-    return () => {
-      window.removeEventListener('beforeunload', onBeforeUnload)
-    }
-  }, [dirty])
+  const onCloseBlockingDialogs = useCallback(() => {
+    setIsPreferencesDialogOpen(false)
+    setIsCreditsDialogOpen(false)
+    setIsMobileActionsMenuOpen(false)
+    setIsMetadataDialogOpen(false)
+    setIsRecentDialogOpen(false)
+    setIsArrangeDialogOpen(false)
+    setIsPatternSizeDialogOpen(false)
+  }, [])
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((isViewsMenuOpen || isColorMenuOpen || isBackgroundMenuOpen || isMobileActionsMenuOpen) && event.key === 'Escape') {
-        setIsViewsMenuOpen(false)
-        setIsColorMenuOpen(false)
-        setIsBackgroundMenuOpen(false)
-        setIsMobileActionsMenuOpen(false)
-        event.preventDefault()
-        return
-      }
+  useBeforeUnloadGuard(dirty)
 
-      if (
-        isPreferencesDialogOpen ||
-        isCreditsDialogOpen ||
-        isMobileActionsMenuOpen ||
-        isMetadataDialogOpen ||
-        isRecentDialogOpen ||
-        isArrangeDialogOpen ||
-        isPatternSizeDialogOpen
-      ) {
-        if (event.key === 'Escape') {
-          setIsPreferencesDialogOpen(false)
-          setIsCreditsDialogOpen(false)
-          setIsMobileActionsMenuOpen(false)
-          setIsMetadataDialogOpen(false)
-          setIsRecentDialogOpen(false)
-          setIsArrangeDialogOpen(false)
-          setIsPatternSizeDialogOpen(false)
-          event.preventDefault()
-        }
-        return
-      }
+  const areMenusOpen = isViewsMenuOpen || isColorMenuOpen || isBackgroundMenuOpen || isMobileActionsMenuOpen
+  const areBlockingDialogsOpen =
+    isPreferencesDialogOpen ||
+    isCreditsDialogOpen ||
+    isMobileActionsMenuOpen ||
+    isMetadataDialogOpen ||
+    isRecentDialogOpen ||
+    isArrangeDialogOpen ||
+    isPatternSizeDialogOpen
 
-      if (isEditableTarget(event.target)) {
-        return
-      }
-
-      const hasModifier = event.ctrlKey || event.metaKey
-      let handled = false
-
-      if (hasModifier && !event.altKey) {
-        const lowerKey = event.key.toLowerCase()
-        if (lowerKey === 'z') {
-          if (event.shiftKey) {
-            redo()
-          } else {
-            undo()
-          }
-          handled = true
-        } else if (lowerKey === 'y') {
-          redo()
-          handled = true
-        } else if (lowerKey === 'p' && event.shiftKey) {
-          onOpenPreferencesDialog()
-          handled = true
-        } else if (lowerKey === 'p' && !event.shiftKey) {
-          onPrintDocument()
-          handled = true
-        } else if (event.code === 'Comma' && !event.shiftKey) {
-          onOpenPreferencesDialog()
-          handled = true
-        } else if (lowerKey === 'i' && !event.shiftKey) {
-          setIsZoomFitMode(false)
-          zoomIn()
-          handled = true
-        } else if (lowerKey === 'u' && !event.shiftKey) {
-          setIsZoomFitMode(false)
-          zoomOut()
-          handled = true
-        } else if (lowerKey === 'n' && !event.shiftKey) {
-          onNewDocument()
-          handled = true
-        } else if (lowerKey === 'o') {
-          if (event.shiftKey) {
-            onOpenRecentDialog()
-          } else {
-            void onOpenDocument()
-          }
-          handled = true
-        } else if (lowerKey === 's') {
-          if (event.shiftKey) {
-            void onSaveAsDocument()
-          } else {
-            void onSaveDocument()
-          }
-          handled = true
-        } else {
-          const shortcut = shortcutFromKeyboardCode(event.code)
-          if (shortcut === 1 && !event.shiftKey) {
-            setSelectedTool('pencil')
-            handled = true
-          } else if (shortcut === 2 && !event.shiftKey) {
-            setSelectedTool('line')
-            handled = true
-          } else if (shortcut === 3 && !event.shiftKey) {
-            setSelectedTool('fill')
-            handled = true
-          } else if (shortcut === 4 && !event.shiftKey) {
-            setSelectedTool('select')
-            handled = true
-          } else if (shortcut === 5 && !event.shiftKey) {
-            onDeleteSelection()
-            handled = true
-          } else if (shortcut === 6 && !event.shiftKey) {
-            setSelectedTool('pipette')
-            handled = true
-          }
-        }
-      } else if (!event.altKey) {
-        const colorFromCode = colorFromKeyboardCode(event.code)
-        if (colorFromCode !== null) {
-          setSelectedColor(colorFromCode)
-          handled = true
-        } else if (event.key === 'Escape') {
-          clearSelection()
-          handled = true
-        } else if (event.code === 'Space') {
-          if (!event.repeat) {
-            isSpaceToolActiveRef.current = true
-            setSelectedTool('pipette')
-          }
-          handled = true
-        } else if (event.key === 'F8') {
-          onOpenArrangeDialog()
-          handled = true
-        } else if (event.key >= '0' && event.key <= '9') {
-          setSelectedColor(Number(event.key))
-          handled = true
-        } else if (event.key === 'ArrowLeft') {
-          shiftLeft()
-          handled = true
-        } else if (event.key === 'ArrowRight') {
-          shiftRight()
-          handled = true
-        }
-      }
-
-      if (handled) {
-        event.preventDefault()
-      }
-    }
-
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (isEditableTarget(event.target)) {
-        return
-      }
-      if (event.code === 'Space' && isSpaceToolActiveRef.current) {
-        isSpaceToolActiveRef.current = false
-        setSelectedTool('pencil')
-        event.preventDefault()
-      }
-    }
-
-    const onBlur = () => {
-      if (!isSpaceToolActiveRef.current) {
-        return
-      }
-      isSpaceToolActiveRef.current = false
-      setSelectedTool('pencil')
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('keyup', onKeyUp)
-    window.addEventListener('blur', onBlur)
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('keyup', onKeyUp)
-      window.removeEventListener('blur', onBlur)
-    }
-  }, [
-    clearSelection,
-    isArrangeDialogOpen,
-    isBackgroundMenuOpen,
-    isCreditsDialogOpen,
-    isMobileActionsMenuOpen,
-    isColorMenuOpen,
-    isMetadataDialogOpen,
-    isPreferencesDialogOpen,
-    isRecentDialogOpen,
-    isViewsMenuOpen,
-    isPatternSizeDialogOpen,
-    onDeleteSelection,
+  useEditorShortcuts({
+    areMenusOpen,
+    areBlockingDialogsOpen,
+    onCloseMenus,
+    onCloseBlockingDialogs,
+    onUndo: undo,
+    onRedo: redo,
+    onOpenPreferences: onOpenPreferencesDialog,
+    onPrint: onPrintDocument,
+    onSetZoomFitMode: setIsZoomFitMode,
+    onZoomIn: zoomIn,
+    onZoomOut: zoomOut,
     onNewDocument,
+    onOpenRecent: onOpenRecentDialog,
     onOpenDocument,
-    onOpenPreferencesDialog,
-    onOpenRecentDialog,
-    onOpenArrangeDialog,
-    onPrintDocument,
-    onSaveAsDocument,
-    onSaveDocument,
-    redo,
-    setSelectedColor,
-    setSelectedTool,
-    zoomIn,
-    zoomOut,
-    shiftLeft,
-    shiftRight,
-    undo,
-  ])
+    onSaveAs: onSaveAsDocument,
+    onSave: onSaveDocument,
+    onSetSelectedTool: setSelectedTool,
+    onDeleteSelection,
+    onSetSelectedColor: setSelectedColor,
+    onClearSelection: clearSelection,
+    onOpenArrange: onOpenArrangeDialog,
+    onShiftLeft: shiftLeft,
+    onShiftRight: shiftRight,
+  })
 
   useEffect(() => {
     const nextSharedMaxRow = getSharedMaxRow()
