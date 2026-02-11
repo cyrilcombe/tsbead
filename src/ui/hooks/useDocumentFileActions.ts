@@ -58,7 +58,7 @@ function ensureJbbFileName(fileName: string): string {
 
 function createJbbBlob(document: JBeadDocument): Blob {
   const content = serializeJbb(document)
-  return new Blob([content], { type: 'text/plain;charset=utf-8' })
+  return new Blob([content], { type: 'application/octet-stream' })
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -102,7 +102,11 @@ export function useDocumentFileActions({
       const link = window.document.createElement('a')
       link.href = url
       link.download = ensureJbbFileName(fileName)
+      link.rel = 'noopener'
+      link.style.display = 'none'
+      window.document.body.appendChild(link)
       link.click()
+      window.document.body.removeChild(link)
       URL.revokeObjectURL(url)
     },
     [document],

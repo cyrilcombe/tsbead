@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_BEAD_SYMBOLS } from './domain/defaults'
 import { useEditorStore } from './domain/editorStore'
 import { buildReportSummary } from './domain/report'
+import { MAX_ZOOM_INDEX } from './domain/zoom'
 import { useI18n } from './i18n/I18nProvider'
 import type { AppLocale } from './i18n/translations'
 import {
@@ -25,6 +26,7 @@ import { useDocumentFileActions } from './ui/hooks/useDocumentFileActions'
 import { useEditorShortcuts } from './ui/hooks/useEditorShortcuts'
 import { useMobilePortraitSinglePane } from './ui/hooks/useMobilePortraitSinglePane'
 import { usePaneSync } from './ui/hooks/usePaneSync'
+import { useCanvasGestures } from './ui/hooks/useCanvasGestures'
 import { usePointerEditing } from './ui/hooks/usePointerEditing'
 import { usePointerDismiss } from './ui/hooks/usePointerDismiss'
 import { useProjectBootstrap } from './ui/hooks/useProjectBootstrap'
@@ -236,7 +238,7 @@ function App() {
   const drawColors = document.view.drawColors
   const drawSymbols = document.view.drawSymbols
   const zoomIndex = document.view.zoom
-  const canZoomIn = zoomIndex < 7
+  const canZoomIn = zoomIndex < MAX_ZOOM_INDEX
   const canZoomOut = zoomIndex > 0
   const hasCanvasPaneVisible = isDraftVisible || isCorrectedVisible || isSimulationVisible
   const hasAnyPaneVisible = hasCanvasPaneVisible || isReportVisible
@@ -284,6 +286,25 @@ function App() {
     shift: document.view.shift,
     setViewScroll,
     setZoom,
+  })
+
+  const gesturePaneRefs = useMemo(
+    () => [draftScrollRef, correctedScrollRef, simulationScrollRef],
+    [correctedScrollRef, draftScrollRef, simulationScrollRef],
+  )
+
+  useCanvasGestures({
+    panes: gesturePaneRefs,
+    onZoomIn: () => {
+      setIsZoomFitMode(false)
+      zoomIn()
+    },
+    onZoomOut: () => {
+      setIsZoomFitMode(false)
+      zoomOut()
+    },
+    onShiftLeft: () => shiftLeft(),
+    onShiftRight: () => shiftRight(),
   })
 
   const reportSummary = useMemo(
@@ -447,22 +468,12 @@ function App() {
     setIsMetadataDialogOpen(true)
   }, [document.author, document.notes, document.organization])
 
-  const onSelectMobileView = useCallback(
-    (pane: ViewPaneId) => {
-      setViewVisibility('draft', pane === 'draft')
-      setViewVisibility('corrected', pane === 'corrected')
-      setViewVisibility('simulation', pane === 'simulation')
-      setViewVisibility('report', pane === 'report')
-    },
-    [setViewVisibility],
-  )
-
-  useMobilePortraitSinglePane({
+  const { isCompactTabsMode, maxVisiblePanes } = useMobilePortraitSinglePane({
     isDraftVisible,
     isCorrectedVisible,
     isSimulationVisible,
     isReportVisible,
-    onSelectMobileView,
+    onSetPaneVisibility: setViewVisibility,
   })
 
   const onApplyPreferences = useCallback(async () => {
@@ -542,13 +553,55 @@ function App() {
     simulation: isSimulationVisible,
     report: isReportVisible,
   }
-  const mobileActivePane: ViewPaneId = isDraftVisible
-    ? 'draft'
-    : isCorrectedVisible
-      ? 'corrected'
-      : isSimulationVisible
-        ? 'simulation'
-        : 'report'
+  const onToggleMobileView = useCallback(
+    (pane: ViewPaneId) => {
+      const visibleByPane: Record<ViewPaneId, boolean> = {
+        draft: isDraftVisible,
+        corrected: isCorrectedVisible,
+        simulation: isSimulationVisible,
+        report: isReportVisible,
+      }
+      const orderedPanes: ViewPaneId[] = ['draft', 'corrected', 'simulation', 'report']
+      const visiblePanes = orderedPanes.filter((id) => visibleByPane[id])
+      const isVisible = visibleByPane[pane]
+
+      if (!isCompactTabsMode) {
+        // Desktop behavior: open one pane and keep others unchanged is confusing.
+        // Keep mobile tab interactions no-op outside compact mode.
+        return
+      }
+
+      if (isVisible) {
+        if (visiblePanes.length <= 1) {
+          return
+        }
+        setViewVisibility(pane, false)
+        return
+      }
+
+      if (maxVisiblePanes === 1) {
+        orderedPanes.forEach((id) => {
+          setViewVisibility(id, id === pane)
+        })
+        return
+      }
+
+      if (visiblePanes.length >= maxVisiblePanes) {
+        // Keep the latest selection by dropping the first visible pane.
+        setViewVisibility(visiblePanes[0], false)
+      }
+      setViewVisibility(pane, true)
+    },
+    [
+      isCompactTabsMode,
+      isCorrectedVisible,
+      isDraftVisible,
+      isReportVisible,
+      isSimulationVisible,
+      maxVisiblePanes,
+      setViewVisibility,
+    ],
+  )
 
   const paneLabels = useMemo(
     () => ({
@@ -634,13 +687,13 @@ function App() {
         hasAnyPaneVisible={hasAnyPaneVisible}
         recentFilesCount={recentFiles.length}
         isMobileActionsMenuOpen={isMobileActionsMenuOpen}
-        mobileActivePane={mobileActivePane}
+        mobilePaneVisibilityById={paneVisibilityById}
         panes={panes}
         mobileActionsMenuRef={mobileActionsMenuRef}
         openFileInputRef={openFileInputRef}
         onToggleMobileActionsMenu={() => setIsMobileActionsMenuOpen((value) => !value)}
         onCloseMobileActionsMenu={() => setIsMobileActionsMenuOpen(false)}
-        onSelectMobileView={onSelectMobileView}
+        onToggleMobileView={onToggleMobileView}
         onNewDocument={onNewDocument}
         onOpenDocument={onOpenDocument}
         onOpenRecentDialog={onOpenRecentDialog}

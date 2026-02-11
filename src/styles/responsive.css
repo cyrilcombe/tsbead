@@ -1,71 +1,10 @@
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .mobile-view-tabs {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.35rem;
   }
-}
 
-@media (max-width: 1200px) {
-  .app-header {
-    flex-wrap: wrap;
-  }
-
-  .header-controls {
-    width: 100%;
-    align-items: flex-start;
-  }
-
-  .header-actions {
-    justify-content: flex-start;
-  }
-
-  .file-status {
-    text-align: left;
-  }
-
-  .workspace {
-    grid-template-columns: 1fr;
-    height: auto;
-    overflow: auto;
-  }
-
-  .toolbar-view {
-    margin-left: 0;
-    justify-content: flex-start;
-  }
-
-  .preview-grid {
-    grid-template-columns: 1fr;
-    grid-auto-rows: auto;
-    height: auto;
-  }
-
-  .preview-with-scrollbar {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-
-  .preview-with-scrollbar.has-canvas.no-report,
-  .preview-with-scrollbar.has-canvas.has-report {
-    grid-template-columns: 1fr;
-  }
-
-  .shared-scrollbar-panel {
-    display: none;
-  }
-
-  .sidebar {
-    order: -1;
-    overflow: visible;
-  }
-
-  .canvas-panel {
-    min-height: auto;
-  }
-}
-
-@media (max-width: 1200px) {
   .app-shell {
     grid-template-rows: auto auto auto minmax(0, 1fr);
   }
@@ -173,5 +112,57 @@
 
   .preview-with-scrollbar {
     min-width: 0;
+    grid-template-columns: 1fr;
+    height: 100%;
+  }
+
+  .preview-with-scrollbar.has-canvas.no-report {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-with-scrollbar.has-canvas.has-report {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  }
+
+  .preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    min-height: 0;
+    height: 100%;
+  }
+
+  .shared-scrollbar-panel {
+    display: none;
+  }
+
+  .sidebar {
+    order: -1;
+    overflow: visible;
+  }
+
+  .canvas-panel {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 500px) {
+  .mobile-view-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    height: auto;
+  }
+
+  .preview-with-scrollbar {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .preview-with-scrollbar.has-canvas.has-report,
+  .preview-with-scrollbar.has-canvas.no-report {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './defaults'
 import { useEditorStore } from './editorStore'
+import { MAX_ZOOM_INDEX, NORMAL_ZOOM_INDEX } from './zoom'
 
 describe('editor store', () => {
   beforeEach(() => {
@@ -459,12 +460,12 @@ describe('editor store', () => {
     expect(useEditorStore.getState().document.view.zoom).toBe(3)
 
     useEditorStore.getState().zoomNormal()
-    expect(useEditorStore.getState().document.view.zoom).toBe(3)
+    expect(useEditorStore.getState().document.view.zoom).toBe(NORMAL_ZOOM_INDEX)
 
     for (let index = 0; index < 20; index += 1) {
       useEditorStore.getState().zoomIn()
     }
-    expect(useEditorStore.getState().document.view.zoom).toBe(7)
+    expect(useEditorStore.getState().document.view.zoom).toBe(MAX_ZOOM_INDEX)
 
     for (let index = 0; index < 20; index += 1) {
       useEditorStore.getState().zoomOut()
@@ -472,7 +473,7 @@ describe('editor store', () => {
     expect(useEditorStore.getState().document.view.zoom).toBe(0)
 
     useEditorStore.getState().setZoom(99)
-    expect(useEditorStore.getState().document.view.zoom).toBe(7)
+    expect(useEditorStore.getState().document.view.zoom).toBe(MAX_ZOOM_INDEX)
 
     useEditorStore.getState().setZoom(-3)
     expect(useEditorStore.getState().document.view.zoom).toBe(0)

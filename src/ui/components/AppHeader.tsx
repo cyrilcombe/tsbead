@@ -28,13 +28,13 @@ interface AppHeaderProps {
   hasAnyPaneVisible: boolean
   recentFilesCount: number
   isMobileActionsMenuOpen: boolean
-  mobileActivePane: ViewPaneId
+  mobilePaneVisibilityById: Record<ViewPaneId, boolean>
   panes: ViewPaneEntry[]
   mobileActionsMenuRef: RefObject<HTMLDivElement | null>
   openFileInputRef: RefObject<HTMLInputElement | null>
   onToggleMobileActionsMenu: () => void
   onCloseMobileActionsMenu: () => void
-  onSelectMobileView: (pane: ViewPaneId) => void
+  onToggleMobileView: (pane: ViewPaneId) => void
   onNewDocument: () => void
   onOpenDocument: () => Promise<void>
   onOpenRecentDialog: () => void
@@ -56,13 +56,13 @@ export function AppHeader({
   hasAnyPaneVisible,
   recentFilesCount,
   isMobileActionsMenuOpen,
-  mobileActivePane,
+  mobilePaneVisibilityById,
   panes,
   mobileActionsMenuRef,
   openFileInputRef,
   onToggleMobileActionsMenu,
   onCloseMobileActionsMenu,
-  onSelectMobileView,
+  onToggleMobileView,
   onNewDocument,
   onOpenDocument,
   onOpenRecentDialog,
@@ -262,7 +262,12 @@ export function AppHeader({
 
       <section className="mobile-view-tabs" aria-label={t('view.tabsAria')}>
         {panes.map((pane) => (
-          <button key={`mobile-tab-${pane.id}`} className={`action mobile-view-tab ${mobileActivePane === pane.id ? 'active' : ''}`} onClick={() => onSelectMobileView(pane.id)}>
+          <button
+            key={`mobile-tab-${pane.id}`}
+            className={`action mobile-view-tab ${mobilePaneVisibilityById[pane.id] ? 'active' : ''}`}
+            aria-pressed={mobilePaneVisibilityById[pane.id]}
+            onClick={() => onToggleMobileView(pane.id)}
+          >
             {pane.label}
           </button>
         ))}

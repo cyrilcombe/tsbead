@@ -30,17 +30,16 @@ vi.mock('./ui/canvas/BeadPreviewCanvas', () => ({
   BeadPreviewCanvas: () => <div data-testid="bead-preview-canvas" />,
 }))
 
-function setMatchMedia(isCompactTabsMode: boolean): void {
+function setMatchMedia(mode: 'desktop' | 'compact' | 'single'): void {
   vi.stubGlobal(
     'matchMedia',
     vi.fn((query: string) => ({
       matches:
-        isCompactTabsMode &&
+        (mode === 'compact' || mode === 'single') &&
         (
-          query === '(max-width: 1200px)' ||
-          query === '(max-width: 980px)' ||
-          query === '(max-width: 980px) and (orientation: portrait)'
-        ),
+          query === '(max-width: 1024px)'
+        ) ||
+        (mode === 'single' && query === '(max-width: 500px)'),
       media: query,
       onchange: null,
       addListener: () => {},
@@ -56,7 +55,7 @@ describe('App smoke', () => {
   beforeEach(() => {
     useEditorStore.getState().reset()
     useEditorStore.getState().setDocument(createEmptyDocument())
-    setMatchMedia(false)
+    setMatchMedia('desktop')
   })
 
   it('renders and opens help dialog', async () => {
@@ -71,7 +70,7 @@ describe('App smoke', () => {
   })
 
   it('keeps a single visible pane on initial mobile portrait render', async () => {
-    setMatchMedia(true)
+    setMatchMedia('single')
     render(
       <I18nProvider>
         <App />

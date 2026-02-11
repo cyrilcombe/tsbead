@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createEmptyDocument, DEFAULT_BEAD_SYMBOLS } from './defaults'
 import { getLinePoints, normalizeRect, snapLineEnd, type NormalizedRect } from './gridMath'
+import { MAX_ZOOM_INDEX, MIN_ZOOM_INDEX, NORMAL_ZOOM_INDEX } from './zoom'
 import type { CellPoint, JBeadDocument, RgbaColor, SelectionRect, ToolId, ViewPaneId } from './types'
 
 interface EditorState {
@@ -77,10 +78,6 @@ function cloneRows(rows: number[][]): number[][] {
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
-
-const MIN_ZOOM_INDEX = 0
-const MAX_ZOOM_INDEX = 7
-const NORMAL_ZOOM_INDEX = 3
 
 function isInside(document: JBeadDocument, point: CellPoint): boolean {
   const rows = document.model.rows

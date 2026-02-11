@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CellPoint, JBeadDocument, RgbaColor } from '../../domain/types'
+import { getCellSize } from '../../domain/zoom'
 import { useI18n } from '../../i18n/I18nProvider'
 import { getBeadSymbol, getContrastingSymbolColor } from './beadStyle'
 
@@ -41,11 +42,6 @@ interface CellPixelRect {
 function toCss(color: RgbaColor): string {
   const [red, green, blue, alpha = 255] = color
   return `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`
-}
-
-function getCellSize(zoomIndex: number): number {
-  const zoomTable = [6, 8, 10, 12, 14, 16, 18, 20]
-  return zoomTable[Math.max(0, Math.min(zoomIndex, zoomTable.length - 1))]
 }
 
 function correctedPointFromIndex(index: number, width: number): { x: number; y: number } {

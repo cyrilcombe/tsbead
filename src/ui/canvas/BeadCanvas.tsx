@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { getLinePoints, normalizeRect, snapLineEnd } from '../../domain/gridMath'
 import type { CellPoint, JBeadDocument, RgbaColor, SelectionRect } from '../../domain/types'
+import { getCellSize } from '../../domain/zoom'
 import { useI18n } from '../../i18n/I18nProvider'
 import { getBeadSymbol, getContrastingSymbolColor } from './beadStyle'
 
@@ -25,11 +26,6 @@ function toCss(color: RgbaColor): string {
   return `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`
 }
 
-function getCellSize(zoomIndex: number): number {
-  const zoomTable = [6, 8, 10, 12, 14, 16, 18, 20]
-  return zoomTable[Math.max(0, Math.min(zoomIndex, zoomTable.length - 1))]
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
@@ -48,7 +44,12 @@ export function BeadCanvas({
   const { t } = useI18n()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const isPointerDownRef = useRef(false)
+  const lastPointRef = useRef<CellPoint | null>(null)
   const cellSize = getCellSize(document.view.zoom)
+  const isDragTool =
+    document.view.selectedTool === 'pencil' ||
+    document.view.selectedTool === 'line' ||
+    document.view.selectedTool === 'select'
   const totalHeight = document.model.rows.length
   const boundedRowStart = clamp(Math.floor(rowStart ?? 0), 0, totalHeight)
   const boundedRowEnd = clamp(Math.floor(rowEndExclusive ?? totalHeight), boundedRowStart, totalHeight)
@@ -209,7 +210,7 @@ export function BeadCanvas({
     }
   }, [boundedRowStart, cellSize, document, height, linePreview, selectionOverlay, totalHeight, width])
 
-  const getPoint = (event: React.PointerEvent<HTMLCanvasElement>): CellPoint | null => {
+  const getPoint = (event: React.PointerEvent<HTMLCanvasElement>, clampOutsideBounds = false): CellPoint | null => {
     if (!isInteractive) {
       return null
     }
@@ -221,7 +222,7 @@ export function BeadCanvas({
     const bounds = canvas.getBoundingClientRect()
     const rawX = Math.floor((event.clientX - bounds.left - GRID_OFFSET_X) / cellSize)
     const rawY = Math.floor((event.clientY - bounds.top) / cellSize)
-    if (rawX < 0 || rawX >= width || rawY < 0 || rawY >= height) {
+    if (!clampOutsideBounds && (rawX < 0 || rawX >= width || rawY < 0 || rawY >= height)) {
       return null
     }
     return { x: clamp(rawX, 0, width - 1), y: clamp(rawY + boundedRowStart, boundedRowStart, boundedRowEnd - 1) }
@@ -231,6 +232,7 @@ export function BeadCanvas({
     <canvas
       ref={canvasRef}
       className="bead-canvas"
+      style={{ touchAction: isDragTool ? 'none' : 'pan-x pan-y' }}
       onPointerDown={(event) => {
         if (!isInteractive || event.button !== 0) {
           return
@@ -240,7 +242,8 @@ export function BeadCanvas({
           return
         }
         isPointerDownRef.current = true
-        if (event.pointerType !== 'touch') {
+        lastPointRef.current = point
+        if (event.pointerType !== 'touch' || isDragTool) {
           event.currentTarget.setPointerCapture(event.pointerId)
         }
         handlePointerDown(point)
@@ -249,8 +252,9 @@ export function BeadCanvas({
         if (!isInteractive || !isPointerDownRef.current) {
           return
         }
-        const point = getPoint(event)
+        const point = getPoint(event, true)
         if (point) {
+          lastPointRef.current = point
           handlePointerMove(point)
         }
       }}
@@ -259,7 +263,8 @@ export function BeadCanvas({
           return
         }
         isPointerDownRef.current = false
-        const point = getPoint(event)
+        const point = getPoint(event, true) ?? lastPointRef.current
+        lastPointRef.current = null
         if (point) {
           handlePointerUp(point)
         }
@@ -272,6 +277,7 @@ export function BeadCanvas({
           return
         }
         isPointerDownRef.current = false
+        lastPointRef.current = null
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId)
         }

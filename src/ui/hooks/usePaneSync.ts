@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-
-const ZOOM_TABLE = [6, 8, 10, 12, 14, 16, 18, 20]
-
-function getCellSize(zoomIndex: number): number {
-  return ZOOM_TABLE[Math.max(0, Math.min(zoomIndex, ZOOM_TABLE.length - 1))]
-}
+import { MAX_ZOOM_INDEX, getCellSize } from '../../domain/zoom'
 
 interface UsePaneSyncOptions {
   rows: number[][]
@@ -121,7 +116,7 @@ export function usePaneSync({
       }
     })
 
-    for (let candidate = ZOOM_TABLE.length - 1; candidate >= 0; candidate -= 1) {
+    for (let candidate = MAX_ZOOM_INDEX; candidate >= 0; candidate -= 1) {
       const candidateCellSize = getCellSize(candidate)
       const fits = paneContentUnits.every((item) => {
         if (!item) {
