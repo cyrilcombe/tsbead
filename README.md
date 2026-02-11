@@ -1,6 +1,8 @@
 # TsBead
 
-Modern web rewrite of JBead, focused on:
+TsBead is a TypeScript port of the excellent original work done by Damian Brunold on JBead.
+
+This modern web rewrite is focused on:
 - no Java runtime required
 - browser-first usage
 - offline local persistence
@@ -9,7 +11,13 @@ Modern web rewrite of JBead, focused on:
 ## File Format Scope
 
 - Supported in web app: `.jbb`
-- Not planned in web app: `.dbb` legacy format
+- Legacy `.dbb` format: not supported
+
+## Credits
+
+- Original author: Damian Brunold
+- JBead website: https://www.jbead.ch/
+- JBead GitHub: https://github.com/damianbrunold/jbead
 
 ## Tech Stack
 

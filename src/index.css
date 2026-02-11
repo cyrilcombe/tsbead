@@ -704,6 +704,35 @@ h1 {
   width: min(560px, 100%);
 }
 
+.credits-dialog {
+  width: min(640px, 100%);
+}
+
+.credits-content {
+  display: grid;
+  gap: 0.6rem;
+  color: #30383b;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.credits-content p {
+  margin: 0;
+}
+
+.credits-content ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.credits-content li {
+  margin: 0.14rem 0;
+}
+
+.credits-content a {
+  color: #245a58;
+}
+
 .recent-empty {
   margin: 0;
   color: var(--muted);

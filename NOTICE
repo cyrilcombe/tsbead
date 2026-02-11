@@ -1,12 +1,17 @@
-This project is a modern rewrite derived from the original JBead software.
+This project is a TypeScript port and modern rewrite derived from the original JBead software.
 
 Original project:
 - Name: JBead (formerly DB-BEAD)
 - Author: Damian Brunold
-- Website: http://www.jbead.ch
+- Website: https://www.jbead.ch/
+- GitHub: https://github.com/damianbrunold/jbead
 - License: GNU General Public License v3.0 or later
 
 The original source is available in this workspace at:
 - /Users/cyrilcombe/Dev/perso/jbead
+
+Format support in this rewrite:
+- Supported: `.jbb`
+- Not supported: legacy `.dbb`
 
 This rewrite keeps GPL-compatible licensing and attribution.

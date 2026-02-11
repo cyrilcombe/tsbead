@@ -8,6 +8,7 @@ import {
   FilePlus2,
   FolderClock,
   FolderOpen,
+  Info,
   Printer,
   LayoutGrid,
   Minus,
@@ -282,6 +283,7 @@ function App() {
   const [isRecentDialogOpen, setIsRecentDialogOpen] = useState(false)
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false)
+  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false)
   const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false)
   const [isViewsMenuOpen, setIsViewsMenuOpen] = useState(false)
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false)
@@ -788,6 +790,10 @@ function App() {
     setIsPreferencesDialogOpen(true)
   }, [appSettings])
 
+  const onOpenCreditsDialog = useCallback(() => {
+    setIsCreditsDialogOpen(true)
+  }, [])
+
   const onOpenMetadataDialog = useCallback(() => {
     setMetadataAuthorInput(document.author)
     setMetadataOrganizationInput(document.organization)
@@ -1040,6 +1046,7 @@ function App() {
 
       if (
         isPreferencesDialogOpen ||
+        isCreditsDialogOpen ||
         isMetadataDialogOpen ||
         isRecentDialogOpen ||
         isArrangeDialogOpen ||
@@ -1047,6 +1054,7 @@ function App() {
       ) {
         if (event.key === 'Escape') {
           setIsPreferencesDialogOpen(false)
+          setIsCreditsDialogOpen(false)
           setIsMetadataDialogOpen(false)
           setIsRecentDialogOpen(false)
           setIsArrangeDialogOpen(false)
@@ -1196,6 +1204,7 @@ function App() {
     clearSelection,
     isArrangeDialogOpen,
     isBackgroundMenuOpen,
+    isCreditsDialogOpen,
     isColorMenuOpen,
     isMetadataDialogOpen,
     isPreferencesDialogOpen,
@@ -1310,6 +1319,10 @@ function App() {
             <button className="action header-action" onClick={onOpenPreferencesDialog}>
               <Settings2 className="header-action-icon" aria-hidden="true" />
               <span>Preferences...</span>
+            </button>
+            <button className="action header-action" onClick={onOpenCreditsDialog}>
+              <Info className="header-action-icon" aria-hidden="true" />
+              <span>Credits...</span>
             </button>
             <input ref={openFileInputRef} className="hidden-file-input" type="file" accept=".jbb,text/plain" onChange={onFileInputChange} />
           </div>
@@ -1974,6 +1987,46 @@ function App() {
               </button>
               <button className="action tool-action active" onClick={() => void onApplyPreferences()}>
                 Apply
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isCreditsDialogOpen ? (
+        <div className="dialog-backdrop">
+          <section className="arrange-dialog credits-dialog panel" role="dialog" aria-modal="true" aria-label="Credits">
+            <div className="panel-title">
+              <h2>Credits</h2>
+            </div>
+            <div className="credits-content">
+              <p>
+                TsBead is a TypeScript port of the excellent original work done by Damian Brunold on JBead.
+              </p>
+              <ul>
+                <li>
+                  Original author: Damian Brunold
+                </li>
+                <li>
+                  Website:{' '}
+                  <a href="https://www.jbead.ch/" target="_blank" rel="noreferrer">
+                    https://www.jbead.ch/
+                  </a>
+                </li>
+                <li>
+                  GitHub:{' '}
+                  <a href="https://github.com/damianbrunold/jbead" target="_blank" rel="noreferrer">
+                    https://github.com/damianbrunold/jbead
+                  </a>
+                </li>
+              </ul>
+              <p>
+                File format support in TsBead: <strong>.jbb only</strong>. The legacy <strong>.dbb</strong> format is not supported.
+              </p>
+            </div>
+            <div className="arrange-actions">
+              <button className="action" onClick={() => setIsCreditsDialogOpen(false)}>
+                Close
               </button>
             </div>
           </section>
