@@ -62,6 +62,7 @@ export const EN_MESSAGES = {
   'palette.colorCompactLabel': 'C',
   'palette.setBackgroundToColor': 'Set background to color {index}',
   'palette.colorIndex': 'Color {index}',
+  'palette.editHint': 'Double tap/click to edit',
 
   'dialog.cancel': 'Cancel',
   'dialog.apply': 'Apply',
@@ -228,6 +229,7 @@ const FR_MESSAGES: LocaleCatalog = {
   'palette.colorLabel': 'Couleur',
   'palette.setBackgroundToColor': 'Mettre la couleur {index} en fond',
   'palette.colorIndex': 'Couleur {index}',
+  'palette.editHint': 'Double tap/clic pour modifier',
   'dialog.cancel': 'Annuler',
   'dialog.apply': 'Appliquer',
   'dialog.close': 'Fermer',

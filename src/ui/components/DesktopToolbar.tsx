@@ -200,13 +200,15 @@ export function DesktopToolbar({
                         key={`background-color-${color.join('-')}-${index}`}
                         className={`swatch palette-menu-swatch ${index === 0 ? 'selected' : ''}`}
                         style={{ backgroundColor: colorToCss(color) }}
-                        onClick={() => onSetColorAsBackground(index)}
-                        onDoubleClick={() => onEditPaletteColor(index)}
-                        onPointerUp={(event) => onTouchDoubleTapSwatch(index, event)}
+                        onClick={() => {
+                          onSetColorAsBackground(index)
+                          onTouchDoubleTapSwatch(index)
+                        }}
                         title={t('palette.setBackgroundToColor', { index })}
                       />
                     ))}
                   </div>
+                  <p className="palette-menu-hint">{t('palette.editHint')}</p>
                 </div>
               ) : null}
             </div>
@@ -229,13 +231,15 @@ export function DesktopToolbar({
                         key={`selected-color-${color.join('-')}-${index}`}
                         className={`swatch palette-menu-swatch ${selectedColor === index ? 'selected' : ''}`}
                         style={{ backgroundColor: colorToCss(color) }}
-                        onClick={() => onSetSelectedColor(index)}
-                        onDoubleClick={() => onEditPaletteColor(index)}
-                        onPointerUp={(event) => onTouchDoubleTapSwatch(index, event)}
+                        onClick={() => {
+                          onSetSelectedColor(index)
+                          onTouchDoubleTapSwatch(index)
+                        }}
                         title={t('palette.colorIndex', { index })}
                       />
                     ))}
                   </div>
+                  <p className="palette-menu-hint">{t('palette.editHint')}</p>
                 </div>
               ) : null}
             </div>
