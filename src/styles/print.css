@@ -1,0 +1,161 @@
+@media print {
+  @page jbead-default {
+    size: auto;
+    margin: 10mm;
+  }
+
+  @page jbead-a4-portrait {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  @page jbead-a4-landscape {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  @page jbead-letter-portrait {
+    size: Letter portrait;
+    margin: 10mm;
+  }
+
+  @page jbead-letter-landscape {
+    size: Letter landscape;
+    margin: 10mm;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto;
+    overflow: visible;
+    background: #fff !important;
+  }
+
+  body {
+    margin: 0;
+    min-width: 0;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    page: jbead-default;
+  }
+
+  .app-shell {
+    page: jbead-default;
+  }
+
+  body.print-page-a4.print-orientation-portrait,
+  body.print-page-a4.print-orientation-portrait .app-shell {
+    page: jbead-a4-portrait;
+  }
+
+  body.print-page-a4.print-orientation-landscape,
+  body.print-page-a4.print-orientation-landscape .app-shell {
+    page: jbead-a4-landscape;
+  }
+
+  body.print-page-letter.print-orientation-portrait,
+  body.print-page-letter.print-orientation-portrait .app-shell {
+    page: jbead-letter-portrait;
+  }
+
+  body.print-page-letter.print-orientation-landscape,
+  body.print-page-letter.print-orientation-landscape .app-shell {
+    page: jbead-letter-landscape;
+  }
+
+  .app-shell {
+    height: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    display: block;
+  }
+
+  .app-header {
+    display: none !important;
+    margin: 0;
+  }
+
+  .header-actions,
+  .tools-panel,
+  .sidebar,
+  .shared-scrollbar-panel,
+  .dialog-backdrop,
+  .empty-pane,
+  .workspace {
+    display: none !important;
+  }
+
+  .print-workspace {
+    display: block;
+  }
+
+  .panel {
+    border: 1px solid #bdbdbd;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    padding: 0.45rem;
+    margin-bottom: 0.55rem;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .canvas-panel,
+  .report-panel,
+  .print-panel {
+    height: auto !important;
+    overflow: visible !important;
+    min-height: 0;
+    break-before: auto;
+    page-break-before: auto;
+  }
+
+  .print-report-panel {
+    break-before: auto;
+    page-break-before: auto;
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .panel-title {
+    margin-bottom: 0.35rem;
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  .canvas-scroll {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0;
+    overflow: visible !important;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    display: block;
+    break-before: avoid-page;
+    page-break-before: avoid;
+  }
+
+  .print-panel .canvas-scroll {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .canvas-scroll > .bead-canvas,
+  .canvas-scroll > .bead-preview-canvas {
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .report-content {
+    overflow: visible;
+    max-height: none;
+    padding-right: 0;
+  }
+}

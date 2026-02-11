@@ -1,0 +1,156 @@
+@media (max-width: 980px) {
+  .app-header {
+    flex-wrap: wrap;
+  }
+
+  .header-controls {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .file-status {
+    text-align: left;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: auto;
+  }
+
+  .toolbar-view {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .preview-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    height: auto;
+  }
+
+  .preview-with-scrollbar {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .preview-with-scrollbar.has-canvas.no-report,
+  .preview-with-scrollbar.has-canvas.has-report {
+    grid-template-columns: 1fr;
+  }
+
+  .shared-scrollbar-panel {
+    display: none;
+  }
+
+  .sidebar {
+    order: -1;
+    overflow: visible;
+  }
+
+  .canvas-panel {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 980px) and (orientation: portrait) {
+  .app-shell {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+  }
+
+  .app-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: unset;
+  }
+
+  .mobile-header-left,
+  .mobile-file-status {
+    display: block;
+  }
+
+  .mobile-file-status {
+    max-width: min(40vw, 14rem);
+  }
+
+  .mobile-menu-toggle {
+    width: 2.12rem;
+    height: 2.12rem;
+  }
+
+  .header-main {
+    justify-content: center;
+    flex: 1 1 auto;
+  }
+
+  .header-controls {
+    display: none;
+  }
+
+  .app-logo {
+    height: clamp(1.9rem, 5.6vw, 2.8rem);
+  }
+
+  .mobile-view-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .tools-panel {
+    padding: 0.52rem;
+  }
+
+  .toolbar-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.52rem;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-edit {
+    display: none;
+  }
+
+  .toolbar-view {
+    display: flex;
+    flex: 1 1 auto;
+    margin-left: 0;
+    justify-content: flex-start;
+    align-content: start;
+    gap: 0.34rem;
+  }
+
+  .toolbar-view .views-menu-wrap {
+    display: none;
+  }
+
+  .workspace {
+    grid-template-columns: auto minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    gap: 0.5rem;
+  }
+
+  .mobile-edit-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.34rem;
+    align-self: stretch;
+    min-height: 0;
+    overflow: auto;
+    padding: 0.52rem 0.46rem;
+  }
+
+  .preview-with-scrollbar {
+    min-width: 0;
+  }
+}
