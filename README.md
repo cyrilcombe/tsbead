@@ -8,6 +8,10 @@ This modern web rewrite is focused on:
 - offline local persistence
 - compatibility with existing `.jbb` files
 
+## Live App
+
+- URL: https://cyrilcombe.github.io/tsbead/
+
 ## File Format Scope
 
 - Supported in web app: `.jbb`
@@ -32,6 +36,32 @@ This modern web rewrite is focused on:
 npm install
 npm run dev
 ```
+
+## Install As PWA
+
+### Desktop (Chrome / Edge)
+
+1. Open the app: https://cyrilcombe.github.io/tsbead/
+2. Click the install icon in the address bar (or browser menu > Install app).
+3. Launch TsBead from your applications list like a native app.
+
+### Android (Chrome)
+
+1. Open the app URL in Chrome.
+2. Tap `Add to Home screen` or `Install app`.
+3. Confirm installation.
+
+### iPhone / iPad (Safari)
+
+1. Open the app URL in Safari.
+2. Tap `Share`.
+3. Tap `Add to Home Screen`.
+
+### Update The Installed App
+
+1. Open TsBead while online.
+2. Refresh once.
+3. If needed, close and reopen the installed app.
 
 ## Tests
 

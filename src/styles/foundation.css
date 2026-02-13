@@ -19,6 +19,20 @@
   box-sizing: border-box;
 }
 
+.app-shell,
+.app-shell * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 html,
 body {
   height: 100%;
