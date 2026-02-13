@@ -12,30 +12,7 @@ This modern web rewrite is focused on:
 
 - URL: https://cyrilcombe.github.io/tsbead/
 
-## File Format Scope
-
-- Supported in web app: `.jbb`
-- Legacy `.dbb` format: not supported
-
-## Credits
-
-- Original author: Damian Brunold
-- JBead website: https://www.jbead.ch/
-- JBead GitHub: https://github.com/damianbrunold/jbead
-
-## Tech Stack
-
-- React + TypeScript + Vite
-- Zustand for editor state
-- Dexie/IndexedDB for local storage
-- Vitest for tests
-
-## Development
-
-```bash
-npm install
-npm run dev
-```
+![TsBead screenshot](docs/images/tsbead-screenshot.png)
 
 ## Install As PWA
 
@@ -63,17 +40,10 @@ npm run dev
 2. Refresh once.
 3. If needed, close and reopen the installed app.
 
-## Tests
+## File Format Scope
 
-```bash
-npm run test
-```
-
-## Build
-
-```bash
-npm run build
-```
+- Supported in web app: `.jbb`
+- Legacy `.dbb` format: not supported
 
 ## Keyboard Shortcuts
 
@@ -101,6 +71,45 @@ npm run build
 | Shift pattern left/right | `← / →` | `← / →` |
 | Clear selection / close dialogs | `Escape` | `Escape` |
 | Temporary pipette (hold) | `Space` | `Space` |
+
+## Gestures
+
+- Pinch with two fingers on the canvas to zoom in and out.
+- Swipe left or right with two fingers on the canvas to shift the pattern phase.
+
+## Credits
+
+- Original author: Damian Brunold
+- JBead website: https://www.jbead.ch/
+- JBead GitHub: https://github.com/damianbrunold/jbead
+
+## Tech Stack
+
+- React + TypeScript + Vite
+- Zustand for editor state
+- Dexie/IndexedDB for local storage
+- Vitest for tests
+
+## Development, Tests, Build
+
+### Development
+
+```bash
+npm install
+npm run dev
+```
+
+### Tests
+
+```bash
+npm run test
+```
+
+### Build
+
+```bash
+npm run build
+```
 
 ## License
 
